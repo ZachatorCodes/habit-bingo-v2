@@ -13,8 +13,10 @@ run on Windows without Docker, and an isolated database per pull-request preview
 
 - Postgres hosted on Neon, with a database branch per Vercel preview deployment.
 - Drizzle ORM with Drizzle Kit SQL migrations committed to `drizzle/`.
-- Production driver: `@neondatabase/serverless` `Pool` (`drizzle-orm/neon-serverless`), which
-  supports transactions.
+- Production driver: `pg` (node-postgres) `Pool` (`drizzle-orm/node-postgres`) over TCP to Neon's
+  pooled endpoint, which supports transactions. Neon's WebSocket driver cannot reach a local
+  Postgres, so E2E tests could not have a real database; `pg` works on Vercel's Node runtime and
+  against PGlite's socket server, which E2E tests use.
 - Tests: PGlite, a real Postgres compiled to WebAssembly running in-process, with the same
   migrations applied.
 
