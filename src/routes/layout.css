@@ -1,1 +1,33 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/nunito';
+
+/* Playful design tokens (spec §4). Text on state colors is always ink for WCAG AA contrast. */
+@theme {
+	--font-sans: 'Nunito Variable', system-ui, sans-serif;
+
+	--color-cream: #fff7ec;
+	--color-ink: #2b2340;
+	--color-line: #f1e4d3;
+	--color-accent: #ff7a59;
+	--color-accent-edge: #d9573a;
+	--color-accent-2: #ffb443;
+
+	--color-earn: #6bd48a;
+	--color-earn-edge: #4cb86c;
+	--color-earn-shadow: #3e9c5a;
+	--color-protect: #7fa8ff;
+	--color-protect-edge: #5e8bf0;
+	--color-protect-shadow: #4a74d6;
+	--color-risk: #ffd25e;
+	--color-risk-edge: #f2b630;
+	--color-risk-shadow: #d99a12;
+	--color-lost: #efe8df;
+
+	--radius-square: 1rem;
+}
+
+@layer base {
+	body {
+		@apply bg-cream font-sans text-ink antialiased;
+	}
+}

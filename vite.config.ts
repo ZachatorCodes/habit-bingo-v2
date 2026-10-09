@@ -20,8 +20,6 @@ export default defineConfig({
 		})
 	],
 	test: {
-		// The client project has no component tests until the design system lands (M0 Task 5).
-		passWithNoTests: true,
 		expect: { requireAssertions: true },
 		coverage: {
 			provider: 'v8',
