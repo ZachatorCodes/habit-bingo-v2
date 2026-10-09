@@ -1,0 +1,33 @@
+name: Deploy smoke test
+
+# Vercel reports each finished deployment (preview or production) to GitHub.
+# This checks the deployed app is up and connected to its own database.
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Deploy smoke test
+    if: github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    env:
+      URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+      # Lets automation through Vercel Authentication on protected previews.
+      BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+    steps:
+      - name: Health check reports the database is reachable
+        run: |
+          body=$(curl -sS --fail-with-body -H "x-vercel-protection-bypass: $BYPASS" "$URL/api/health")
+          echo "$body"
+          test "$(echo "$body" | jq -r .status)" = ok
+          test "$(echo "$body" | jq -r .db)" = ok
+      - name: Landing page carries security headers
+        run: |
+          headers=$(curl -sS -D - -o /dev/null -H "x-vercel-protection-bypass: $BYPASS" "$URL/")
+          echo "$headers"
+          echo "$headers" | grep -qi '^content-security-policy:'
+          echo "$headers" | grep -qi '^strict-transport-security:'
+          echo "$headers" | grep -qi '^x-frame-options: DENY'
