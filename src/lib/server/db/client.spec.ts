@@ -1,4 +1,4 @@
-import type { Pool } from '@neondatabase/serverless';
+import type { Pool } from 'pg';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/env/private', () => ({ DATABASE_URL: undefined }));
@@ -25,5 +25,12 @@ describe('createDb', () => {
 	it('gives up connecting after 5 seconds so health checks answer instead of hanging', async () => {
 		const pool = await poolOf();
 		expect(pool.options.connectionTimeoutMillis).toBe(5000);
+	});
+
+	it('uses node-postgres so it can reach any Postgres, not only Neon over WebSockets', async () => {
+		const { createDb } = await import('./client');
+		const db = createDb('postgres://u:p@localhost/db') as unknown as { $client: unknown };
+		const { Pool } = await import('pg');
+		expect(db.$client).toBeInstanceOf(Pool);
 	});
 });

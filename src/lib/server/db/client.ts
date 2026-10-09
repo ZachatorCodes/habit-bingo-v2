@@ -1,14 +1,14 @@
-import { Pool } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import pg from 'pg';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { DATABASE_URL } from '$app/env/private';
 import * as schema from './schema';
 
-/** The database handle every service takes. Neon in production, PGlite in tests. */
+/** The database handle every service takes. Postgres via node-postgres in production and E2E, PGlite in unit tests. */
 export type Db = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 export function createDb(url: string): Db {
-	const pool = new Pool({ connectionString: url, connectionTimeoutMillis: 5000 });
+	const pool = new pg.Pool({ connectionString: url, connectionTimeoutMillis: 5000, max: 5 });
 	// An idle pooled client can fail when Neon suspends compute or drops the socket.
 	// Unhandled, that 'error' event would crash the whole function instance.
 	pool.on('error', (error: Error) =>
