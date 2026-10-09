@@ -19,7 +19,8 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
 		"test:coverage": "vitest --run --coverage",
-		"icons": "tsx scripts/generate-icons.ts"
+		"icons": "tsx scripts/generate-icons.ts",
+		"vercel-build": "drizzle-kit migrate && vite build"
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "^0.5.8",
