@@ -31,7 +31,7 @@ before it is built.
 | #  | Milestone           | Delivers                                                                                          |
 |----|---------------------|---------------------------------------------------------------------------------------------------|
 | M0 | Foundation          | Repo, SvelteKit app, CI, Vercel previews + production, Neon DB, design tokens, landing, privacy/terms |
-| M1 | Accounts            | Username + password sign-up/sign-in, invite-only gate, admin password-reset links, profile (name, emoji avatar, timezone, week start) |
+| M1 | Accounts            | Google sign-in and username + password sign-up/sign-in, account linking, invite-only gate, admin password-reset links, profile (username, name, emoji avatar, timezone, week start) |
 | M2 | Habit library       | Create, edit, archive habits                                                                      |
 | M3 | Card builder        | Size, habit picking, prorated targets, rewards, shuffle, 48-hour edit window                     |
 | M4 | Today & check-ins   | Today list, logging with Pop & burst, 3-day backfill, earn/protect states                        |
@@ -40,9 +40,10 @@ before it is built.
 | M7 | Month lifecycle     | Closing window, finalization, recap, history                                                      |
 | M8 | Groups              | Groups, invite links (also the signup path), leaderboards, viewing members' cards                |
 | M9 | Feed                | Highlights feed with emoji reactions                                                              |
+| M10 | Calendar           | Optional Google Calendar connection; month-milestone events on a dedicated calendar (§4.13)      |
 
 M0–M5 is a complete single-player game. M6–M7 make it sticky. Social (M8–M9) comes after the core
-loop feels great.
+loop feels great. Calendar (M10) builds on the month lifecycle.
 
 **Bootstrapping invites before M8:** M1 introduces the `invite` table with an optional `groupId`.
 Until groups exist, invites are created by an admin (the first account, seeded via a script). M8
@@ -192,18 +193,21 @@ to start.
 ### 4.1 Public
 
 - **Landing** (`/`, prerendered): what it is, an animated sample card, sign-in button. OG tags.
-- **Sign in** (`/signin`): username + password. "Forgot password?" explains that an admin can
-  send a reset link.
-- **Invite** (`/join/[code]`): "Alex invited you to *College Crew*" → create account (username,
-  password) or sign in → join. Creating an account is only possible through a valid, unexpired
-  invite with uses remaining.
+- **Sign in** (`/signin`): "Continue with Google", or username + password. "Forgot password?"
+  explains that an admin can send a reset link. Signing in with Google requests only basic profile
+  scopes (`openid`, `email`, `profile`); never calendar access.
+- **Invite** (`/join/[code]`): "Alex invited you to *College Crew*" → create an account (Google, or
+  username + password) or sign in → join. Creating an account by either method is only possible
+  through a valid, unexpired invite with uses remaining. A Google account with no existing user and
+  no valid invite sees "You need an invite to join" and no account is created.
 - **Password reset** (`/reset/[token]`): set a new password using an admin-issued one-time link.
 - **Privacy** and **Terms** pages. A one-time dismissible notice: "We only use essential cookies
   to keep you signed in." No consent banner (only essential cookies; analytics are cookieless).
 
 ### 4.2 Onboarding (first sign-in)
 
-1. Profile: display name, emoji avatar (timezone and week start auto-detected).
+1. Profile: username (Google sign-ups choose one here; password sign-ups already chose it), display
+   name, emoji avatar (timezone and week start auto-detected).
 2. Habit library: add habits; tap-to-add starter suggestions.
 3. Build your first card.
 
@@ -272,8 +276,19 @@ The Updates tab shows a badge when any priority 1–2 nudge exists.
 
 ### 4.10 Me
 
-Profile, Habit library, History (past cards + recaps), Settings (timezone, week start), Change
-password, Sign out everywhere, Delete account (cascades all data).
+Profile, Habit library, History (past cards + recaps), Settings (timezone, week start — "applies
+from your next card"), Sign out everywhere, Delete account (cascades all data).
+
+**Sign-in methods:** connect or disconnect Google; set or change a password. A user must always keep
+at least one sign-in method. Linking Google to an existing account happens only from this signed-in
+screen, never automatically by matching email addresses.
+
+**Google Calendar:** connect / disconnect (§4.13).
+
+### 4.11 Month recap
+
+Full-screen sequence: final board → points and group rank → rewards earned → a highlight (best
+streak or most-logged habit) → "Build next month's card".
 
 ### 4.12 Admin (admins only)
 
@@ -281,10 +296,32 @@ Create invites (expiry, max uses) and generate one-time password-reset links for
 copies the link and sends it to the person however they like. The first admin account is created by
 a seed script.
 
-### 4.11 Month recap
+### 4.13 Google Calendar (M10)
 
-Full-screen sequence: final board → points and group rank → rewards earned → a highlight (best
-streak or most-logged habit) → "Build next month's card".
+Optional; connected from Me → Google Calendar.
+
+- **Connect:** an incremental Google authorization requesting only the narrowest scope that lets the
+  app create its own calendar and manage events on it (`calendar.app.created`; the M10 plan must
+  confirm its exact behavior and Google's verification requirements). The app cannot read or change
+  any other calendar. A password-only user connecting Calendar also links Google as a sign-in method.
+- **Calendar:** the app creates a secondary calendar named "Habit Bingo" in the user's account.
+- **Events** (all-day, with a default reminder), created when a card starts and updated if its dates
+  change:
+
+  | Date | Event |
+  |------|-------|
+  | Card's `editableUntil` date | "✏️ Card locks today: last chance to edit" |
+  | Last day of the month | "🎯 Last day of {Month}'s card" |
+  | 1st of next month | "🆕 Build your {Next month} card" |
+  | 3rd of next month | "⏳ Final day to log missed {Month} check-ins" |
+  | 4th of next month | "🎉 Your {Month} recap is ready" |
+
+- **Disconnect:** asks whether to delete the Habit Bingo calendar or keep it, then revokes the
+  app's calendar access with Google.
+- **Failures:** calendar sync never blocks a game action. Failed syncs are retried; if Google
+  reports the access was revoked, the connection is marked disconnected and Me shows "Reconnect".
+- Until Google verifies the app, users see an "unverified app" warning on the calendar consent
+  screen and the app is limited to 100 Google users; acceptable while invite-only.
 
 ## 5. Architecture
 
@@ -296,7 +333,8 @@ streak or most-logged habit) → "Build next month's card".
 | Styling        | Tailwind CSS v4 with design tokens; Bits UI for accessible primitives |
 | Motion         | Svelte transitions / springs; `canvas-confetti` |
 | Database       | Postgres on Neon; Drizzle ORM + Drizzle Kit migrations |
-| Auth           | Better Auth with the username plugin: username + password, scrypt hashing, DB-backed sessions and rate limiting, Have I Been Pwned password check. Better Auth's core user schema expects an email; the M1 plan must verify this and, if required, store a non-routable placeholder (e.g. `<userId>@users.invalid`) that is never displayed or emailed, replaced when email recovery lands. |
+| Auth           | Better Auth: Google social provider plus the username plugin (username + password, scrypt hashing), account linking, DB-backed sessions and rate limiting, Have I Been Pwned password check, encrypted OAuth tokens. Better Auth's core user schema expects an email; Google users have one. The M1 plan must verify whether password-only users need one and, if so, store a non-routable placeholder (e.g. `<userId>@users.invalid`) that is never displayed or emailed. |
+| Google APIs    | Google Calendar API (M10) |
 | Email          | None for now (no outbound email). |
 | Validation     | Zod |
 | Hosting        | Vercel (production + per-PR previews); Neon branch per preview |
@@ -318,11 +356,11 @@ Dependencies point downward only.
 
 | Table | Key columns |
 |-------|-------------|
-| `user` (+ Better Auth `session`, `account`, `verification`) | `id`, `username` (unique, case-insensitive), `displayName`, `avatarEmoji`, `timezone`, `weekStartsOn`, `isAdmin`, `onboardedAt` (+ `email` placeholder if Better Auth requires it, see §5.1) |
+| `user` (+ Better Auth `session`, `account`, `verification`; `account` holds Google OAuth tokens, encrypted) | `id`, `username` (unique, case-insensitive), `email` (from Google, or placeholder per §5.1), `displayName`, `avatarEmoji`, `timezone`, `weekStartsOn`, `isAdmin`, `onboardedAt` |
 | `invite` | `code` (unique), `createdBy`, `groupId?`, `expiresAt`, `maxUses`, `uses` |
 | `password_reset` | `tokenHash` (unique), `userId`, `createdBy` (admin), `expiresAt`, `usedAt?` |
 | `habit` | `id`, `userId`, `emoji`, `name`, `direction`, `target`, `period`, `isPrivate`, `archivedAt?` |
-| `card` | `id`, `userId`, `month` (`YYYY-MM`), `size`, `startDate`, `editableUntil`, `rewardBingo`, `rewardSixty`, `rewardBlackout`; unique (`userId`, `month`) |
+| `card` | `id`, `userId`, `month` (`YYYY-MM`), `size`, `startDate`, `editableUntil`, `weekStartsOn` (snapshot), `rewardBingo`, `rewardSixty`, `rewardBlackout`; unique (`userId`, `month`) |
 | `card_square` | `id`, `cardId`, `position`, `isFree`, `habitId?`, snapshot fields (`emoji`, `name`, `direction`, `period`, `target`, `isPrivate`); unique (`cardId`, `position`) |
 | `check_in` | `id`, `squareId`, `date` (`YYYY-MM-DD`), `createdAt`; unique (`squareId`, `date`) |
 | `group` | `id`, `name`, `emoji`, `createdBy` |
@@ -330,10 +368,12 @@ Dependencies point downward only.
 | `feed_event` | `id`, `userId`, `cardId`, `type`, `payload` (JSON), `createdAt` |
 | `reaction` | `feedEventId`, `userId`, `emoji`; unique (`feedEventId`, `userId`) |
 | `month_result` | `userId`, `month`, `points`, `lines`, `tiers`, `squaresCounting`, `size`; unique (`userId`, `month`) |
+| `calendar_connection` | `userId` (unique), `googleCalendarId`, `status` (`connected` \| `needsReconnect`), `connectedAt` |
+| `calendar_event` | `cardId`, `kind` (`editLock` \| `lastDay` \| `buildNext` \| `backfillDeadline` \| `recap`), `googleEventId`; unique (`cardId`, `kind`) |
 
 For week-period habits, the `target` snapshot is the full-week N; per-week requirements for
-clipped weeks are computed by the game module from `startDate`, the month and `weekStartsOn`.
-`card` therefore also snapshots `weekStartsOn` so a later settings change doesn't alter a card.
+clipped weeks are computed by the game module from `startDate`, the month and the card's
+`weekStartsOn` snapshot, so a later settings change doesn't alter an active card.
 
 ### 5.4 Security
 
@@ -342,6 +382,7 @@ clipped weeks are computed by the game module from `startDate`, the month and `w
 | Passwords | Hashed with scrypt (Better Auth default); never stored or logged in plain text. Rules: at least 10 characters, max 128, not equal to the username, rejected if found in Have I Been Pwned (k-anonymity range query; the password itself never leaves the server). |
 | Usernames | 3–20 characters `[a-z0-9_]`, unique case-insensitively, shown as `@username` beside display names. |
 | Password reset | Admin-issued link containing a random 32-byte token; only its SHA-256 hash is stored; single use; expires after 24 hours. Using it, or changing a password, revokes all other sessions. |
+| Google OAuth | Sign-in requests only `openid email profile`; calendar access is requested separately and only on connect. State and PKCE handled by Better Auth. Access/refresh tokens are encrypted at rest. Accounts are linked only by an explicit action from a signed-in session, never by matching emails. |
 | Sessions | Random session ID in an `httpOnly`, `Secure`, `SameSite=Lax` cookie, looked up in the DB; expiry; "sign out everywhere" deletes the user's sessions. |
 | CSRF | SvelteKit's built-in origin check on form actions. |
 | Authorization | Every service function takes the current user and scopes queries to the user or shared-group members; private habit names stripped for non-owners. Dedicated tests per rule. |
@@ -443,5 +484,6 @@ States never rely on color alone; full keyboard support; labelled controls; WCAG
 ## 9. Later (explicitly out of scope)
 
 Push notifications (installable PWA groundwork is in scope: manifest + icons in M0), optional
-email for self-service password recovery, Google/Apple sign-in, passkeys, comments, one-to-one
-friends, dark mode, multiple check-ins per day, open signup.
+email for self-service password recovery, habit reminder events on Google Calendar, Apple
+sign-in, passkeys, comments, one-to-one friends, dark mode, multiple check-ins per day, open
+signup.
