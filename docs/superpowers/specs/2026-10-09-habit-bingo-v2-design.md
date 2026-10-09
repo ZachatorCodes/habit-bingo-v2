@@ -63,27 +63,43 @@ These rules live in the pure `game` module (§5) and are the primary TDD target.
 
 ### 3.2 Habits
 
-A habit has: `emoji`, `name`, `direction` (`atLeast` | `atMost`), `target` (integer N),
-`period` (`day` | `week` | `month`), and `isPrivate`.
+A habit has: `emoji`, `name`, `category`, `direction` (`atLeast` | `atMost`), `target`
+(integer N), `period` (`day` | `week` | `month`), `countMode` (`times` | `days`), and `isPrivate`.
 
-Valid combinations:
+**Check-ins are counts.** A check-in records how many times the habit was done on a date
+(`count` ≥ 1; at most 20 per habit per day). Tapping adds one; a − / + stepper corrects it; a count
+of 0 removes the check-in.
 
-| direction \ period | day                | week                 | month                 |
-|--------------------|--------------------|----------------------|-----------------------|
-| `atLeast`          | protect (N fixed 1) | protect (1 ≤ N ≤ 7)  | **earn** (1 ≤ N ≤ 31) |
-| `atMost`           | not offered        | protect (0 ≤ N ≤ 6)  | protect (0 ≤ N ≤ 30)  |
+**Count mode** decides how check-ins are measured against a target over a span of dates:
 
-- **One check-in per habit per day.** A day is logged or not; logging the same day twice is a no-op.
+- `times`: the sum of counts ("Bike 3 times a month": two rides on one day = 2).
+- `days`: the number of dates with a check-in ("Gym 3 days a week": two workouts on one day = 1).
+
+Defaults: `atMost` → `times`; `atLeast` → `days`. `day`-period habits have no count mode choice:
+each day needs N check-ins that day.
+
+Valid combinations and ranges:
+
+| direction \ period | day                          | week                                   | month                                   |
+|--------------------|------------------------------|----------------------------------------|-----------------------------------------|
+| `atLeast`          | protect, 1 ≤ N ≤ 20 per day  | protect; `days`: 1–7, `times`: 1–50    | **earn**; `days`: 1–31, `times`: 1–100  |
+| `atMost`           | not offered                  | protect; `days`: 0–6, `times`: 0–50    | protect; `days`: 0–30, `times`: 0–100   |
+
 - `atMost` check-ins are **slips** ("I ate out today").
 - Habits are archived, not deleted, so past cards keep their history. Archived habits do not appear
   in the card builder.
+
+**Categories** (fixed set; every habit has exactly one): 💪 Fitness, 🥗 Health, 🧠 Mind,
+🏠 Home, 👥 Social, 📚 Learning, 🎨 Creative, 💰 Money, ✨ Other. Categories group and filter the
+habit library and card builder, appear in the square's bottom sheet, and drive the recap's
+per-category breakdown. They are not shown on card squares.
 
 ### 3.3 Cards
 
 - One card per user per calendar month (`YYYY-MM`). A card can be created on any day of the month.
 - Sizes: **3×3** (9 habits), **4×4** (16 habits), **5×5** (24 habits + FREE center at index 12).
-- When a card is created, each square **snapshots** its habit (emoji, name, direction, period,
-  target after proration and user overrides, isPrivate). Later library edits never affect it.
+- When a card is created, each square **snapshots** its habit (emoji, name, category, direction,
+  period, countMode, target after proration and user overrides, isPrivate). Later library edits never affect it.
 - Habits are placed in random positions; the builder offers re-shuffle before the card starts.
 - Three rewards (free text): **first bingo**, **~60% of squares**, **blackout**.
   Middle-tier thresholds: 3×3 → 5, 4×4 → 10, 5×5 → 15 squares. FREE counts as a square.
@@ -100,9 +116,9 @@ lets the user override any of them before starting.
 |-----------------------|-----------------------------------------------------------------------------|
 | `atLeast` / `month`   | `max(1, round(N × R / D))`                                                  |
 | `atMost` / `month`    | `round(N × R / D)`                                                          |
-| `atLeast` / `day`     | Every day from the start date to month end                                 |
-| `atLeast` / `week`    | Each week clipped to the card's span (start date … month end) needs `round(N × d / 7)`, where `d` is the days of that week inside the span. Full weeks need `N`. |
-| `atMost` / `week`     | Each clipped week allows `ceil(N × d / 7)`. Limits round **up** so a stub week is never stricter than a full one. |
+| `atLeast` / `day`     | Every day from the start date to month end needs N check-ins (no proration of N) |
+| `atLeast` / `week`    | Each week clipped to the card's span (start date … month end) needs `round(N × d / 7)`, where `d` is the days of that week inside the span; in `days` mode also capped at `d`. Full weeks need `N`. |
+| `atMost` / `week`     | Each clipped week allows `ceil(N × d / 7)`; in `days` mode also capped at `d`. Limits round **up** so a stub week is never stricter than a full one. |
 
 Week clipping applies even to cards started on the 1st, because months rarely align with weeks.
 
@@ -111,7 +127,10 @@ Week clipping applies even to cards started on the 1st, because months rarely al
 Evaluated for a given "today". A square **counts** (toward lines, tiers and blackout) when its state
 is `complete`, `held` or `atRisk`.
 
-**Earn squares** (`atLeast` / `month`), with `k` = logged days, `N` = requirement:
+Below, "progress" over a span of dates is measured by the square's count mode (§3.2), and a date is
+**met** for a `day` habit when that date's count ≥ N.
+
+**Earn squares** (`atLeast` / `month`), with `k` = progress over the card span, `N` = requirement:
 
 | State        | Condition |
 |--------------|-----------|
@@ -123,10 +142,10 @@ is `complete`, `held` or `atRisk`.
 
 | Habit              | `atRisk` when… | `lost` when… |
 |--------------------|----------------|--------------|
-| `atLeast` / `day`  | Any day in the backfill window other than today (and within the card span) is unlogged | Any card-span day older than the backfill window is unlogged |
-| `atLeast` / `week` | The current week still needs `m > 0` check-ins and the days left in that week (including today) ≤ `m`; **or** a past week is short of its requirement but its last day is still within the backfill window | A week whose last day is older than the backfill window is short of its requirement |
-| `atMost` / `week`  | Slips this week = the week's limit | Any week's slips exceed its limit |
-| `atMost` / `month` | Slips this month = the limit | Slips exceed the limit |
+| `atLeast` / `day`  | Any day in the backfill window other than today (and within the card span) is not met | Any card-span day older than the backfill window is not met |
+| `atLeast` / `week` | The current week's progress is short by `m > 0` and the days left in that week (including today) ≤ `m`; **or** a past week is short of its requirement but its last day is still within the backfill window | A week whose last day is older than the backfill window is short of its requirement |
+| `atMost` / `week`  | This week's progress = the week's limit | Any week's progress exceeds its limit |
+| `atMost` / `month` | This month's progress = the limit | Progress exceeds the limit |
 
 `atMost` squares become `lost` immediately on exceeding a limit, but because check-ins within the
 backfill window can be removed, a mistaken slip can restore the square. Once the offending days
@@ -150,8 +169,8 @@ Each square has a base value of **10**:
 | Square                         | Points |
 |--------------------------------|--------|
 | Earn                           | `10 × min(k, N) / N` |
-| `atLeast` / `day`              | `10 × logged span days / required span days` |
-| `atLeast` / `week`             | `10 × Σ min(kᵥ, Nᵥ) / Σ Nᵥ` over weeks `w` (if `Σ Nᵥ = 0`, the square scores 10) |
+| `atLeast` / `day`              | `10 × Σ min(count_d, N) / (N × span days)` over span dates `d` |
+| `atLeast` / `week`             | `10 × Σ min(kᵥ, Nᵥ) / Σ Nᵥ` over weeks `w`, with `kᵥ` the week's progress (if `Σ Nᵥ = 0`, the square scores 10) |
 | `atMost` (week or month)       | `10` while `held`/`atRisk`, `0` when `lost` |
 | FREE                           | `0` |
 
@@ -227,17 +246,18 @@ same sections; Today and Card side-by-side where width allows.
 
 ### 4.5 Today
 
-Sections: **Do today** (day habits; week habits still needing check-ins this week), **Anytime this
-month** (earn squares), **Log a slip** (`atMost` habits). Each row: emoji, name, progress text,
-check button. Earlier backfill-window days reachable via a day switcher. Empty states: "No card yet
+Sections: **Do today** (day habits not yet met today; week habits still short this week),
+**Anytime this month** (earn squares), **Log a slip** (`atMost` habits). Each row: emoji, name,
+progress text (e.g. "5/8 today", "2 of 3 this week"), and an add button that logs one more check-in
+(long-press or the bottom sheet's stepper to correct). Earlier backfill-window days reachable via a day switcher. Empty states: "No card yet
 → Build one", "All done today 🎉".
 
 ### 4.6 Card
 
 - Header: month, percent of squares counting, bingo count, points, reward-tier chips.
 - **Phone (and all 5×5 on narrow screens):** emoji grid. Each square shows emoji, state color and a
-  thin progress bar. Tapping opens a **bottom sheet**: name, rule, progress, this week's / month's
-  days, log / unlog. Logging never happens from a stray grid tap.
+  thin progress bar. Tapping opens a **bottom sheet**: name, category, rule, progress, this
+  week's / month's days with their counts, and a − / + stepper for the selected day. Logging never happens from a stray grid tap.
 - **Wider screens and 3×3 / 4×4:** squares also show full names.
 - Private squares show to others as 🔒 with progress only.
 
@@ -288,7 +308,8 @@ screen, never automatically by matching email addresses.
 ### 4.11 Month recap
 
 Full-screen sequence: final board → points and group rank → rewards earned → a highlight (best
-streak or most-logged habit) → "Build next month's card".
+streak or most-logged habit) → per-category breakdown (percent of each category's squares
+counting) → "Build next month's card".
 
 ### 4.12 Admin (admins only)
 
@@ -359,10 +380,10 @@ Dependencies point downward only.
 | `user` (+ Better Auth `session`, `account`, `verification`; `account` holds Google OAuth tokens, encrypted) | `id`, `username` (unique, case-insensitive), `email` (from Google, or placeholder per §5.1), `displayName`, `avatarEmoji`, `timezone`, `weekStartsOn`, `isAdmin`, `onboardedAt` |
 | `invite` | `code` (unique), `createdBy`, `groupId?`, `expiresAt`, `maxUses`, `uses` |
 | `password_reset` | `tokenHash` (unique), `userId`, `createdBy` (admin), `expiresAt`, `usedAt?` |
-| `habit` | `id`, `userId`, `emoji`, `name`, `direction`, `target`, `period`, `isPrivate`, `archivedAt?` |
+| `habit` | `id`, `userId`, `emoji`, `name`, `category`, `direction`, `target`, `period`, `countMode`, `isPrivate`, `archivedAt?` |
 | `card` | `id`, `userId`, `month` (`YYYY-MM`), `size`, `startDate`, `editableUntil`, `weekStartsOn` (snapshot), `rewardBingo`, `rewardSixty`, `rewardBlackout`; unique (`userId`, `month`) |
-| `card_square` | `id`, `cardId`, `position`, `isFree`, `habitId?`, snapshot fields (`emoji`, `name`, `direction`, `period`, `target`, `isPrivate`); unique (`cardId`, `position`) |
-| `check_in` | `id`, `squareId`, `date` (`YYYY-MM-DD`), `createdAt`; unique (`squareId`, `date`) |
+| `card_square` | `id`, `cardId`, `position`, `isFree`, `habitId?`, snapshot fields (`emoji`, `name`, `category`, `direction`, `period`, `countMode`, `target`, `isPrivate`); unique (`cardId`, `position`) |
+| `check_in` | `id`, `squareId`, `date` (`YYYY-MM-DD`), `count` (1–20), `updatedAt`; unique (`squareId`, `date`) |
 | `group` | `id`, `name`, `emoji`, `createdBy` |
 | `group_member` | `groupId`, `userId`, `role` (`owner` \| `member`), `joinedAt`; unique (`groupId`, `userId`) |
 | `feed_event` | `id`, `userId`, `cardId`, `type`, `payload` (JSON), `createdAt` |
@@ -414,7 +435,7 @@ clipped weeks are computed by the game module from `startDate`, the month and th
 - **Authorization failures** return 404 for resources the user may not know exist, 403 otherwise.
 - **Unexpected errors** use SvelteKit's `handleError` hook: log with a request ID, show a friendly
   error page with that ID.
-- **Concurrency:** unique constraints (one card per month, one check-in per square-day, one reaction
+- **Concurrency:** unique constraints (one card per month, one check-in row (with a count) per square and date, one reaction
   per user-event) are the source of truth; services treat constraint violations as idempotent
   no-ops or domain errors.
 
@@ -485,5 +506,5 @@ States never rely on color alone; full keyboard support; labelled controls; WCAG
 
 Push notifications (installable PWA groundwork is in scope: manifest + icons in M0), optional
 email for self-service password recovery, habit reminder events on Google Calendar, Apple
-sign-in, passkeys, comments, one-to-one friends, dark mode, multiple check-ins per day, open
+sign-in, passkeys, comments, one-to-one friends, dark mode, custom categories, open
 signup.
