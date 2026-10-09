@@ -1,4 +1,10 @@
-export type LogEntry = { level: 'error'; errorId: string; path: string; message: string };
+export type LogEntry = {
+	level: 'error';
+	errorId: string;
+	path: string;
+	message: string;
+	stack?: string;
+};
 
 /** Logs an unexpected error with a reference ID and returns a message that is safe to show.
  * SvelteKit fills in `status`. */
@@ -9,7 +15,11 @@ export function toAppError(
 	newId: () => string = () => crypto.randomUUID()
 ): Pick<App.Error, 'message' | 'errorId'> {
 	const errorId = newId();
-	const message = error instanceof Error ? error.message : String(error);
-	log({ level: 'error', errorId, path, message });
+	const entry: LogEntry = { level: 'error', errorId, path, message: String(error) };
+	if (error instanceof Error) {
+		entry.message = error.message;
+		if (error.stack) entry.stack = error.stack;
+	}
+	log(entry);
 	return { message: 'Something went wrong.', errorId };
 }
