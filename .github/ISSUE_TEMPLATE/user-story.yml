@@ -1,0 +1,45 @@
+name: User story
+description: A small, shippable piece of product behavior
+labels: [story]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: Story
+      description: As a … I want … so that …
+      placeholder: As a player, I want to log a habit from the Today screen so that checking in takes one tap.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Given / When / Then. Each one becomes a test.
+      placeholder: |
+        - Given … When … Then …
+        - Given … When … Then …
+    validations:
+      required: true
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Milestone
+      options:
+        - 'M0: Foundation'
+        - 'M1: Accounts'
+        - 'M2: Habit library'
+        - 'M3: Card builder'
+        - 'M4: Today & check-ins'
+        - 'M5: Card view & scoring'
+        - 'M6: Updates'
+        - 'M7: Month lifecycle'
+        - 'M8: Groups'
+        - 'M9: Feed'
+        - 'M10: Calendar'
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Spec sections, design links, open questions.
