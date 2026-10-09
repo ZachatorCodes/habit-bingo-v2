@@ -30,3 +30,6 @@ test-results
 # Coverage & reports
 coverage
 playwright-report
+
+# Agent git worktrees
+.claude/worktrees/

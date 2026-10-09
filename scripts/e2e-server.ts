@@ -21,11 +21,15 @@ const socketServer = new PGLiteSocketServer({
 });
 await socketServer.start();
 
-const child = spawn('npx', ['vite', 'preview', '--port', String(APP_PORT)], {
-	stdio: 'inherit',
-	shell: true,
-	env: { ...process.env, DATABASE_URL, BETTER_AUTH_SECRET }
-});
+// Spawn vite directly (no npx, no shell) so child.kill() reaches the real server process.
+const child = spawn(
+	process.execPath,
+	['node_modules/vite/bin/vite.js', 'preview', '--port', String(APP_PORT)],
+	{
+		stdio: 'inherit',
+		env: { ...process.env, DATABASE_URL, BETTER_AUTH_SECRET }
+	}
+);
 
 let stopping = false;
 async function stop(code: number) {
