@@ -21,11 +21,22 @@ export default defineConfig({
 	],
 	test: {
 		expect: { requireAssertions: true },
+		coverage: {
+			provider: 'v8',
+			reporter: ['text', 'html'],
+			include: ['src/**/*.{ts,svelte}'],
+			thresholds: {
+				// Spec §7.1: the pure game rules module requires full branch coverage.
+				'src/lib/game/**': { branches: 100, functions: 100, lines: 100, statements: 100 }
+			}
+		},
 		projects: [
 			{
 				extends: './vite.config.ts',
 				test: {
 					name: 'client',
+					// No component tests exist until the design system lands (M0 Task 5).
+					passWithNoTests: true,
 					browser: {
 						enabled: true,
 						provider: playwright(),
