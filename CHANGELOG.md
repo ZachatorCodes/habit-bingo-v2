@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/ZachatorCodes/habit-bingo-v2/compare/habit-bingo-v0.1.0...habit-bingo-v0.1.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* address M0 review minor findings ([#24](https://github.com/ZachatorCodes/habit-bingo-v2/issues/24)) ([4d3397c](https://github.com/ZachatorCodes/habit-bingo-v2/commit/4d3397c06988dd7c7f7dad804400c2158a311fd3))
+
 ## 0.1.0 (2026-10-09)
 
 
