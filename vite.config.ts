@@ -17,7 +17,8 @@ export default defineConfig({
 			// Vercel sets VERCEL=1 during its builds. adapter-vercel needs symlink permission, which local
 			// Windows builds lack, so local builds use adapter-auto instead.
 			csp: {
-				mode: 'auto',
+				// Hashes, not nonces: public pages are CDN-cached, and a cached nonce is a public nonce.
+				mode: 'hash',
 				directives: {
 					'default-src': ['self'],
 					'script-src': ['self'],

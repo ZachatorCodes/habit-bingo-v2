@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Button from '#lib/components/Button.svelte';
 	import SampleCard from '#lib/components/SampleCard.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 
@@ -39,8 +38,12 @@
 			Build a monthly card, check off habits, and race your friends to a blackout.
 		</p>
 		<div class="mt-8">
-			<!-- /signin arrives in M1 (Accounts), so it can't be resolve()d yet. -->
-			<Button href="/signin">Get started</Button>
+			<!-- Replaced by a "Get started" button once sign-in exists (M1). -->
+			<p
+				class="inline-block rounded-2xl border-2 border-line bg-white px-5 py-2.5 font-extrabold shadow-[0_3px_0_var(--color-line)]"
+			>
+				Invite-only beta. Sign-in opens soon.
+			</p>
 		</div>
 	</div>
 	<div class="flex w-full flex-1 justify-center">

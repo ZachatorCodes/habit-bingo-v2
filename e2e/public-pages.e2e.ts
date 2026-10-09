@@ -2,10 +2,12 @@ import { expect, test } from '@playwright/test';
 
 const publicPaths = ['/', '/privacy', '/terms'];
 
-test('landing has a heading, a call to action and the sample card', async ({ page }) => {
+test('landing has a heading, the sample card and no link to unbuilt pages', async ({ page }) => {
 	await page.goto('/');
 	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-	await expect(page.getByRole('link', { name: 'Get started' })).toHaveAttribute('href', '/signin');
+	// Sign-in arrives in M1; until then the call to action must not lead to a 404.
+	await expect(page.locator('a[href="/signin"]')).toHaveCount(0);
+	await expect(page.getByText('Invite-only beta. Sign-in opens soon.')).toBeVisible();
 	await expect(page.getByTestId('sample-card').getByRole('img')).toHaveCount(9);
 });
 
@@ -50,7 +52,10 @@ test('the sample card does not animate with reduced motion', async ({ browser })
 	await context.close();
 });
 
-test('the sample card animates by default', async ({ page }) => {
+test('the sample card animates once, then stops (WCAG 2.2.2)', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByTestId('sample-card')).toHaveAttribute('data-animating', 'true');
+	const card = page.getByTestId('sample-card');
+	await expect(card).toHaveAttribute('data-animating', 'true');
+	await expect(card).toHaveAttribute('data-animating', 'false', { timeout: 8000 });
+	await expect(card.getByRole('img', { name: /: complete$/ })).toHaveCount(3);
 });
