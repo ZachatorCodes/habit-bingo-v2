@@ -1,2 +1,2 @@
-// Tables arrive in M1 (Accounts).
-export {};
+export * from './schema/auth.ts';
+export * from './schema/accounts.ts';
