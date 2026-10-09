@@ -20,6 +20,8 @@ export default defineConfig({
 		})
 	],
 	test: {
+		// The client project has no component tests until the design system lands (M0 Task 5).
+		passWithNoTests: true,
 		expect: { requireAssertions: true },
 		coverage: {
 			provider: 'v8',
@@ -35,8 +37,6 @@ export default defineConfig({
 				extends: './vite.config.ts',
 				test: {
 					name: 'client',
-					// No component tests exist until the design system lands (M0 Task 5).
-					passWithNoTests: true,
 					browser: {
 						enabled: true,
 						provider: playwright(),
