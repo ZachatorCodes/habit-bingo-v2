@@ -31,7 +31,7 @@ before it is built.
 | #  | Milestone           | Delivers                                                                                          |
 |----|---------------------|---------------------------------------------------------------------------------------------------|
 | M0 | Foundation          | Repo, SvelteKit app, CI, Vercel previews + production, Neon DB, design tokens, landing, privacy/terms |
-| M1 | Accounts            | Google / Apple / magic-link sign-in, invite-only gate, profile (name, emoji avatar, timezone, week start) |
+| M1 | Accounts            | Username + password sign-up/sign-in, invite-only gate, admin password-reset links, profile (name, emoji avatar, timezone, week start) |
 | M2 | Habit library       | Create, edit, archive habits                                                                      |
 | M3 | Card builder        | Size, habit picking, prorated targets, rewards, shuffle, 48-hour edit window                     |
 | M4 | Today & check-ins   | Today list, logging with Pop & burst, 3-day backfill, earn/protect states                        |
@@ -192,9 +192,12 @@ to start.
 ### 4.1 Public
 
 - **Landing** (`/`, prerendered): what it is, an animated sample card, sign-in button. OG tags.
-- **Sign in** (`/signin`): Google, Apple, email magic link.
-- **Invite** (`/join/[code]`): "Alex invited you to *College Crew*" → sign in → join.
-  Signing up is only possible through a valid, unexpired invite with uses remaining.
+- **Sign in** (`/signin`): username + password. "Forgot password?" explains that an admin can
+  send a reset link.
+- **Invite** (`/join/[code]`): "Alex invited you to *College Crew*" → create account (username,
+  password) or sign in → join. Creating an account is only possible through a valid, unexpired
+  invite with uses remaining.
+- **Password reset** (`/reset/[token]`): set a new password using an admin-issued one-time link.
 - **Privacy** and **Terms** pages. A one-time dismissible notice: "We only use essential cookies
   to keep you signed in." No consent banner (only essential cookies; analytics are cookieless).
 
@@ -269,8 +272,14 @@ The Updates tab shows a badge when any priority 1–2 nudge exists.
 
 ### 4.10 Me
 
-Profile, Habit library, History (past cards + recaps), Settings (timezone, week start), Sign out
-everywhere, Delete account (cascades all data).
+Profile, Habit library, History (past cards + recaps), Settings (timezone, week start), Change
+password, Sign out everywhere, Delete account (cascades all data).
+
+### 4.12 Admin (admins only)
+
+Create invites (expiry, max uses) and generate one-time password-reset links for a user. The admin
+copies the link and sends it to the person however they like. The first admin account is created by
+a seed script.
 
 ### 4.11 Month recap
 
@@ -287,8 +296,8 @@ streak or most-logged habit) → "Build next month's card".
 | Styling        | Tailwind CSS v4 with design tokens; Bits UI for accessible primitives |
 | Motion         | Svelte transitions / springs; `canvas-confetti` |
 | Database       | Postgres on Neon; Drizzle ORM + Drizzle Kit migrations |
-| Auth           | Better Auth: Google, Apple, email magic link; DB-backed sessions and rate limiting. Apple sign-in requires a paid Apple Developer Program membership; if none is available at M1, ship Google + magic link and add Apple as a follow-up issue. |
-| Email          | Transactional email provider for magic links (chosen in M1 plan) |
+| Auth           | Better Auth with the username plugin: username + password, scrypt hashing, DB-backed sessions and rate limiting, Have I Been Pwned password check. Better Auth's core user schema expects an email; the M1 plan must verify this and, if required, store a non-routable placeholder (e.g. `<userId>@users.invalid`) that is never displayed or emailed, replaced when email recovery lands. |
+| Email          | None for now (no outbound email). |
 | Validation     | Zod |
 | Hosting        | Vercel (production + per-PR previews); Neon branch per preview |
 | Analytics      | Vercel Web Analytics (cookieless) |
@@ -309,8 +318,9 @@ Dependencies point downward only.
 
 | Table | Key columns |
 |-------|-------------|
-| `user` (+ Better Auth `session`, `account`, `verification`) | `id`, `email`, `displayName`, `avatarEmoji`, `timezone`, `weekStartsOn`, `isAdmin`, `onboardedAt` |
+| `user` (+ Better Auth `session`, `account`, `verification`) | `id`, `username` (unique, case-insensitive), `displayName`, `avatarEmoji`, `timezone`, `weekStartsOn`, `isAdmin`, `onboardedAt` (+ `email` placeholder if Better Auth requires it, see §5.1) |
 | `invite` | `code` (unique), `createdBy`, `groupId?`, `expiresAt`, `maxUses`, `uses` |
+| `password_reset` | `tokenHash` (unique), `userId`, `createdBy` (admin), `expiresAt`, `usedAt?` |
 | `habit` | `id`, `userId`, `emoji`, `name`, `direction`, `target`, `period`, `isPrivate`, `archivedAt?` |
 | `card` | `id`, `userId`, `month` (`YYYY-MM`), `size`, `startDate`, `editableUntil`, `rewardBingo`, `rewardSixty`, `rewardBlackout`; unique (`userId`, `month`) |
 | `card_square` | `id`, `cardId`, `position`, `isFree`, `habitId?`, snapshot fields (`emoji`, `name`, `direction`, `period`, `target`, `isPrivate`); unique (`cardId`, `position`) |
@@ -329,13 +339,15 @@ clipped weeks are computed by the game module from `startDate`, the month and `w
 
 | Concern | Defense |
 |---------|---------|
-| Passwords | None stored. Google/Apple OAuth and single-use, ~10-minute magic links. (Passkeys later store only public keys.) |
+| Passwords | Hashed with scrypt (Better Auth default); never stored or logged in plain text. Rules: at least 10 characters, max 128, not equal to the username, rejected if found in Have I Been Pwned (k-anonymity range query; the password itself never leaves the server). |
+| Usernames | 3–20 characters `[a-z0-9_]`, unique case-insensitively, shown as `@username` beside display names. |
+| Password reset | Admin-issued link containing a random 32-byte token; only its SHA-256 hash is stored; single use; expires after 24 hours. Using it, or changing a password, revokes all other sessions. |
 | Sessions | Random session ID in an `httpOnly`, `Secure`, `SameSite=Lax` cookie, looked up in the DB; expiry; "sign out everywhere" deletes the user's sessions. |
 | CSRF | SvelteKit's built-in origin check on form actions. |
 | Authorization | Every service function takes the current user and scopes queries to the user or shared-group members; private habit names stripped for non-owners. Dedicated tests per rule. |
 | Input | Zod schemas on every form action and API endpoint. |
 | XSS | Svelte escaping by default; strict Content Security Policy via SvelteKit `kit.csp`. |
-| Abuse | Better Auth DB-backed rate limits on auth routes (per IP and per email). |
+| Brute force | Better Auth DB-backed rate limits on auth routes per IP, plus per-username failed-sign-in throttling with a short lockout. Sign-in errors never reveal whether a username exists. |
 | Signup | Only via a valid invite (unexpired, uses remaining). |
 | Supply chain | Dependabot updates, CodeQL scanning. |
 | Secrets | Vercel and GitHub environment settings only; `.env.example` documents names. |
@@ -430,5 +442,6 @@ States never rely on color alone; full keyboard support; labelled controls; WCAG
 
 ## 9. Later (explicitly out of scope)
 
-Push notifications (installable PWA groundwork is in scope: manifest + icons in M0), passkeys,
-comments, one-to-one friends, dark mode, multiple check-ins per day, open signup.
+Push notifications (installable PWA groundwork is in scope: manifest + icons in M0), optional
+email for self-service password recovery, Google/Apple sign-in, passkeys, comments, one-to-one
+friends, dark mode, multiple check-ins per day, open signup.
