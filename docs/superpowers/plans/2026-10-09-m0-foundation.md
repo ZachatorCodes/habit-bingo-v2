@@ -69,6 +69,7 @@ server-renders them with CDN caching instead, because prerendered files on Verce
 **Branch:** `chore/scaffold`
 
 **Files:**
+
 - Create (via `sv create`): `package.json`, `vite.config.ts`, `tsconfig.json`, `eslint.config.js`,
   `prettier.config.js`, `playwright.config.ts`, `drizzle.config.ts`, `src/app.html`, `src/app.d.ts`,
   `src/env.ts`, `src/routes/+layout.svelte`, `src/routes/+page.svelte`, `src/routes/layout.css`,
@@ -79,6 +80,7 @@ server-renders them with CDN caching instead, because prerendered files on Verce
   demo `task` table (Task 4 recreates the db folder), `static/robots.txt` (Task 7 serves it)
 
 **Interfaces:**
+
 - Produces: npm scripts `dev`, `build`, `preview`, `check`, `lint`, `format`, `test:unit`
   (`vitest`), `test:e2e` (`playwright test`, **without** `playwright install`), `test`
   (`vitest --run && playwright test`), `db:generate`, `db:migrate`, `db:studio`.
@@ -128,11 +130,13 @@ Merge (squash) after human approval; `git switch main && git pull`.
 **Branch:** `ci/github-actions`
 
 **Files:**
+
 - Create: `.github/workflows/ci.yml`
 - Modify: `vite.config.ts` (coverage), `package.json` (`test:coverage` script)
 - Create: `src/lib/smoke.spec.ts` (temporary; deleted in Task 4)
 
 **Interfaces:**
+
 - Produces: required status check names used by Task 3's branch protection, exactly:
   `Lint & typecheck`, `Unit & component tests`, `E2E tests`, `Build`.
 
@@ -165,12 +169,12 @@ Triggers: `pull_request` and `push` to `main`. `concurrency` group per ref with
 `cancel-in-progress: true`. All jobs: `actions/checkout`, `actions/setup-node` with
 `node-version-file: .nvmrc` and `cache: npm`, `npm ci`. **No `DATABASE_URL` in any job.**
 
-| Job `name:` | Steps after install |
-|---|---|
-| `Lint & typecheck` | `npm run lint`, `npm run check` |
-| `Unit & component tests` | `npx playwright install --with-deps chromium`, `npm run test:coverage` |
-| `E2E tests` | `npx playwright install --with-deps chromium`, `npx playwright test`; upload `playwright-report/` as an artifact on failure |
-| `Build` | `npm run build` |
+| Job `name:`              | Steps after install                                                                                                         |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `Lint & typecheck`       | `npm run lint`, `npm run check`                                                                                             |
+| `Unit & component tests` | `npx playwright install --with-deps chromium`, `npm run test:coverage`                                                      |
+| `E2E tests`              | `npx playwright install --with-deps chromium`, `npx playwright test`; upload `playwright-report/` as an artifact on failure |
+| `Build`                  | `npm run build`                                                                                                             |
 
 - [ ] **Step 5: Push and verify CI on the PR**
 
@@ -188,6 +192,7 @@ and remove it in Task 6.)
 **Branch:** `chore/repo-governance`
 
 **Files:**
+
 - Create: `.github/pull_request_template.md`, `.github/ISSUE_TEMPLATE/user-story.yml`,
   `.github/ISSUE_TEMPLATE/bug.yml`, `.github/ISSUE_TEMPLATE/config.yml`, `.github/dependabot.yml`,
   `.github/workflows/codeql.yml`, `.github/workflows/release-please.yml`,
@@ -253,6 +258,7 @@ prints the four check names; `git push origin main` from a scratch commit is rej
 **Branch:** `feat/db-health`
 
 **Files:**
+
 - Create: `src/lib/server/db/schema.ts`, `src/lib/server/db/client.ts`,
   `src/lib/server/db/test-db.ts`, `src/lib/server/health.ts`, `src/lib/server/health.spec.ts`,
   `src/lib/server/db/client.spec.ts`, `src/routes/api/health/+server.ts`,
@@ -261,6 +267,7 @@ prints the four check names; `git push origin main` from a scratch commit is rej
 - Delete: `src/lib/server/db/index.ts` (generated eager client), `src/lib/smoke.spec.ts`
 
 **Interfaces:**
+
 - Produces:
   - `type Db = PgDatabase<PgQueryResultHKT, typeof schema>` (from `drizzle-orm/pg-core`), exported
     from `client.ts`. Every service in later milestones takes a `Db`.
@@ -340,12 +347,14 @@ Expected: `✔ done`.
 **Branch:** `feat/design-system`
 
 **Files:**
+
 - Modify: `src/routes/layout.css`
 - Create: `src/lib/game/square-state.ts`, `src/lib/components/Button.svelte`,
   `src/lib/components/Button.svelte.spec.ts`, `src/lib/components/BingoSquare.svelte`,
   `src/lib/components/BingoSquare.svelte.spec.ts`
 
 **Interfaces:**
+
 - Produces:
   - `type SquareState = 'empty' | 'inProgress' | 'complete' | 'held' | 'atRisk' | 'lost' | 'free'`
     in `src/lib/game/square-state.ts` (type only; the game module that computes it starts in M2).
@@ -405,6 +414,7 @@ Expected: all pass.
 **Branch:** `feat/public-pages`
 
 **Files:**
+
 - Create: `src/lib/components/Seo.svelte`, `src/lib/components/SiteFooter.svelte`,
   `src/lib/components/CookieNotice.svelte`, `src/lib/components/CookieNotice.svelte.spec.ts`,
   `src/lib/components/SampleCard.svelte`, `src/routes/+page.svelte` (replace),
@@ -416,6 +426,7 @@ Expected: all pass.
   `docs/superpowers/specs/2026-10-09-habit-bingo-v2-design.md` §5.5 (SSR + CDN cache)
 
 **Interfaces:**
+
 - Consumes: `Button`, `BingoSquare`, `SquareState` (Task 5).
 - Produces:
   - `Seo.svelte` props `{ title: string; description: string; path: string; noindex?: boolean }`:
@@ -499,10 +510,12 @@ Expected: all pass on both Playwright projects.
 **Branch:** `feat/seo-files`
 
 **Files:**
+
 - Create: `src/lib/server/seo.ts`, `src/lib/server/seo.spec.ts`,
   `src/routes/sitemap.xml/+server.ts`, `src/routes/robots.txt/+server.ts`
 
 **Interfaces:**
+
 - Consumes: `PUBLIC_PATHS` (Task 6).
 - Produces: `sitemapXml(origin: string, paths: readonly string[]): string`,
   `robotsTxt(origin: string): string`.
@@ -526,7 +539,7 @@ it('robots allows public pages, blocks /api/, and points to the sitemap', () => 
 - [ ] **Step 2: Run to verify failure** (`npx vitest --run --project server src/lib/server/seo.spec.ts` → FAIL)
 
 - [ ] **Step 3: Implement** the two functions and thin `GET` handlers using `url.origin`, content
-  types `application/xml` and `text/plain`, and `publicCache`.
+      types `application/xml` and `text/plain`, and `publicCache`.
 
 - [ ] **Step 4: Run tests** → PASS
 
@@ -539,12 +552,14 @@ it('robots allows public pages, blocks /api/, and points to the sitemap', () => 
 **Branch:** `feat/security-headers`
 
 **Files:**
+
 - Create: `src/lib/server/security-headers.ts`, `src/lib/server/errors.ts`,
   `src/lib/server/errors.spec.ts`, `src/hooks.server.ts`, `src/routes/+error.svelte`,
   `e2e/security.e2e.ts`
 - Modify: `vite.config.ts` (`csp`), `src/app.d.ts` (`App.Error`)
 
 **Interfaces:**
+
 - Produces:
   - `SECURITY_HEADERS: Readonly<Record<string, string>>`, exactly:
     `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`,
@@ -606,6 +621,7 @@ the `errorId` when present ("Reference: …"), link home.
 **Branch:** `feat/pwa-manifest`
 
 **Files:**
+
 - Create: `static/icon.svg`, `scripts/generate-icons.ts`, `static/icons/icon-192.png`,
   `static/icons/icon-512.png`, `static/icons/maskable-512.png`, `static/apple-touch-icon.png`,
   `static/manifest.webmanifest`, `e2e/pwa.e2e.ts`
@@ -649,6 +665,7 @@ check. `scripts/generate-icons.ts` uses `sharp` (dev dependency; approve its ins
 Account setup is done by the human partner; the agent prepares config and verifies.
 
 **Files:**
+
 - Create: `vercel.json`
 - Modify: `package.json` (`vercel-build`), `README.md` (Deploy section)
 
