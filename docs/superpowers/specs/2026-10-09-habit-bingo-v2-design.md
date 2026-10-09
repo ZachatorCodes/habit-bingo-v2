@@ -211,7 +211,7 @@ to start.
 
 ### 4.1 Public
 
-- **Landing** (`/`, prerendered): what it is, an animated sample card, sign-in button. OG tags.
+- **Landing** (`/`, server-rendered and CDN-cached): what it is, an animated sample card, sign-in button. OG tags.
 - **Sign in** (`/signin`): "Continue with Google", or username + password. "Forgot password?"
   explains that an admin can send a reset link. Signing in with Google requests only basic profile
   scopes (`openid`, `email`, `profile`); never calendar access.
@@ -417,7 +417,7 @@ clipped weeks are computed by the game module from `startDate`, the month and th
 
 ### 5.5 SEO & privacy
 
-- Landing, privacy and terms pages are prerendered, with title, description and Open Graph tags.
+- Landing, privacy and terms pages are server-rendered and CDN-cached (ADR 0006), with title, description and Open Graph tags.
 - `sitemap.xml` lists public pages; `robots.txt` allows them and disallows app routes.
 - All authenticated pages send `noindex`.
 - Only essential cookies (session, notice dismissal). No consent banner; privacy policy linked in
