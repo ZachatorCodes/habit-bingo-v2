@@ -14,8 +14,6 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			// Vercel sets VERCEL=1 during its builds. adapter-vercel needs symlink permission, which local
-			// Windows builds lack, so local builds use adapter-auto instead.
 			csp: {
 				// Hashes, not nonces: public pages are CDN-cached, and a cached nonce is a public nonce.
 				mode: 'hash',
@@ -33,6 +31,8 @@ export default defineConfig({
 					'object-src': ['none']
 				}
 			},
+			// Vercel sets VERCEL=1 during its builds. adapter-vercel needs symlink permission, which local
+			// Windows builds lack, so local builds use adapter-auto instead.
 			adapter: process.env.VERCEL ? vercelAdapter({ runtime: 'nodejs24.x' }) : autoAdapter()
 		})
 	],

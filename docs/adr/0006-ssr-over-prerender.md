@@ -17,7 +17,10 @@ headers.
 
 ## Consequences
 
-- One source of truth for security headers, testable locally with `vite preview`.
+- One source of truth for security headers on pages, testable locally with `vite preview`.
+- Static files (icons, the web manifest, `/_app/immutable/*`) still bypass the hook, so `vercel.json`
+  sets the same non-CSP headers for every path. A unit test keeps it in sync with
+  `SECURITY_HEADERS`. Static files carry no CSP; they are not HTML documents.
 - SEO is unchanged: crawlers receive full HTML either way.
 - A cold cache costs one function invocation per hour per page, which is negligible.
 - Public pages must not depend on cookies or the signed-in user, or they could not be shared-cached.
