@@ -16,6 +16,22 @@ export default defineConfig({
 			},
 			// Vercel sets VERCEL=1 during its builds. adapter-vercel needs symlink permission, which local
 			// Windows builds lack, so local builds use adapter-auto instead.
+			csp: {
+				mode: 'auto',
+				directives: {
+					'default-src': ['self'],
+					'script-src': ['self'],
+					// Svelte transitions write inline styles.
+					'style-src': ['self', 'unsafe-inline'],
+					'img-src': ['self', 'data:'],
+					'font-src': ['self'],
+					'connect-src': ['self'],
+					'frame-ancestors': ['none'],
+					'base-uri': ['self'],
+					'form-action': ['self'],
+					'object-src': ['none']
+				}
+			},
 			adapter: process.env.VERCEL ? vercelAdapter({ runtime: 'nodejs24.x' }) : autoAdapter()
 		})
 	],
