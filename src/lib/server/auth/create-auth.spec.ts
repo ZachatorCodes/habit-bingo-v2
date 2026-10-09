@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from '#lib/server/db/client.ts';
 import { account, session, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
-import type { Auth } from './create-auth.ts';
+import { DISABLED_PATHS, type Auth } from './create-auth.ts';
 import { createTestAuth } from './test-auth.ts';
 
 const PASSWORD = 'correct horse battery';
@@ -84,15 +84,28 @@ describe('createAuth', () => {
 		await expect(signUp('longpw', 'a'.repeat(129))).rejects.toThrow();
 	});
 
-	it('does not expose password sign-in over HTTP', async () => {
+	// Routes that would bypass our invite, lockout and breach rules, or reveal whether a username
+	// exists. Listed here as well as in DISABLED_PATHS so dropping one from the config fails a test.
+	const MUST_NOT_BE_ROUTED = [
+		...DISABLED_PATHS,
+		'/sign-in/username',
+		'/is-username-available',
+		'/verify-password'
+	];
+
+	it.each([...new Set(MUST_NOT_BE_ROUTED)])('does not route %s over HTTP', async (path) => {
 		const res = await auth.handler(
-			new Request('http://localhost/api/auth/sign-in/username', {
+			new Request(`http://localhost/api/auth${path}`, {
 				method: 'POST',
 				headers: { 'content-type': 'application/json', origin: 'http://localhost' },
 				body: '{}'
 			})
 		);
 		expect(res.status).toBe(404);
+		expect(await res.text()).toBe('Not Found');
+	});
+
+	it('still answers routes that are not disabled', async () => {
 		// Control: the handler itself is mounted and answering.
 		expect((await auth.handler(new Request('http://localhost/api/auth/ok'))).status).toBe(200);
 	});

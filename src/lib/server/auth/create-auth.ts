@@ -19,8 +19,8 @@ export type AuthOptions = {
 
 /**
  * Every Better Auth route that would let a password be set, checked or changed, or an account be
- * changed, without our invite, lockout and breach rules. Our own form actions call `auth.api.*`
- * on the server instead, which still works.
+ * changed, without our invite, lockout and breach rules, or that would reveal whether a username
+ * exists. Our own form actions call `auth.api.*` on the server instead, which still works.
  */
 export const DISABLED_PATHS = [
 	'/sign-up/email',
@@ -34,7 +34,11 @@ export const DISABLED_PATHS = [
 	'/delete-user',
 	'/revoke-sessions',
 	'/link-social',
-	'/unlink-account'
+	'/unlink-account',
+	// Unauthenticated "is this username taken?": a username-existence oracle.
+	'/is-username-available',
+	// Session-holder password guessing with no lockout.
+	'/verify-password'
 ];
 
 /** The current request event, or undefined outside a request (tests, scripts, seeding). */
