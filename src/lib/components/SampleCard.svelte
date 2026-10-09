@@ -24,23 +24,21 @@
 		[0, 'complete']
 	];
 
-	const fresh = () => start.map((square) => ({ ...square }));
-
-	let squares = $state(fresh());
+	let squares = $state(start.map((square) => ({ ...square })));
 	let animating = $state(false);
 
 	onMount(() => {
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		animating = true;
 		let step = 0;
+		// Plays once and stops on the bingo: auto-updating content must not run forever (WCAG 2.2.2).
 		const timer = setInterval(() => {
-			if (step === steps.length) {
-				squares = fresh();
-				step = 0;
-				return;
-			}
 			const [index, state] = steps[step++];
 			squares[index] = { ...squares[index], state };
+			if (step === steps.length) {
+				clearInterval(timer);
+				animating = false;
+			}
 		}, 1500);
 		return () => clearInterval(timer);
 	});

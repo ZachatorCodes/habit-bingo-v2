@@ -48,3 +48,14 @@ is set.
 
 > **Windows note:** local builds use `@sveltejs/adapter-auto` because `@sveltejs/adapter-vercel`
 > needs symlink permission. Vercel builds use the Vercel adapter automatically.
+
+## Deployment
+
+- **Production:** every merge to `main` deploys to Vercel.
+- **Previews:** every pull request gets a Vercel preview URL, backed by its own Neon database branch
+  (Vercel's Neon integration creates it and sets `DATABASE_URL`).
+- **Migrations:** Vercel runs `npm run vercel-build` (`drizzle-kit migrate && vite build`), so each
+  environment's database is migrated before the app is built.
+- **Health check:** `GET /api/health` returns `{"status":"ok","db":"ok"}` when the app can reach its
+  database. The **Deploy smoke test** workflow checks this, plus the security headers, after every
+  deployment (previews are reached with the `VERCEL_AUTOMATION_BYPASS_SECRET` repo secret).

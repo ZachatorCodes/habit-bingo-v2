@@ -8,7 +8,13 @@ import * as schema from './schema';
 export type Db = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 export function createDb(url: string): Db {
-	return drizzle(new Pool({ connectionString: url }), { schema });
+	const pool = new Pool({ connectionString: url, connectionTimeoutMillis: 5000 });
+	// An idle pooled client can fail when Neon suspends compute or drops the socket.
+	// Unhandled, that 'error' event would crash the whole function instance.
+	pool.on('error', (error: Error) =>
+		console.error(JSON.stringify({ level: 'error', source: 'db-pool', message: error.message }))
+	);
+	return drizzle(pool, { schema });
 }
 
 let cached: Db | undefined;

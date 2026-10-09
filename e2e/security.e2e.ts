@@ -22,6 +22,12 @@ test('HTML responses carry a CSP that forbids framing', async ({ request }) => {
 	expect(csp).toContain("default-src 'self'");
 });
 
+test('the CSP uses hashes, not nonces, so CDN-cached pages stay protected', async ({ request }) => {
+	const csp = (await request.get('/')).headers()['content-security-policy'];
+	expect(csp).not.toContain('nonce-');
+	expect(csp).toMatch(/script-src [^;]*'sha256-/);
+});
+
 test('the landing page hydrates with no CSP violations', async ({ page }) => {
 	const violations: string[] = [];
 	page.on('console', (message) => {
