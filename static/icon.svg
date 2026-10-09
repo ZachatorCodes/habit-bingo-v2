@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<rect width="512" height="512" rx="112" fill="#FFF7EC"/>
+	<g stroke-width="10">
+		<rect x="76" y="76" width="104" height="104" rx="26" fill="#6BD48A" stroke="#4CB86C"/>
+		<rect x="204" y="76" width="104" height="104" rx="26" fill="#6BD48A" stroke="#4CB86C"/>
+		<rect x="332" y="76" width="104" height="104" rx="26" fill="#6BD48A" stroke="#4CB86C"/>
+		<rect x="76" y="204" width="104" height="104" rx="26" fill="#7FA8FF" stroke="#5E8BF0"/>
+		<rect x="204" y="204" width="104" height="104" rx="26" fill="#2B2340" stroke="#2B2340"/>
+		<rect x="332" y="204" width="104" height="104" rx="26" fill="#FFFFFF" stroke="#F1E4D3"/>
+		<rect x="76" y="332" width="104" height="104" rx="26" fill="#FFFFFF" stroke="#F1E4D3"/>
+		<rect x="204" y="332" width="104" height="104" rx="26" fill="#FFD25E" stroke="#F2B630"/>
+		<rect x="332" y="332" width="104" height="104" rx="26" fill="#7FA8FF" stroke="#5E8BF0"/>
+	</g>
+	<path d="M226 258l22 22 40-46" fill="none" stroke="#FFD25E" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+	<line x1="104" y1="128" x2="408" y2="128" stroke="#FF7A59" stroke-width="16" stroke-linecap="round"/>
+</svg>
