@@ -1,5 +1,9 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
+import type { Auth } from '#lib/server/auth/create-auth.ts';
+
+type AuthSession = Auth['$Infer']['Session'];
+
 declare global {
 	namespace App {
 		interface Error {
@@ -7,7 +11,11 @@ declare global {
 			/** Reference shown to the user and logged with the real error. */
 			errorId?: string;
 		}
-		// interface Locals {}
+		interface Locals {
+			/** The signed-in user, or null. Set by the auth handle in hooks.server.ts. */
+			user: AuthSession['user'] | null;
+			session: AuthSession['session'] | null;
+		}
 		// interface PageData {}
 		// interface PageState {}
 		// interface Platform {}

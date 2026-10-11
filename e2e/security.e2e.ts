@@ -9,7 +9,7 @@ const expectedHeaders = {
 	'cross-origin-opener-policy': 'same-origin'
 };
 
-for (const path of ['/', '/privacy', '/sitemap.xml', '/api/health']) {
+for (const path of ['/', '/privacy', '/sitemap.xml', '/api/health', '/api/auth/ok']) {
 	test(`${path} carries the security headers`, async ({ request }) => {
 		const response = await request.get(path);
 		expect(response.headers()).toMatchObject(expectedHeaders);
