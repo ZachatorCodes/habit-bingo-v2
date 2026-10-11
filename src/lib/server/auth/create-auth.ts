@@ -4,7 +4,6 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { username } from 'better-auth/plugins';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import type { RequestEvent } from '@sveltejs/kit';
-import { getRequestEvent } from '$app/server';
 import type { Db } from '#lib/server/db/client.ts';
 import { account, rateLimit, session, user, verification } from '#lib/server/db/schema.ts';
 import { consumeInvite } from './invites.ts';
@@ -18,6 +17,12 @@ export type AuthOptions = {
 	isPwned: (password: string) => Promise<boolean>;
 	/** Invite code that lets the first admin sign up before any invite exists. */
 	bootstrapInviteCode?: string;
+	/**
+	 * The current SvelteKit request event, or undefined outside a request. Lets Better Auth set its
+	 * cookies on our responses. Injected (rather than imported from `$app/server`) so this module also
+	 * loads outside Vite, e.g. in the E2E seed script.
+	 */
+	getRequestEvent?: () => RequestEvent | undefined;
 };
 
 /**
@@ -82,16 +87,6 @@ function inviteRequired(): APIError {
 		code: 'INVITE_REQUIRED',
 		message: 'You need an invite to join.'
 	});
-}
-
-/** The current request event, or undefined outside a request (tests, scripts, seeding). */
-function currentRequestEvent(): RequestEvent {
-	try {
-		return getRequestEvent();
-	} catch {
-		// sveltekitCookies skips setting cookies when there is no event.
-		return undefined as unknown as RequestEvent;
-	}
 }
 
 export function createAuth(db: Db, options: AuthOptions) {
@@ -188,7 +183,8 @@ export function createAuth(db: Db, options: AuthOptions) {
 				usernameValidator: (value) => /^[a-z0-9_]+$/i.test(value)
 			}),
 			// Must stay last: it copies Better Auth's Set-Cookie headers onto the SvelteKit response.
-			sveltekitCookies(currentRequestEvent)
+			// sveltekitCookies skips setting cookies when there is no event.
+			sveltekitCookies(() => (options.getRequestEvent?.() ?? undefined) as unknown as RequestEvent)
 		]
 	});
 }
