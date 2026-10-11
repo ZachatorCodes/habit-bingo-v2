@@ -8,6 +8,8 @@
 	let { data, form }: PageProps = $props();
 
 	const errors = $derived(form?.errors ?? {});
+	// A password attempt's error replaces one Google sent back.
+	const formError = $derived(errors.form ?? data.googleError);
 </script>
 
 <Seo
@@ -24,7 +26,6 @@
 	</div>
 
 	{#if data.googleEnabled}
-		<!-- The Google action is wired in Task 7. -->
 		<form method="POST" action="?/google">
 			<input type="hidden" name="next" value={data.next} />
 			<Button type="submit" variant="secondary" class="w-full">Continue with Google</Button>
@@ -44,10 +45,10 @@
 	>
 		<!-- The form action replaces the query string, so ?next= travels in the body. -->
 		<input type="hidden" name="next" value={data.next} />
-		{#if errors.form}
+		{#if formError}
 			<p role="alert" tabindex="-1" class="rounded-xl bg-risk px-4 py-3 font-bold text-ink">
 				<span aria-hidden="true">⚠</span>
-				{errors.form}
+				{formError}
 			</p>
 		{/if}
 		<TextField
