@@ -7,6 +7,7 @@ import {
 } from '$app/env/private';
 import { getDb } from '#lib/server/db/client.ts';
 import { createAuth, type Auth } from './create-auth.ts';
+import { isPwnedPassword } from './pwned.ts';
 
 export { createAuth, type Auth, type AuthOptions } from './create-auth.ts';
 
@@ -24,8 +25,7 @@ export function tryGetAuth(): Auth | null {
 			GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET
 				? { clientId: GOOGLE_CLIENT_ID, clientSecret: GOOGLE_CLIENT_SECRET }
 				: undefined,
-		// Not consulted until the password-policy hooks land (Task 3), which pass isPwnedPassword.
-		isPwned: async () => false,
+		isPwned: isPwnedPassword,
 		bootstrapInviteCode: BOOTSTRAP_INVITE_CODE
 	});
 	return cached;
