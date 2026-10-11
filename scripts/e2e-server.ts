@@ -3,6 +3,8 @@ import { PGlite } from '@electric-sql/pglite';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
+import * as schema from '#lib/server/db/schema.ts';
+import { seedE2E } from './e2e-seed.ts';
 
 const DB_PORT = 55432;
 const APP_PORT = 4173;
@@ -10,8 +12,10 @@ const DATABASE_URL = `postgres://postgres:postgres@127.0.0.1:${DB_PORT}/postgres
 const BETTER_AUTH_SECRET = 'e2e-test-secret-e2e-test-secret-e2e-test-secret!';
 
 const db = await PGlite.create();
-await migrate(drizzle(db), { migrationsFolder: './drizzle' });
-// Task 4 adds an optional seed hook here, before the server accepts traffic.
+const orm = drizzle(db, { schema });
+await migrate(orm, { migrationsFolder: './drizzle' });
+// Seed before the server accepts traffic.
+await seedE2E(orm, BETTER_AUTH_SECRET, `http://localhost:${APP_PORT}`);
 
 const socketServer = new PGLiteSocketServer({
 	db,
