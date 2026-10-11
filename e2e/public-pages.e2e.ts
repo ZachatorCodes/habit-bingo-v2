@@ -2,12 +2,11 @@ import { expect, test } from '@playwright/test';
 
 const publicPaths = ['/', '/privacy', '/terms'];
 
-test('landing has a heading, the sample card and no link to unbuilt pages', async ({ page }) => {
+test('landing links to sign in', async ({ page }) => {
 	await page.goto('/');
 	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-	// Sign-in arrives in M1; until then the call to action must not lead to a 404.
-	await expect(page.locator('a[href="/signin"]')).toHaveCount(0);
-	await expect(page.getByText('Invite-only beta. Sign-in opens soon.')).toBeVisible();
+	await expect(page.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/signin');
+	await expect(page.getByText('Invite-only beta.')).toBeVisible();
 	await expect(page.getByTestId('sample-card').getByRole('img')).toHaveCount(9);
 });
 
