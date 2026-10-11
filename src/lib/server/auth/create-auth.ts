@@ -145,7 +145,15 @@ export function createAuth(db: Db, options: AuthOptions) {
 				if (typeof password !== 'string') return;
 				let username: string | null;
 				if (endpoint === '/sign-up/email') {
-					username = typeof ctx.body?.username === 'string' ? ctx.body.username : null;
+					// Without a username, the username plugin (whose hook runs after ours) copies
+					// displayUsername into it, so compare against that too.
+					const { username: typed, displayUsername } = ctx.body ?? {};
+					username =
+						typeof typed === 'string'
+							? typed
+							: typeof displayUsername === 'string'
+								? displayUsername
+								: null;
 				} else {
 					const current = await getSessionFromCtx(ctx);
 					username = (current?.user as { username?: string | null } | undefined)?.username ?? null;

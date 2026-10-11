@@ -261,6 +261,22 @@ describe('password policy hooks', () => {
 		);
 	});
 
+	it('rejects a password equal to a displayUsername sent without a username', async () => {
+		// The username plugin copies displayUsername into username when username is absent.
+		await expect(
+			auth.api.signUpEmail({
+				body: {
+					email: `${crypto.randomUUID()}@users.invalid`,
+					password: 'zach_stuff1',
+					name: 'Zach',
+					displayUsername: 'Zach_Stuff1'
+				} as never,
+				headers: inviteHeaders(inviteCode)
+			})
+		).rejects.toEqual(apiError('BAD_REQUEST', 'sameAsUsername'));
+		expect(await db.select().from(user).where(eq(user.username, 'zach_stuff1'))).toEqual([]);
+	});
+
 	it('rejects a breached sign-up password with the copy', async () => {
 		auth = createTestAuth(db, { isPwned: async () => true });
 		await expect(signUp('breachy')).rejects.toEqual(
