@@ -32,7 +32,6 @@
 		</div>
 
 		{#if data.googleEnabled}
-			<!-- The Google action is wired in Task 7. -->
 			<form method="POST" action="?/google">
 				<Button type="submit" variant="secondary" class="w-full">Continue with Google</Button>
 			</form>

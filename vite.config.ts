@@ -27,7 +27,9 @@ export default defineConfig({
 					'connect-src': ['self'],
 					'frame-ancestors': ['none'],
 					'base-uri': ['self'],
-					'form-action': ['self'],
+					// Also limits where a form submission may redirect: the Google button posts to our
+					// action, which 303s to Google's sign-in page.
+					'form-action': ['self', 'https://accounts.google.com'],
 					'object-src': ['none']
 				}
 			},

@@ -1,5 +1,10 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from '$app/env/private';
+import {
+	googleErrorMessage,
+	redirectToGoogle,
+	startGoogleSignIn
+} from '#lib/server/auth/google.ts';
 import { getAuth } from '#lib/server/auth/index.ts';
 import {
 	DEFAULT_SIGNED_IN_PATH,
@@ -15,21 +20,33 @@ type Field = 'username' | 'password' | 'form';
 /** Longer than any real username; longer input is refused before it reaches the database. */
 const MAX_USERNAME_INPUT = 64;
 
+function stringField(formData: FormData, key: string): string {
+	const value = formData.get(key);
+	return typeof value === 'string' ? value : '';
+}
+
+const googleEnabled = () => Boolean(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET);
+
 export const load: PageServerLoad = ({ url, locals }) => {
 	if (locals.user) redirect(303, DEFAULT_SIGNED_IN_PATH);
 	return {
 		next: safeNextPath(url.searchParams.get('next')),
-		googleEnabled: Boolean(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET)
+		googleEnabled: googleEnabled(),
+		// Better Auth sends failed Google sign-ins back here with ?error=<code>.
+		googleError: googleErrorMessage(url.searchParams.get('error'))
 	};
 };
 
 export const actions: Actions = {
+	google: async ({ request, locals }) => {
+		const next = safeNextPath(stringField(await request.formData(), 'next'));
+		if (locals.user) redirect(303, next);
+		if (!googleEnabled()) error(404, 'Google sign-in is not available.');
+		redirectToGoogle(await startGoogleSignIn(getAuth(), request.headers, next));
+	},
 	signin: async ({ request, locals }) => {
 		const formData = await request.formData();
-		const text = (key: string) => {
-			const value = formData.get(key);
-			return typeof value === 'string' ? value : '';
-		};
+		const text = (key: string) => stringField(formData, key);
 		const next = safeNextPath(text('next'));
 		if (locals.user) redirect(303, next);
 
