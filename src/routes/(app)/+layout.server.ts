@@ -8,7 +8,6 @@ export const load: LayoutServerLoad = ({ locals, url, setHeaders }) => {
 		redirect(303, '/signin?next=' + encodeURIComponent(url.pathname + url.search));
 	}
 	const user = requireUser(locals);
-	// The onboarding page arrives in Task 6.
 	if (!user.onboardedAt) redirect(303, '/onboarding');
 	// Personal pages: never stored by a shared cache.
 	setHeaders({ 'cache-control': 'private, no-store' });
