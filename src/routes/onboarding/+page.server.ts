@@ -1,5 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { AVATAR_EMOJI, type WeekStart } from '#lib/profile.ts';
+import { AVATAR_EMOJI, isValidTimezone, type WeekStart } from '#lib/profile.ts';
 import { completeOnboarding } from '#lib/server/auth/accounts.ts';
 import { requireUser } from '#lib/server/auth/guards.ts';
 import { getDb } from '#lib/server/db/client.ts';
@@ -50,7 +50,10 @@ export const actions: Actions = {
 				username: values.username,
 				name: values.name,
 				avatarEmoji: values.avatarEmoji,
-				timezone: values.timezone || 'UTC',
+				// The browser's zone name can be one this server's ICU does not know (Asia/Calcutta vs
+				// Asia/Kolkata); the field is hidden, so fall back to UTC rather than dead-end. It is
+				// editable later in settings.
+				timezone: isValidTimezone(values.timezone) ? values.timezone : 'UTC',
 				weekStartsOn: (values.weekStartsOn || 'monday') as WeekStart
 			},
 			new Date()

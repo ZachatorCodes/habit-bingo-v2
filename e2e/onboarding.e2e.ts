@@ -1,13 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
-import { signIn, uniqueUsername } from './fixtures.ts';
+import { signIn, uniqueUsername, waitForHydration } from './fixtures.ts';
 
 async function signUp(page: Page, displayName: string): Promise<void> {
 	await page.goto('/join/E2E-OPEN');
+	await waitForHydration(page);
 	await page.getByLabel('Username').fill(uniqueUsername());
 	await page.getByLabel('Display name').fill(displayName);
 	await page.getByLabel('Password').fill('a long new password 1');
 	await page.getByRole('button', { name: 'Create account' }).click();
 	await expect(page).toHaveURL(/\/onboarding$/);
+	await waitForHydration(page);
 }
 
 test('a new sign-up completes onboarding and reaches Today', async ({ page }) => {
@@ -44,6 +46,7 @@ test('an empty display name is reported and focused', async ({ page }) => {
 	await expect(name).toHaveAccessibleDescription(/Enter a display name\./);
 	await expect(name).toBeFocused();
 	await expect(page).toHaveURL(/\/onboarding$/);
+	await waitForHydration(page);
 });
 
 test('onboarding needs a session, and onboarded people skip it', async ({ page }) => {
@@ -52,5 +55,16 @@ test('onboarding needs a session, and onboarded people skip it', async ({ page }
 	await signIn(page, 'e2e_member', 'e2e member password 1');
 	await expect(page).toHaveURL(/\/today$/);
 	await page.goto('/onboarding');
+	await expect(page).toHaveURL(/\/today$/);
+});
+
+test('a browser timezone the server does not know falls back to UTC instead of blocking', async ({
+	page
+}) => {
+	await signUp(page, 'Odd Zone');
+	await page.locator('input[name="timezone"]').evaluate((el: HTMLInputElement) => {
+		el.value = 'Mars/Olympus';
+	});
+	await page.getByRole('button', { name: "Let's go" }).click();
 	await expect(page).toHaveURL(/\/today$/);
 });

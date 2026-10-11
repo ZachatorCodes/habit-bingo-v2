@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { signIn, uniqueUsername } from './fixtures.ts';
+import { signIn, uniqueUsername, waitForHydration } from './fixtures.ts';
 
 const MEMBER = { username: 'e2e_member', password: 'e2e member password 1' };
 const ADMIN = { username: 'e2e_admin', password: 'e2e admin password 1' };
@@ -37,6 +37,7 @@ test('signed-out visitors are sent to sign in and come back after', async ({ pag
 
 test('the sign-in page offers help and no Google button when Google is off', async ({ page }) => {
 	await page.goto('/signin');
+	await waitForHydration(page);
 	await expect(
 		page.getByText('Forgot your password? Ask an admin for a reset link.')
 	).toBeVisible();
@@ -48,6 +49,7 @@ test('signed-in visitors skip the sign-in page', async ({ page }) => {
 	await signIn(page, MEMBER.username, MEMBER.password);
 	await expect(page).toHaveURL(/\/today$/);
 	await page.goto('/signin');
+	await waitForHydration(page);
 	await expect(page).toHaveURL(/\/today$/);
 });
 
@@ -103,6 +105,7 @@ test('a new account works: sign out and back in', async ({ page, context }) => {
 	const username = uniqueUsername();
 	const password = 'a long new password 1';
 	await page.goto('/join/E2E-OPEN');
+	await waitForHydration(page);
 	await page.getByLabel('Username').fill(username);
 	await page.getByLabel('Display name').fill('New Friend');
 	await page.getByLabel('Password').fill(password);
