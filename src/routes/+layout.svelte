@@ -3,9 +3,15 @@
 	import { dev } from '$app/env';
 	import CookieNotice from '#lib/components/CookieNotice.svelte';
 	import SiteFooter from '#lib/components/SiteFooter.svelte';
+	import { onMount } from 'svelte';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
+
+	// Lets E2E tests wait until enhanced forms are wired up before submitting.
+	onMount(() => {
+		document.documentElement.dataset.hydrated = 'true';
+	});
 </script>
 
 <svelte:head>
