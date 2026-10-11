@@ -1,16 +1,16 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Seo from '#lib/components/Seo.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
 
-	// /me and /admin arrive later in M1, so they cannot go through resolve() yet.
-	const links = $derived([
-		{ href: '/today', label: 'Today' },
-		{ href: '/me', label: 'Me' },
-		...(data.user.isAdmin ? [{ href: '/admin', label: 'Admin' }] : [])
-	]);
+	const linkClass = (href: string) => [
+		'rounded-xl px-3 py-1.5 font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink',
+		page.url.pathname === href ? 'bg-ink text-white' : 'hover:bg-line/40'
+	];
+	const current = (href: string) => (page.url.pathname === href ? 'page' : undefined);
 </script>
 
 <Seo
@@ -30,19 +30,15 @@
 			<span class="truncate font-extrabold">@{data.user.displayUsername}</span>
 		</div>
 		<nav aria-label="Main" class="flex items-center gap-1">
-			{#each links as link (link.href)}
-				{@const current = page.url.pathname === link.href}
-				<!-- eslint-disable svelte/no-navigation-without-resolve -->
-				<a
-					href={link.href}
-					aria-current={current ? 'page' : undefined}
-					class={[
-						'rounded-xl px-3 py-1.5 font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink',
-						current ? 'bg-ink text-white' : 'hover:bg-line/40'
-					]}>{link.label}</a
-				>
-				<!-- eslint-enable svelte/no-navigation-without-resolve -->
-			{/each}
+			<a href={resolve('/(app)/today')} aria-current={current('/today')} class={linkClass('/today')}
+				>Today</a
+			>
+			<a href={resolve('/(app)/me')} aria-current={current('/me')} class={linkClass('/me')}>Me</a>
+			{#if data.user.isAdmin}
+				<!-- /admin arrives later in M1, so it cannot go through resolve() yet. -->
+				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+				<a href="/admin" aria-current={current('/admin')} class={linkClass('/admin')}>Admin</a>
+			{/if}
 			<form method="POST" action="/signout">
 				<button
 					type="submit"

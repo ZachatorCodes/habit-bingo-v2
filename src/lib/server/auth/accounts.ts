@@ -1,10 +1,14 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { APIError } from 'better-auth/api';
+import { and, eq, isNotNull, isNull, or } from 'drizzle-orm';
 import { AVATAR_EMOJI, isValidTimezone, type WeekStart } from '#lib/profile.ts';
 import type { Db } from '#lib/server/db/client.ts';
-import { user } from '#lib/server/db/schema.ts';
+import { account, user } from '#lib/server/db/schema.ts';
+import type { Auth } from './create-auth.ts';
+import { PASSWORD_MESSAGES } from './password-policy.ts';
 import { USERNAME_RULES_MESSAGE, USERNAME_TAKEN_MESSAGE } from './sign-up.ts';
 
 export type Invalid = { ok: false; field: string; message: string };
+export type Result = { ok: true } | Invalid;
 
 /** Display name (trimmed, 1–40 characters) and avatar. */
 export function validateProfileInput(input: {
@@ -95,4 +99,170 @@ export async function completeOnboarding(
 		throw error;
 	}
 	return { ok: true };
+}
+
+/** Changes the display name and avatar, with the onboarding rules. */
+export async function updateProfile(
+	db: Db,
+	userId: string,
+	input: { name: string; avatarEmoji: string }
+): Promise<Result> {
+	const profile = validateProfileInput(input);
+	if (!profile.ok) return profile;
+	await db
+		.update(user)
+		.set({ name: profile.name, avatarEmoji: input.avatarEmoji })
+		.where(eq(user.id, userId));
+	return { ok: true };
+}
+
+/** Changes the timezone and week start, with the onboarding rules. */
+export async function updateSettings(
+	db: Db,
+	userId: string,
+	input: { timezone: string; weekStartsOn: WeekStart }
+): Promise<Result> {
+	const settings = validateSettingsInput(input);
+	if (!settings.ok) return settings;
+	await db
+		.update(user)
+		.set({ timezone: settings.timezone, weekStartsOn: settings.weekStartsOn })
+		.where(eq(user.id, userId));
+	return { ok: true };
+}
+
+/** Which ways this user can sign in. A credential account only counts if it has a password. */
+export async function getSignInMethods(
+	db: Db,
+	userId: string
+): Promise<{ password: boolean; google: boolean }> {
+	const rows = await db
+		.select({ providerId: account.providerId })
+		.from(account)
+		.where(
+			and(
+				eq(account.userId, userId),
+				or(
+					and(eq(account.providerId, 'credential'), isNotNull(account.password)),
+					eq(account.providerId, 'google')
+				)
+			)
+		);
+	return {
+		password: rows.some((r) => r.providerId === 'credential'),
+		google: rows.some((r) => r.providerId === 'google')
+	};
+}
+
+/** Deletes the user row; sessions, accounts, reset links and everything else cascade. */
+export async function deleteAccount(db: Db, userId: string): Promise<void> {
+	await db.delete(user).where(eq(user.id, userId));
+}
+
+export const WRONG_CURRENT_PASSWORD_MESSAGE = "That's not your current password.";
+export const PASSWORD_ALREADY_SET_MESSAGE = 'You already have a password.';
+export const KEEP_A_SIGN_IN_METHOD_MESSAGE = 'Set a password first so you can still sign in.';
+export const GOOGLE_NOT_LINKED_MESSAGE = 'Google is not linked.';
+export const SIGN_IN_AGAIN_MESSAGE = 'For your safety, sign out and back in, then try again.';
+
+/** Better Auth's password policy codes (from our hook and its own checks) as new-password errors. */
+function newPasswordProblem(code: string | undefined): Invalid | undefined {
+	const message =
+		code === 'PASSWORD_TOO_SHORT'
+			? PASSWORD_MESSAGES.tooShort
+			: code === 'PASSWORD_TOO_LONG'
+				? PASSWORD_MESSAGES.tooLong
+				: code && code in PASSWORD_MESSAGES
+					? PASSWORD_MESSAGES[code as keyof typeof PASSWORD_MESSAGES]
+					: undefined;
+	return message ? { ok: false, field: 'newPassword', message } : undefined;
+}
+
+function apiErrorCode(error: unknown): string | undefined {
+	return error instanceof APIError ? (error.body?.code as string | undefined) : undefined;
+}
+
+/**
+ * Changes the signed-in user's password (checked by our policy hook) and ends every other session.
+ * Better Auth replaces this device's session and sets its cookie on the current response.
+ */
+export async function changeUserPassword(
+	auth: Auth,
+	headers: Headers,
+	input: { currentPassword: string; newPassword: string }
+): Promise<Result> {
+	if (!input.currentPassword)
+		return { ok: false, field: 'currentPassword', message: 'Enter your current password.' };
+	if (!input.newPassword)
+		return { ok: false, field: 'newPassword', message: 'Enter a new password.' };
+	try {
+		await auth.api.changePassword({
+			body: {
+				currentPassword: input.currentPassword,
+				newPassword: input.newPassword,
+				revokeOtherSessions: true
+			},
+			headers
+		});
+		return { ok: true };
+	} catch (error) {
+		const code = apiErrorCode(error);
+		if (code === 'INVALID_PASSWORD')
+			return { ok: false, field: 'currentPassword', message: WRONG_CURRENT_PASSWORD_MESSAGE };
+		const problem = newPasswordProblem(code);
+		if (problem) return problem;
+		throw error;
+	}
+}
+
+/** Adds a password for a signed-in user who has none (e.g. a Google sign-up). */
+export async function setUserPassword(
+	auth: Auth,
+	headers: Headers,
+	input: { newPassword: string }
+): Promise<Result> {
+	if (!input.newPassword)
+		return { ok: false, field: 'newPassword', message: 'Enter a new password.' };
+	try {
+		await auth.api.setPassword({ body: { newPassword: input.newPassword }, headers });
+		return { ok: true };
+	} catch (error) {
+		const code = apiErrorCode(error);
+		if (code === 'PASSWORD_ALREADY_SET')
+			return { ok: false, field: 'newPassword', message: PASSWORD_ALREADY_SET_MESSAGE };
+		const problem = newPasswordProblem(code);
+		if (problem) return problem;
+		throw error;
+	}
+}
+
+/**
+ * Unlinks Google from a signed-in user, refusing when it is their only way to sign in. Better Auth
+ * asks for a recently created session; older sessions get a "sign in again" message.
+ */
+export async function unlinkGoogle(
+	auth: Auth,
+	db: Db,
+	userId: string,
+	headers: Headers
+): Promise<Result> {
+	const methods = await getSignInMethods(db, userId);
+	if (!methods.google) return { ok: false, field: 'google', message: GOOGLE_NOT_LINKED_MESSAGE };
+	if (!methods.password)
+		return { ok: false, field: 'google', message: KEEP_A_SIGN_IN_METHOD_MESSAGE };
+	const [google] = await db
+		.select({ id: account.id })
+		.from(account)
+		.where(and(eq(account.userId, userId), eq(account.providerId, 'google')));
+	try {
+		await auth.api.unlinkAccount({ body: { accountId: google.id }, headers });
+		return { ok: true };
+	} catch (error) {
+		const code = apiErrorCode(error);
+		if (code === 'SESSION_NOT_FRESH')
+			return { ok: false, field: 'google', message: SIGN_IN_AGAIN_MESSAGE };
+		if (code === 'FAILED_TO_UNLINK_LAST_ACCOUNT')
+			return { ok: false, field: 'google', message: KEEP_A_SIGN_IN_METHOD_MESSAGE };
+		throw error;
+	}
 }
