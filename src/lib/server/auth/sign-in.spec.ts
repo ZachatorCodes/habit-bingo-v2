@@ -106,6 +106,41 @@ describe('signInWithPassword', () => {
 		await signIn('zach_s', 'not the right password');
 		expect(await isLockedOut(db, 'zach_s', now)).toBe(false);
 	});
+
+	it('a user with no password fails like a wrong password, after a hash', async () => {
+		// A Google-only account: a user row and no credential account (Review Focus 5).
+		const id = crypto.randomUUID();
+		await db.insert(user).values({
+			id,
+			name: 'Google User',
+			email: `${id}@users.invalid`,
+			username: 'google_only',
+			displayUsername: 'Google_Only'
+		});
+		const context = await auth.$context;
+		const hash = vi.spyOn(context.password, 'hash');
+		const signInUsername = vi.spyOn(auth.api, 'signInUsername');
+
+		expect(await signIn('Google_Only', PASSWORD)).toEqual({
+			ok: false,
+			message: 'Wrong username or password.'
+		});
+		expect(hash).toHaveBeenCalledWith(PASSWORD);
+		expect(signInUsername).not.toHaveBeenCalled();
+		expect(await failures()).toBe(1);
+	});
+
+	it('concurrent attempts cannot get past the lockout', async () => {
+		const signInUsername = vi.spyOn(auth.api, 'signInUsername');
+		const results = await Promise.all(
+			Array.from({ length: 10 }, () => signIn('zach_s', 'not the right password'))
+		);
+		expect(signInUsername.mock.calls.length).toBeLessThanOrEqual(5);
+		const locked = results.filter((r) => !r.ok && r.message === LOCKED_OUT_MESSAGE);
+		expect(locked.length).toBe(10 - signInUsername.mock.calls.length);
+		expect(await failures()).toBeLessThanOrEqual(5);
+		expect(await isLockedOut(db, 'zach_s', now)).toBe(true);
+	});
 });
 
 describe('safeNextPath', () => {
@@ -119,7 +154,13 @@ describe('safeNextPath', () => {
 		['https://evil.example/today', '/today'],
 		['javascript:alert(1)', '/today'],
 		['today', '/today'],
-		['/\t/evil.example', '/today']
+		['/\t/evil.example', '/today'],
+		// Dot segments that normalize to a protocol-relative URL.
+		['/..//evil.example', '/today'],
+		['/.//evil.example', '/today'],
+		['/a/..//evil.example', '/today'],
+		['/%2e%2e//evil.example', '/today'],
+		['/a/../b', '/b']
 	])('%j → %j', (next, expected) => {
 		expect(safeNextPath(next)).toBe(expected);
 	});

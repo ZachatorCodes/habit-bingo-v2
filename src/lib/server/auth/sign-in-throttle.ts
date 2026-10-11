@@ -1,4 +1,4 @@
-import { and, count, eq, gt } from 'drizzle-orm';
+import { and, count, eq, gt, lte } from 'drizzle-orm';
 import type { Db } from '#lib/server/db/client.ts';
 import { signInFailure } from '#lib/server/db/schema.ts';
 
@@ -28,4 +28,37 @@ export async function recordFailure(db: Db, username: string, now: Date): Promis
 
 export async function clearFailures(db: Db, username: string): Promise<void> {
 	await db.delete(signInFailure).where(eq(signInFailure.username, key(username)));
+}
+
+/**
+ * Records an attempt before it is checked, so concurrent requests cannot all pass a lockout check
+ * before any of their failures land. Returns the reserved row's id while the username is under the
+ * limit, counting only attempts reserved before this one; otherwise removes the row (locked
+ * attempts are never recorded, so a lock still ends 15 minutes after the 5th failure) and returns
+ * null. The caller keeps the row on failure and clears the username on success.
+ */
+export async function reserveAttempt(db: Db, username: string, now: Date): Promise<number | null> {
+	const [reserved] = await db
+		.insert(signInFailure)
+		.values({ username: key(username), createdAt: now })
+		.returning({ id: signInFailure.id });
+	const since = new Date(now.getTime() - LOCKOUT_WINDOW_MS);
+	const [row] = await db
+		.select({ attempts: count() })
+		.from(signInFailure)
+		.where(
+			and(
+				eq(signInFailure.username, key(username)),
+				gt(signInFailure.createdAt, since),
+				lte(signInFailure.id, reserved.id)
+			)
+		);
+	if (row.attempts <= MAX_FAILURES) return reserved.id;
+	await releaseAttempt(db, reserved.id);
+	return null;
+}
+
+/** Removes a reserved attempt that turned out not to be a failed sign-in. */
+export async function releaseAttempt(db: Db, id: number): Promise<void> {
+	await db.delete(signInFailure).where(eq(signInFailure.id, id));
 }

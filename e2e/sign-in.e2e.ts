@@ -81,13 +81,23 @@ test('a copied session cookie stops working after sign out', async ({ browser })
 	await b.close();
 });
 
-test('open redirects are ignored', async ({ page }) => {
-	await page.goto('/signin?next=//evil.example');
-	await page.getByLabel('Username').fill(MEMBER.username);
-	await page.getByLabel('Password').fill(MEMBER.password);
-	await page.getByRole('button', { name: 'Sign in' }).click();
-	await expect(page).toHaveURL(/^http:\/\/localhost:4173\/today$/);
-});
+for (const next of [
+	'//evil.example',
+	'/..//evil.example',
+	'/.//evil.example',
+	'/a/..//evil.example',
+	'/%2e%2e//evil.example'
+]) {
+	test(`open redirects are ignored: ${next}`, async ({ page }) => {
+		await page.goto('/signin?next=' + encodeURIComponent(next));
+		// The page itself never carries an off-site target, whatever the action does with it.
+		await expect(page.locator('form[action="?/signin"] input[name="next"]')).toHaveValue('/today');
+		await page.getByLabel('Username').fill(MEMBER.username);
+		await page.getByLabel('Password').fill(MEMBER.password);
+		await page.getByRole('button', { name: 'Sign in' }).click();
+		await expect(page).toHaveURL(/^http:\/\/localhost:4173\/today$/);
+	});
+}
 
 test('a new account works: sign out and back in', async ({ page, context }) => {
 	const username = uniqueUsername();
