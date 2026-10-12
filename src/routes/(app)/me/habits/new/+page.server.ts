@@ -1,24 +1,13 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { requireUser } from '#lib/server/auth/guards.ts';
 import { getDb } from '#lib/server/db/client.ts';
-import { libraryUrl, readHabitForm } from '#lib/server/habit-form.ts';
-import { createHabit, type HabitInput } from '#lib/server/habits.ts';
+import { DEFAULT_HABIT_INPUT, libraryUrl, readHabitForm } from '#lib/server/habit-form.ts';
+import { createHabit } from '#lib/server/habits.ts';
 import type { Actions, PageServerLoad } from './$types';
-
-const DEFAULTS: HabitInput = {
-	emoji: '',
-	name: '',
-	category: 'other',
-	direction: 'atLeast',
-	period: 'week',
-	countMode: 'days',
-	target: 3,
-	isPrivate: false
-};
 
 export const load: PageServerLoad = ({ locals }) => {
 	requireUser(locals);
-	return { values: DEFAULTS };
+	return { values: DEFAULT_HABIT_INPUT };
 };
 
 export const actions: Actions = {

@@ -33,7 +33,14 @@ const child = spawn(
 		stdio: 'inherit',
 		// Every E2E test comes from 127.0.0.1, so the per-IP auth limits are raised here (and only
 		// here) to keep the suite from tripping them. Production leaves the multiplier unset (1).
-		env: { ...process.env, DATABASE_URL, BETTER_AUTH_SECRET, IP_LIMIT_MULTIPLIER: '1000' }
+		env: {
+			...process.env,
+			DATABASE_URL,
+			BETTER_AUTH_SECRET,
+			IP_LIMIT_MULTIPLIER: '1000',
+			// PGlite is one session: a single connection keeps transactions from interleaving.
+			DB_POOL_MAX: '1'
+		}
 	}
 );
 

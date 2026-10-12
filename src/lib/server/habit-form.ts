@@ -24,3 +24,15 @@ export async function readHabitForm(request: Request): Promise<HabitInput> {
 export function libraryUrl(category: string, flag: 'created' | 'saved'): string {
 	return `/me/habits?category=${encodeURIComponent(category)}&${flag}=1`;
 }
+
+/** A blank habit form's starting values. */
+export const DEFAULT_HABIT_INPUT: HabitInput = {
+	emoji: '',
+	name: '',
+	category: 'other',
+	direction: 'atLeast',
+	period: 'week',
+	countMode: 'days',
+	target: 3,
+	isPrivate: false
+};
