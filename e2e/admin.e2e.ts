@@ -127,7 +127,7 @@ test('an admin reset link lets a user set a new password and sign in', async ({
 	const visitor = await newPage(browser);
 	const response = await visitor.goto(resetUrl);
 	expect(response?.headers()['cache-control']).toBe('no-store');
-	expect(response?.headers()['referrer-policy']).toBe('no-referrer');
+	expect(response?.headers()['referrer-policy']).toBe('strict-origin');
 	await expect(visitor.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
 	await waitForHydration(visitor);
 
@@ -209,11 +209,9 @@ test('admin forms work without JavaScript', async ({ browser }) => {
 	);
 });
 
-// Pending a decision: with `Referrer-Policy: no-referrer`, Chrome sends `Origin: null` on a
-// same-origin form POST navigation, so SvelteKit's CSRF check answers 403. Only the no-JS path is
-// affected (enhanced fetch submissions send a real Origin). `strict-origin` would fix it without
-// ever sending the token-bearing path anywhere.
-test.fixme('the reset form works without JavaScript', async ({ browser }) => {
+// Pins the reset page's `strict-origin` policy: with `no-referrer`, Chrome sends `Origin: null` on
+// a no-JS form POST and SvelteKit's CSRF check answers 403.
+test('the reset form works without JavaScript', async ({ browser }) => {
 	const username = uniqueUsername();
 	await join(await newPage(browser), '/join/E2E-OPEN', username);
 	const admin = await noJsAdmin(browser);
@@ -225,7 +223,7 @@ test.fixme('the reset form works without JavaScript', async ({ browser }) => {
 	const visitor = await (await browser.newContext({ javaScriptEnabled: false })).newPage();
 	const page = await visitor.goto(resetUrl);
 	expect(page?.headers()['cache-control']).toBe('no-store');
-	expect(page?.headers()['referrer-policy']).toBe('no-referrer');
+	expect(page?.headers()['referrer-policy']).toBe('strict-origin');
 	await visitor.getByLabel('New password').fill('short');
 	const [response] = await Promise.all([
 		visitor.waitForResponse((r) => r.request().method() === 'POST'),
@@ -233,7 +231,7 @@ test.fixme('the reset form works without JavaScript', async ({ browser }) => {
 	]);
 	expect(response.status()).toBe(400);
 	expect(response.headers()['cache-control']).toBe('no-store');
-	expect(response.headers()['referrer-policy']).toBe('no-referrer');
+	expect(response.headers()['referrer-policy']).toBe('strict-origin');
 	await expect(visitor.getByLabel('New password')).toHaveAccessibleDescription(
 		/Use at least 10 characters\./
 	);

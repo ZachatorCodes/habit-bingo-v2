@@ -55,8 +55,10 @@ export const securityHeadersHandle: Handle = async ({ event, resolve }) =>
  * Covers pages, action results, redirects and error pages alike.
  */
 const ROUTE_HEADERS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
-	// The token in the URL is a bearer secret: never cached, never sent on as a referrer.
-	'/reset/[token]': { 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' },
+	// The token in the URL is a bearer secret: never cached, and its path never sent on as a
+	// referrer. `strict-origin` rather than `no-referrer`: the latter makes browsers send
+	// `Origin: null` on a no-JS form POST, which SvelteKit's CSRF check rejects.
+	'/reset/[token]': { 'cache-control': 'no-store', 'referrer-policy': 'strict-origin' },
 	// Action results carry invite and reset links.
 	'/(app)/admin': { 'cache-control': 'private, no-store' }
 };
@@ -75,8 +77,11 @@ export const routeHeadersHandle: Handle = async ({ event, resolve }) => {
 // Referrer-Policy.
 export const handle = sequence(securityHeadersHandle, routeHeadersHandle, authHandle);
 
-/** Only `no-referrer` may replace the default, for pages with a secret in their URL (/reset). */
-const STRICTER_REFERRER_POLICY = 'no-referrer';
+/**
+ * Only `strict-origin` (origin only, never the path) may replace the default, for pages with a
+ * secret in their URL (/reset).
+ */
+const STRICTER_REFERRER_POLICY = 'strict-origin';
 
 function setSecurityHeaders(headers: Headers): void {
 	for (const [name, value] of Object.entries(SECURITY_HEADERS)) {

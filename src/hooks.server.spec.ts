@@ -39,10 +39,10 @@ describe('securityHeadersHandle', () => {
 			event,
 			resolve: async () =>
 				new Response('ok', {
-					headers: { 'referrer-policy': 'no-referrer', 'x-frame-options': 'SAMEORIGIN' }
+					headers: { 'referrer-policy': 'strict-origin', 'x-frame-options': 'SAMEORIGIN' }
 				})
 		});
-		expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+		expect(response.headers.get('referrer-policy')).toBe('strict-origin');
 		// Every other header still wins over what the page set.
 		expect(response.headers.get('x-frame-options')).toBe('DENY');
 	});
@@ -111,7 +111,7 @@ describe('routeHeadersHandle', () => {
 				resolve: async () => new Response('x', { status })
 			});
 			expect(response.headers.get('cache-control')).toBe('no-store');
-			expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+			expect(response.headers.get('referrer-policy')).toBe('strict-origin');
 		}
 	});
 
@@ -139,7 +139,7 @@ describe('routeHeadersHandle', () => {
 			resolve: async (event) =>
 				routeHeadersHandle({ event, resolve: async () => Response.redirect('http://x/', 303) })
 		});
-		expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+		expect(response.headers.get('referrer-policy')).toBe('strict-origin');
 		expect(response.headers.get('cache-control')).toBe('no-store');
 	});
 });

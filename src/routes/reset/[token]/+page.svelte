@@ -22,7 +22,7 @@
 </script>
 
 <svelte:head>
-	<meta name="referrer" content="no-referrer" />
+	<meta name="referrer" content="strict-origin" />
 </svelte:head>
 
 <!-- The token stays out of the canonical URL. -->

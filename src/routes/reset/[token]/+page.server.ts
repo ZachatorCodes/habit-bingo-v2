@@ -5,7 +5,7 @@ import { isPwnedPassword } from '#lib/server/auth/pwned.ts';
 import { getDb } from '#lib/server/db/client.ts';
 import type { Actions, PageServerLoad } from './$types';
 
-// No-store and no-referrer for this route come from `routeHeadersHandle` in hooks.server.ts.
+// No-store and Referrer-Policy: strict-origin for this route come from `routeHeadersHandle` in hooks.server.ts.
 // Public, so signed-in visitors can use a link too.
 
 function requireDb() {
