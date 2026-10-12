@@ -27,6 +27,7 @@ import {
 import { localDate } from '#lib/server/clock.ts';
 import {
 	currentMonth,
+	editBlocked,
 	getCard,
 	startCard,
 	updateCard,
@@ -48,11 +49,17 @@ async function builderContext(locals: App.Locals) {
 	const user = requireUser(locals);
 	const db = getDb();
 	if (!db) error(503, 'The card builder is not available right now.');
-	const month = currentMonth({ timezone: user.timezone ?? 'UTC' }, new Date());
+	const now = new Date();
+	const month = currentMonth({ timezone: user.timezone ?? 'UTC' }, now);
 	const [card, draft] = await Promise.all([
 		getCard(db, user.id, month),
 		getDraft(db, user.id, month)
 	]);
+	// An edit draft outlives its window: drop it rather than let people redo steps that cannot save.
+	if (editBlocked(draft.cardId, card, now)) {
+		await discardDraft(db, user.id);
+		redirect(303, '/card?locked=1');
+	}
 	// A card for this month can only be changed through a draft that is editing it.
 	if (card && draft.cardId !== card.id) redirect(303, '/card');
 	return { user, db, month, card, draft };
@@ -347,9 +354,10 @@ export const actions: Actions = {
 			layout: draft.layout
 		};
 		const editing = draft.cardId !== null;
-		const result = editing
-			? await updateCard(db, person, plan, new Date())
-			: await startCard(db, person, { size: draft.size, ...plan }, new Date());
+		const result =
+			draft.cardId !== null
+				? await updateCard(db, person, draft.cardId, plan, new Date())
+				: await startCard(db, person, { size: draft.size, ...plan }, new Date());
 		if (result.ok) {
 			await discardDraft(db, user.id);
 			redirect(303, editing ? '/card?saved=1' : '/card?started=1');

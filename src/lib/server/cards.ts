@@ -1,6 +1,6 @@
 // Monthly cards: a snapshot of nine or twenty-four habits, laid out on a board. Every query is
 // scoped to the signed-in user.
-import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { monthName, monthOf, nextMonth } from '#lib/game/calendar.ts';
 import { CARD_SIZES, isValidLayout, type CardSize } from '#lib/game/card-layout.ts';
 import type { CategoryId } from '#lib/game/categories.ts';
@@ -77,6 +77,20 @@ export function isEditable(card: Pick<Card, 'editableUntil'>, now: Date): boolea
 	return now.getTime() < card.editableUntil.getTime();
 }
 
+/**
+ * Whether a draft that is editing a card (`draftCardId`) can no longer be used: the card it points
+ * at is gone, is another one, or is past its edit window. A draft that is not editing is never
+ * blocked.
+ */
+export function editBlocked(
+	draftCardId: string | null,
+	card: Pick<Card, 'id' | 'editableUntil'> | null,
+	now: Date
+): boolean {
+	if (draftCardId === null) return false;
+	return !card || card.id !== draftCardId || !isEditable(card, now);
+}
+
 function toCard(row: typeof card.$inferSelect, squares: (typeof cardSquare.$inferSelect)[]): Card {
 	return {
 		id: row.id,
@@ -110,10 +124,16 @@ function toCard(row: typeof card.$inferSelect, squares: (typeof cardSquare.$infe
 }
 
 export async function getCard(db: Db, userId: string, month: string): Promise<Card | null> {
-	const [row] = await db
-		.select()
-		.from(card)
-		.where(and(eq(card.userId, userId), eq(card.month, month)));
+	return loadCard(db, and(eq(card.userId, userId), eq(card.month, month)));
+}
+
+/** One of the person's cards by id; null for an id that is not theirs. */
+export async function getCardById(db: Db, userId: string, cardId: string): Promise<Card | null> {
+	return loadCard(db, and(eq(card.userId, userId), eq(card.id, cardId)));
+}
+
+async function loadCard(db: Db, where: SQL | undefined): Promise<Card | null> {
+	const [row] = await db.select().from(card).where(where);
 	if (!row) return null;
 	const squares = await db
 		.select()
@@ -273,19 +293,20 @@ export async function startCard(
 export async function updateCard(
 	db: Db,
 	user: { id: string; timezone: string },
+	cardId: string,
 	plan: Omit<CardPlan, 'size'>,
 	now: Date
 ): Promise<{ ok: true; card: Card } | CardError> {
-	const month = currentMonth(user, now);
 	// Reading and writing under one per-person lock keeps simultaneous updates from interleaving.
 	return db.transaction(async (tx) => {
 		await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${'card:' + user.id}))`);
-		const existing = await getCard(tx, user.id, month);
+		// By id, not by the current month: a window cut at month end closes in the next month.
+		const existing = await getCardById(tx, user.id, cardId);
 		if (!existing) {
 			return {
 				ok: false as const,
 				field: 'exists' as const,
-				message: `There's no card for ${monthName(month)} yet.`
+				message: "There's no card to change."
 			};
 		}
 		if (!isEditable(existing, now)) {
@@ -345,6 +366,6 @@ export async function updateCard(
 				});
 			}
 		}
-		return { ok: true as const, card: (await getCard(tx, user.id, month))! };
+		return { ok: true as const, card: (await getCardById(tx, user.id, existing.id))! };
 	});
 }
