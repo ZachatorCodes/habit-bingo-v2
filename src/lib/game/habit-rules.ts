@@ -12,7 +12,7 @@ export type HabitRule = {
 
 type Range = { min: number; max: number };
 
-const RANGES: Record<Direction, Partial<Record<Period, Record<CountMode, Range>>>> = {
+const RANGES: Record<Direction, Record<Period, Record<CountMode, Range>>> = {
 	atLeast: {
 		// Per-day habits have no count mode choice: each day needs N check-ins.
 		day: { times: { min: 1, max: 20 }, days: { min: 1, max: 20 } },
@@ -20,6 +20,8 @@ const RANGES: Record<Direction, Partial<Record<Period, Record<CountMode, Range>>
 		month: { days: { min: 1, max: 31 }, times: { min: 1, max: 100 } }
 	},
 	atMost: {
+		// Check-ins cap at 20 a day, so a limit of 20 could never be broken; 0 a day is "None this month".
+		day: { times: { min: 1, max: 19 }, days: { min: 1, max: 19 } },
 		week: { days: { min: 0, max: 6 }, times: { min: 0, max: 50 } },
 		month: { days: { min: 0, max: 30 }, times: { min: 0, max: 100 } }
 	}
@@ -29,13 +31,9 @@ const DIRECTIONS: readonly string[] = ['atLeast', 'atMost'];
 const PERIODS: readonly string[] = ['day', 'week', 'month'];
 const COUNT_MODES: readonly string[] = ['times', 'days'];
 
-/** The allowed target range, or null when the combination isn't offered. */
-export function targetRange(
-	direction: Direction,
-	period: Period,
-	countMode: CountMode
-): Range | null {
-	return RANGES[direction][period]?.[countMode] ?? null;
+/** The allowed target range for a combination. */
+export function targetRange(direction: Direction, period: Period, countMode: CountMode): Range {
+	return RANGES[direction][period][countMode];
 }
 
 export function defaultCountMode(direction: Direction): CountMode {
@@ -58,9 +56,6 @@ export function normalizeRule(input: {
 	}
 	const direction = input.direction as Direction;
 	const period = input.period as Period;
-	if (direction === 'atMost' && period === 'day') {
-		return { ok: false, field: 'period', message: 'Limits can be per week or per month.' };
-	}
 
 	let countMode: CountMode =
 		input.countMode !== undefined && COUNT_MODES.includes(input.countMode)
@@ -68,7 +63,7 @@ export function normalizeRule(input: {
 			: defaultCountMode(direction);
 	if (period === 'day') countMode = 'times';
 
-	const range = targetRange(direction, period, countMode) as Range;
+	const range = targetRange(direction, period, countMode);
 	const target = parseTarget(input.target);
 	if (target === null || target < range.min || target > range.max) {
 		return {

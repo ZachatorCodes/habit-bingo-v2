@@ -18,6 +18,7 @@ describe('targetRange', () => {
 		['atLeast', 'week', 'times', { min: 1, max: 50 }],
 		['atLeast', 'month', 'days', { min: 1, max: 31 }],
 		['atLeast', 'month', 'times', { min: 1, max: 100 }],
+		['atMost', 'day', 'times', { min: 1, max: 19 }],
 		['atMost', 'week', 'days', { min: 0, max: 6 }],
 		['atMost', 'week', 'times', { min: 0, max: 50 }],
 		['atMost', 'month', 'days', { min: 0, max: 30 }],
@@ -32,9 +33,9 @@ describe('targetRange', () => {
 		expect(targetRange('atLeast', 'day', 'days')).toEqual({ min: 1, max: 20 });
 	});
 
-	it('limits are not offered per day', () => {
-		expect(targetRange('atMost', 'day', 'times')).toBeNull();
-		expect(targetRange('atMost', 'day', 'days')).toBeNull();
+	// Check-ins cap at 20 a day, so a limit of 20 could never be broken; 0 a day is "None this month".
+	it('per-day limits allow 1 to 19 whichever count mode is asked for', () => {
+		expect(targetRange('atMost', 'day', 'days')).toEqual({ min: 1, max: 19 });
 	});
 });
 
@@ -78,12 +79,23 @@ describe('normalizeRule', () => {
 		).toMatchObject({ ok: true, rule: { countMode: 'days' } });
 	});
 
-	it('rejects a limit per day on the period field', () => {
-		expect(normalizeRule({ direction: 'atMost', period: 'day', target: 1 })).toEqual({
-			ok: false,
-			field: 'period',
-			message: 'Limits can be per week or per month.'
+	it('accepts a limit per day, counted in times', () => {
+		expect(
+			normalizeRule({ direction: 'atMost', period: 'day', countMode: 'days', target: '1' })
+		).toEqual({
+			ok: true,
+			rule: { direction: 'atMost', period: 'day', countMode: 'times', target: 1 }
 		});
+	});
+
+	it('rejects a per-day limit of 0 or 20', () => {
+		for (const target of [0, 20]) {
+			expect(normalizeRule({ direction: 'atMost', period: 'day', target })).toEqual({
+				ok: false,
+				field: 'target',
+				message: 'Pick a number from 1 to 19.'
+			});
+		}
 	});
 
 	it('rejects out-of-range and non-integer targets with the range in the message', () => {
@@ -137,6 +149,11 @@ describe('describeRule', () => {
 			'At most 3 days a month'
 		],
 		[{ direction: 'atMost', period: 'week', countMode: 'times', target: 1 }, 'At most once a week'],
+		[{ direction: 'atMost', period: 'day', countMode: 'times', target: 1 }, 'At most once a day'],
+		[
+			{ direction: 'atMost', period: 'day', countMode: 'times', target: 3 },
+			'At most 3 times a day'
+		],
 		[{ direction: 'atMost', period: 'month', countMode: 'times', target: 0 }, 'None this month'],
 		[{ direction: 'atMost', period: 'week', countMode: 'days', target: 0 }, 'None this week']
 	] as const)('describes %o as %s', (rule, sentence) => {
