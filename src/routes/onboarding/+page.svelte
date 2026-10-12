@@ -74,15 +74,13 @@
 			value={form?.values?.name ?? data.name}
 			error={errors.name}
 		/>
-		<div>
-			<EmojiPicker name="avatarEmoji" bind:value={avatar} options={data.avatars} label="Avatar" />
-			{#if errors.avatarEmoji}
-				<p class="mt-1.5 text-sm font-bold text-ink">
-					<span aria-hidden="true">⚠</span>
-					{errors.avatarEmoji}
-				</p>
-			{/if}
-		</div>
+		<EmojiPicker
+			name="avatarEmoji"
+			bind:value={avatar}
+			options={data.avatars}
+			label="Avatar"
+			error={errors.avatarEmoji}
+		/>
 		<input type="hidden" name="timezone" value={timezone} />
 		<input type="hidden" name="weekStartsOn" value={weekStartsOn} />
 		<Button type="submit" class="mt-2 w-full">Let's go</Button>

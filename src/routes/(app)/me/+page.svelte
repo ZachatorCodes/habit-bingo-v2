@@ -100,15 +100,13 @@
 				value={valuesFor('profile').name ?? data.profile.name}
 				error={profileErrors.name}
 			/>
-			<div>
-				<EmojiPicker name="avatarEmoji" bind:value={avatar} options={data.avatars} label="Avatar" />
-				{#if profileErrors.avatarEmoji}
-					<p class="mt-1.5 text-sm font-bold text-ink">
-						<span aria-hidden="true">⚠</span>
-						{profileErrors.avatarEmoji}
-					</p>
-				{/if}
-			</div>
+			<EmojiPicker
+				name="avatarEmoji"
+				bind:value={avatar}
+				options={data.avatars}
+				label="Avatar"
+				error={profileErrors.avatarEmoji}
+			/>
 			<Button type="submit" class="self-start">Save profile</Button>
 		</form>
 	</section>
@@ -141,6 +139,7 @@
 			<div
 				role="radiogroup"
 				aria-labelledby="week-start-label"
+				aria-invalid={settingsErrors.weekStartsOn ? 'true' : undefined}
 				aria-describedby={['week-start-hint', settingsErrors.weekStartsOn && 'week-start-error']
 					.filter(Boolean)
 					.join(' ')}

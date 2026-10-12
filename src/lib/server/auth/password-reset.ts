@@ -73,6 +73,26 @@ export async function getResetStatus(db: Db, token: string, now: Date): Promise<
 }
 
 /**
+ * The username a reset link is for, only while the link is usable: the page puts it in a hidden
+ * `autocomplete="username"` field so password managers save the new password to the right account.
+ */
+export async function getResetUsername(db: Db, token: string, now: Date): Promise<string | null> {
+	if (!TOKEN_PATTERN.test(token)) return null;
+	const [row] = await db
+		.select({ username: user.username })
+		.from(passwordReset)
+		.innerJoin(user, eq(user.id, passwordReset.userId))
+		.where(
+			and(
+				eq(passwordReset.tokenHash, hashToken(token)),
+				isNull(passwordReset.usedAt),
+				gt(passwordReset.expiresAt, now)
+			)
+		);
+	return row?.username ?? null;
+}
+
+/**
  * Sets a new password through a reset link. Runs our password policy itself (Better Auth's
  * reset route is disabled and its hooks never see a direct hash). Then, in one transaction: claims
  * the link (a conditional UPDATE, so it works exactly once even under concurrent use), sets or
