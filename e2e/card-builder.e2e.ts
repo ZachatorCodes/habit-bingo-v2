@@ -173,6 +173,44 @@ test('rewards are required', async ({ page }) => {
 	await expect(page).toHaveURL(/\/card\/build\/board$/);
 });
 
+test('a habit archived after picking sends the person back to Habits', async ({ page }) => {
+	await newMemberWithHabits(page, 10);
+	await startAtHabits(page);
+	const name = (
+		await page
+			.locator('label')
+			.filter({ has: page.getByRole('checkbox') })
+			.first()
+			.locator('.font-extrabold')
+			.innerText()
+	).trim();
+	await pickHabits(page, 9);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/targets$/);
+
+	await page.goto('/me/habits');
+	await waitForHydration(page);
+	await page.getByRole('button', { name: `Archive ${name}`, exact: true }).click();
+	await expect(page.getByRole('button', { name: `Archive ${name}`, exact: true })).toHaveCount(0);
+
+	await page.goto('/card/build/targets');
+	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+	await page.goto('/card/build/rewards');
+	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+	await waitForHydration(page);
+	await expect(page.getByText('8 of 9 picked')).toBeVisible();
+
+	// Another habit takes its place and the builder carries on.
+	const unpicked = page
+		.locator('label')
+		.filter({ has: page.getByRole('checkbox', { checked: false }) })
+		.first();
+	await unpicked.click();
+	await expect(page.getByText('9 of 9 picked')).toBeVisible();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/targets$/);
+});
+
 test('later steps redirect back until earlier ones are done', async ({ page }) => {
 	await newMemberWithHabits(page, 9);
 	await page.goto('/card/build/targets');

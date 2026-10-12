@@ -15,7 +15,9 @@
 	const createForm = $derived(form && 'errors' in form ? form : null);
 	// svelte-ignore state_referenced_locally
 	let picked = $state<string[]>(
-		(form && 'selected' in form ? form.selected : undefined) ?? data.draft.habitIds
+		(form && 'selected' in form ? form.selected : undefined) ??
+			// A habit archived after it was picked is no longer a choice.
+			data.draft.habitIds.filter((id) => data.habits.some((h) => h.id === id))
 	);
 	let creating = $state(false);
 
