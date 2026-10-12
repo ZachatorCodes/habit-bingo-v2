@@ -35,9 +35,11 @@
 			>
 			<a href={resolve('/(app)/me')} aria-current={current('/me')} class={linkClass('/me')}>Me</a>
 			{#if data.user.isAdmin}
-				<!-- /admin arrives later in M1, so it cannot go through resolve() yet. -->
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-				<a href="/admin" aria-current={current('/admin')} class={linkClass('/admin')}>Admin</a>
+				<a
+					href={resolve('/(app)/admin')}
+					aria-current={current('/admin')}
+					class={linkClass('/admin')}>Admin</a
+				>
 			{/if}
 			<form method="POST" action="/signout">
 				<button

@@ -53,4 +53,19 @@ describe('TextField', () => {
 			.element(page.getByRole('textbox', { name: 'Second' }))
 			.toHaveAccessibleDescription('Bad second.');
 	});
+
+	it('can be a number input with bounds', async () => {
+		render(TextField, {
+			label: 'Max uses',
+			name: 'maxUses',
+			type: 'number',
+			value: 1,
+			min: 1,
+			max: 50
+		});
+		const input = page.getByRole('spinbutton', { name: 'Max uses' });
+		await expect.element(input).toHaveAttribute('min', '1');
+		await expect.element(input).toHaveAttribute('max', '50');
+		await expect.element(input).toHaveValue(1);
+	});
 });

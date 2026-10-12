@@ -45,6 +45,12 @@
 	>
 		<!-- The form action replaces the query string, so ?next= travels in the body. -->
 		<input type="hidden" name="next" value={data.next} />
+		{#if data.passwordUpdated && !formError}
+			<p role="status" class="rounded-xl bg-earn px-4 py-3 font-bold text-ink">
+				<span aria-hidden="true">✓</span>
+				Password updated. Sign in with your new password.
+			</p>
+		{/if}
 		{#if formError}
 			<p role="alert" tabindex="-1" class="rounded-xl bg-risk px-4 py-3 font-bold text-ink">
 				<span aria-hidden="true">⚠</span>

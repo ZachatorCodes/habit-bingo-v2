@@ -48,8 +48,17 @@ export const securityHeadersHandle: Handle = async ({ event, resolve }) => {
 // Security headers wrap auth so Better Auth's own /api/auth responses get them too (spec §5.4).
 export const handle = sequence(securityHeadersHandle, authHandle);
 
+/** Only `no-referrer` may replace the default, for pages with a secret in their URL (/reset). */
+const STRICTER_REFERRER_POLICY = 'no-referrer';
+
 function setSecurityHeaders(headers: Headers): void {
 	for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+		if (
+			name.toLowerCase() === 'referrer-policy' &&
+			headers.get(name) === STRICTER_REFERRER_POLICY
+		) {
+			continue;
+		}
 		headers.set(name, value);
 	}
 }
@@ -57,5 +66,12 @@ function setSecurityHeaders(headers: Headers): void {
 export const handleError: HandleServerError = ({ kind, error, event }) => {
 	// App errors, validation errors and SvelteKit's own (like 404) already carry safe messages.
 	if (kind !== 'unknown') return;
-	return toAppError(error, event.url.pathname, (entry) => console.error(JSON.stringify(entry)));
+	return toAppError(error, loggablePath(event.url.pathname), (entry) =>
+		console.error(JSON.stringify(entry))
+	);
 };
+
+/** The path for logs, with bearer secrets (reset-link tokens) taken out. */
+function loggablePath(pathname: string): string {
+	return pathname.replace(/^\/reset\/[^/]+/, '/reset/[token]');
+}

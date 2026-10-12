@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { and, eq, gt, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, lt, sql } from 'drizzle-orm';
 import type { Db } from '#lib/server/db/client.ts';
 import { invite } from '#lib/server/db/schema.ts';
 
@@ -24,15 +24,41 @@ export async function createInvite(
 	return { code };
 }
 
+function statusOf(row: { expiresAt: Date; uses: number; maxUses: number }, now: Date) {
+	if (row.expiresAt <= now) return 'expired';
+	if (row.uses >= row.maxUses) return 'usedUp';
+	return 'valid';
+}
+
 export async function getInviteStatus(db: Db, code: string, now: Date): Promise<InviteStatus> {
 	const [row] = await db
 		.select({ expiresAt: invite.expiresAt, uses: invite.uses, maxUses: invite.maxUses })
 		.from(invite)
 		.where(eq(invite.code, code));
-	if (!row) return 'notFound';
-	if (row.expiresAt <= now) return 'expired';
-	if (row.uses >= row.maxUses) return 'usedUp';
-	return 'valid';
+	return row ? statusOf(row, now) : 'notFound';
+}
+
+export type InviteSummary = {
+	code: string;
+	status: Exclude<InviteStatus, 'notFound'>;
+	uses: number;
+	maxUses: number;
+	expiresAt: Date;
+};
+
+/** The most recent invites, newest first, for the admin page. */
+export async function listInvites(db: Db, now: Date, limit = 100): Promise<InviteSummary[]> {
+	const rows = await db
+		.select({
+			code: invite.code,
+			uses: invite.uses,
+			maxUses: invite.maxUses,
+			expiresAt: invite.expiresAt
+		})
+		.from(invite)
+		.orderBy(desc(invite.createdAt), invite.code)
+		.limit(limit);
+	return rows.map((row) => ({ ...row, status: statusOf(row, now) }));
 }
 
 /**
