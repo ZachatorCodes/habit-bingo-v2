@@ -109,9 +109,17 @@ const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 const PICTOGRAPHIC = /\p{Extended_Pictographic}/u;
 const FLAG = /^\p{Regional_Indicator}{2}$/u;
 const KEYCAP = /^[0-9#*]️?⃣$/u;
+/**
+ * The longest standard emoji (a kiss with two skin tones) is 15 UTF-16 units. A grapheme can be
+ * far longer (made-up ZWJ chains render as several pictographs; combining marks stack forever).
+ */
+const MAX_EMOJI_LENGTH = 16;
+/** Combining marks other than the emoji variation selector and the keycap's enclosing mark. */
+const STRAY_MARK = /[^\P{M}️⃣]/u;
 
 /** Exactly one emoji grapheme: pictographs (incl. ZWJ sequences and skin tones), flags, keycaps. */
 export function isSingleEmoji(value: string): boolean {
+	if (value.length > MAX_EMOJI_LENGTH || STRAY_MARK.test(value)) return false;
 	const graphemes = [...segmenter.segment(value)];
 	if (graphemes.length !== 1) return false;
 	const [grapheme] = graphemes;

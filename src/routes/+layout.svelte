@@ -10,7 +10,8 @@
 	let { children }: LayoutProps = $props();
 
 	// Signed-in pages render their own header (a banner landmark) above their own <main>.
-	const ownsMain = $derived(page.route.id?.startsWith('/(app)') ?? false);
+	// Error pages render in this layout only, so they always get this <main>.
+	const ownsMain = $derived(!page.error && (page.route.id?.startsWith('/(app)') ?? false));
 
 	// Lets E2E tests wait until enhanced forms are wired up before submitting.
 	onMount(() => {
