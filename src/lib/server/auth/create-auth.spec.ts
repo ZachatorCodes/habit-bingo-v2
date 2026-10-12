@@ -159,6 +159,21 @@ describe('createAuth', () => {
 		expect((await auth.handler(new Request('http://localhost/api/auth/ok'))).status).toBe(200);
 	});
 
+	it.each([
+		['no state', ''],
+		['an unknown state', '?state=forged&code=abc']
+	])('sends a Google callback with %s back to /signin with an error', async (_, query) => {
+		const google = createTestAuth(db, { google: { clientId: 'id', clientSecret: 'secret' } });
+		const res = await google.handler(
+			new Request(`http://localhost/api/auth/callback/google${query}`)
+		);
+		expect(res.status).toBe(302);
+		const location = new URL(res.headers.get('location') ?? '', 'http://localhost');
+		expect(location.origin).toBe('http://localhost');
+		expect(location.pathname).toBe('/signin');
+		expect(location.searchParams.get('error')).toBeTruthy();
+	});
+
 	it('deleting a user cascades to their sessions and accounts', async () => {
 		const { user: created } = await signUp('cascade');
 		await auth.api.signInUsername({ body: { username: 'cascade', password: PASSWORD } });

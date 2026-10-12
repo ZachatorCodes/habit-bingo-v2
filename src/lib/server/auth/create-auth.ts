@@ -127,6 +127,9 @@ export function createAuth(db: Db, options: AuthOptions) {
 		session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
 		rateLimit: { enabled: true, storage: 'database' },
 		advanced: { cookiePrefix: 'hb' },
+		// OAuth failures Better Auth cannot attribute to a sign-in (missing or forged state) land on
+		// /signin?error=..., which shows the generic Google message, not Better Auth's bare error page.
+		onAPIError: { errorURL: '/signin' },
 		disabledPaths: DISABLED_PATHS,
 		hooks: {
 			// Runs before the endpoint (and before the username plugin's checks), so a rejected password
