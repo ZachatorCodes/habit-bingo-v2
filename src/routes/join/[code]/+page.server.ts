@@ -1,10 +1,15 @@
 import { error, fail, redirect, type Cookies } from '@sveltejs/kit';
 import * as z from 'zod';
-import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, IP_LIMIT_MULTIPLIER } from '$app/env/private';
+import {
+	BOOTSTRAP_INVITE_CODE,
+	GOOGLE_CLIENT_ID,
+	GOOGLE_CLIENT_SECRET,
+	IP_LIMIT_MULTIPLIER
+} from '$app/env/private';
 import { INVITE_COOKIE } from '#lib/server/auth/create-auth.ts';
 import { redirectToGoogle, startGoogleSignIn } from '#lib/server/auth/google.ts';
 import { getAuth } from '#lib/server/auth/index.ts';
-import { getInviteStatus } from '#lib/server/auth/invites.ts';
+import { getJoinStatus } from '#lib/server/auth/invites.ts';
 import { checkAndRecordIp, TOO_MANY_ATTEMPTS_MESSAGE } from '#lib/server/auth/ip-limit.ts';
 import { checkPassword, PASSWORD_MESSAGES } from '#lib/server/auth/password-policy.ts';
 import { signUpWithPassword, USERNAME_RULES_MESSAGE } from '#lib/server/auth/sign-up.ts';
@@ -52,7 +57,7 @@ export const load: PageServerLoad = async ({ params, cookies, locals }) => {
 	const db = getDb();
 	if (!db) error(503, 'Sign-up is not available right now.');
 
-	const status = await getInviteStatus(db, params.code, new Date());
+	const status = await getJoinStatus(db, params.code, new Date(), BOOTSTRAP_INVITE_CODE);
 	// Dead invites get a friendly page and no cookie (Review Focus 3).
 	if (status !== 'valid') return { status };
 
@@ -69,7 +74,7 @@ export const actions: Actions = {
 
 		// The invite may have expired or been used up since the page loaded. Returning re-runs load,
 		// which shows the dead-invite page (Review Focus 3).
-		const status = await getInviteStatus(db, params.code, new Date());
+		const status = await getJoinStatus(db, params.code, new Date(), BOOTSTRAP_INVITE_CODE);
 		if (status !== 'valid') return fail(400, { status });
 
 		// Google brings the visitor back to our callback, where the create-user hook reads this

@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { and, desc, eq, gt, lt, sql } from 'drizzle-orm';
 import type { Db } from '#lib/server/db/client.ts';
-import { invite } from '#lib/server/db/schema.ts';
+import { invite, user } from '#lib/server/db/schema.ts';
 
 export type InviteStatus = 'valid' | 'expired' | 'usedUp' | 'notFound';
 
@@ -36,6 +36,24 @@ export async function getInviteStatus(db: Db, code: string, now: Date): Promise<
 		.from(invite)
 		.where(eq(invite.code, code));
 	return row ? statusOf(row, now) : 'notFound';
+}
+
+/**
+ * Like getInviteStatus, but the `BOOTSTRAP_INVITE_CODE` also counts as valid while there are no
+ * users at all (the account-creation hook then makes that first user the admin). Once any user
+ * exists the code falls through to the normal lookup and is not found.
+ */
+export async function getJoinStatus(
+	db: Db,
+	code: string,
+	now: Date,
+	bootstrapCode: string | undefined
+): Promise<InviteStatus> {
+	if (bootstrapCode && code === bootstrapCode) {
+		const [anyUser] = await db.select({ id: user.id }).from(user).limit(1);
+		if (!anyUser) return 'valid';
+	}
+	return getInviteStatus(db, code, now);
 }
 
 export type InviteSummary = {

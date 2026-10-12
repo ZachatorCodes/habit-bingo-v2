@@ -3,7 +3,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from '#lib/server/db/client.ts';
 import { invite, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
-import { consumeInvite, createInvite, getInviteStatus, listInvites } from './invites.ts';
+import { createTestAuth } from './test-auth.ts';
+import {
+	consumeInvite,
+	createInvite,
+	getInviteStatus,
+	getJoinStatus,
+	listInvites
+} from './invites.ts';
 
 const NOW = new Date('2026-10-11T12:00:00Z');
 const DAY = 24 * 60 * 60 * 1000;
@@ -111,5 +118,56 @@ describe('listInvites', () => {
 			{ code: expired, status: 'expired', uses: 0, maxUses: 5, expiresAt: expect.any(Date) },
 			{ code: usedUp, status: 'usedUp', uses: 1, maxUses: 1, expiresAt: expect.any(Date) }
 		]);
+	});
+});
+
+describe('getJoinStatus', () => {
+	const BOOTSTRAP = 'bootstrap-code-for-tests';
+
+	it('accepts the bootstrap code while there are no users', async () => {
+		const empty = await createTestDb();
+		expect(await getJoinStatus(empty, BOOTSTRAP, NOW, BOOTSTRAP)).toBe('valid');
+	});
+
+	it('rejects the bootstrap code once any user exists', async () => {
+		expect(await getJoinStatus(db, BOOTSTRAP, NOW, BOOTSTRAP)).toBe('notFound');
+	});
+
+	it('never treats a missing or empty bootstrap code as valid', async () => {
+		const empty = await createTestDb();
+		expect(await getJoinStatus(empty, '', NOW, undefined)).toBe('notFound');
+		expect(await getJoinStatus(empty, '', NOW, '')).toBe('notFound');
+		expect(await getJoinStatus(empty, 'anything', NOW, undefined)).toBe('notFound');
+		expect(await getJoinStatus(empty, 'other', NOW, BOOTSTRAP)).toBe('notFound');
+	});
+
+	it('leaves normal invites unaffected', async () => {
+		const { code } = await createInvite(
+			db,
+			{ createdBy: adminId, expiresInDays: 1, maxUses: 1 },
+			NOW
+		);
+		expect(await getJoinStatus(db, code, NOW, BOOTSTRAP)).toBe('valid');
+		expect(await getJoinStatus(db, code, new Date(NOW.getTime() + 2 * DAY), BOOTSTRAP)).toBe(
+			'expired'
+		);
+	});
+
+	it('lets the first person join with the bootstrap code and become admin', async () => {
+		const empty = await createTestDb();
+		const auth = createTestAuth(empty, { bootstrapInviteCode: BOOTSTRAP });
+		expect(await getJoinStatus(empty, BOOTSTRAP, NOW, BOOTSTRAP)).toBe('valid');
+		const { user: first } = await auth.api.signUpEmail({
+			body: {
+				email: `${crypto.randomUUID()}@users.invalid`,
+				password: 'a-long-enough-password',
+				name: 'Owner',
+				username: 'owner'
+			} as never,
+			headers: new Headers({ cookie: `hb_invite=${BOOTSTRAP}` })
+		});
+		const [row] = await empty.select().from(user).where(eq(user.id, first.id));
+		expect(row.isAdmin).toBe(true);
+		expect(await getJoinStatus(empty, BOOTSTRAP, NOW, BOOTSTRAP)).toBe('notFound');
 	});
 });
