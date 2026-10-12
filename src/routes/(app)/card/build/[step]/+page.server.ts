@@ -1,7 +1,9 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { CATEGORIES, type CategoryId } from '#lib/game/categories.ts';
-import { monthName } from '#lib/game/calendar.ts';
+import { daysLeftInMonth, monthName } from '#lib/game/calendar.ts';
 import { CARD_SIZES, isCardSize, type CardSize } from '#lib/game/card-layout.ts';
+import { targetRange } from '#lib/game/habit-rules.ts';
+import { prorateTarget } from '#lib/game/proration.ts';
 import { requireUser } from '#lib/server/auth/guards.ts';
 import {
 	STEPS,
@@ -15,10 +17,11 @@ import {
 	type CardDraft,
 	type Step
 } from '#lib/server/card-drafts.ts';
-import { currentMonth, getCard } from '#lib/server/cards.ts';
+import { localDate } from '#lib/server/clock.ts';
+import { currentMonth, getCard, validateRewards, type Card } from '#lib/server/cards.ts';
 import { getDb } from '#lib/server/db/client.ts';
 import { DEFAULT_HABIT_INPUT, readHabitForm } from '#lib/server/habit-form.ts';
-import { createHabit, listHabits } from '#lib/server/habits.ts';
+import { createHabit, listHabits, type Habit } from '#lib/server/habits.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 function isStep(value: string): value is Step {
@@ -57,6 +60,42 @@ function nextStep(draft: CardDraft, step: Step): Step {
 	return steps[Math.min(steps.indexOf(step) + 1, steps.length - 1)];
 }
 
+/** The day the card starts: the existing card's when changing it, otherwise today. */
+function startDateOf(user: { timezone?: string | null }, card: Card | null, draft: CardDraft) {
+	return card && draft.cardId === card.id
+		? card.startDate
+		: localDate(new Date(), user.timezone ?? 'UTC');
+}
+
+/**
+ * The picked habits that are still active, in pick order. A habit archived after it was picked
+ * leaves the set short, so the person is sent back to re-pick instead of seeing a short list.
+ */
+async function pickedHabits(
+	db: NonNullable<ReturnType<typeof getDb>>,
+	userId: string,
+	draft: CardDraft,
+	size: CardSize
+): Promise<Habit[]> {
+	const active = new Map((await listHabits(db, userId)).map((h) => [h.id, h]));
+	const picked = draft.habitIds.flatMap((id) => active.get(id) ?? []);
+	if (picked.length !== CARD_SIZES[size].habits) redirect(303, '/card/build/habits');
+	return picked;
+}
+
+/** One row per picked habit: its prorated target and the value to show (override or prorated). */
+function targetRows(picked: Habit[], draft: CardDraft, startDate: string) {
+	return picked.map((habit) => {
+		const prorated = prorateTarget(habit, startDate);
+		return {
+			habit,
+			prorated,
+			value: draft.targets[habit.id] ?? prorated,
+			range: targetRange(habit.direction, habit.period, habit.countMode)
+		};
+	});
+}
+
 export const load: PageServerLoad = async ({ locals, params }) => {
 	if (!isStep(params.step)) error(404, 'Not found');
 	const { user, db, month, card, draft } = await builderContext(locals);
@@ -66,10 +105,26 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const habits = await listHabits(db, user.id);
 	const counts = Object.fromEntries(CATEGORIES.map((c) => [c.id, 0])) as Record<CategoryId, number>;
 	for (const habit of habits) counts[habit.category] += 1;
+	let targets: { startDate: string; daysLeft: number; rows: ReturnType<typeof targetRows> } | null =
+		null;
+	if (params.step === 'targets' || params.step === 'rewards') {
+		if (size === null) redirect(303, '/card/build/size');
+		const picked = await pickedHabits(db, user.id, draft, size);
+		if (params.step === 'targets') {
+			const startDate = startDateOf(user, card, draft);
+			targets = {
+				startDate,
+				daysLeft: daysLeftInMonth(startDate),
+				rows: targetRows(picked, draft, startDate)
+			};
+		}
+	}
 	return {
 		step: params.step,
 		steps: stepsFor(draft),
 		draft,
+		targets,
+		sixtyThreshold: size === null ? null : CARD_SIZES[size].sixtyThreshold,
 		monthName: monthName(month),
 		habits,
 		counts,
@@ -118,6 +173,62 @@ export const actions: Actions = {
 		const next = complete(same ? picked : reopen(picked, 'habits'), 'habits');
 		await saveDraft(db, user.id, next);
 		redirect(303, `/card/build/${nextStep(next, 'habits')}`);
+	},
+
+	targets: async ({ locals, request }) => {
+		const { user, db, card, draft } = await builderContext(locals);
+		if (!canOpen(draft, 'targets')) redirect(303, `/card/build/${firstOpenStep(draft)}`);
+		const size: CardSize | null = draft.size ?? card?.size ?? null;
+		if (size === null) redirect(303, '/card/build/size');
+		const picked = await pickedHabits(db, user.id, draft, size);
+		const startDate = startDateOf(user, card, draft);
+
+		const form = await request.formData();
+		const values: Record<string, string> = {};
+		const errors: Record<string, string> = {};
+		const targets: Record<string, number> = {};
+		for (const habit of picked) {
+			const field = `target:${habit.id}`;
+			const raw = form.get(field);
+			const text = typeof raw === 'string' ? raw.trim() : '';
+			values[field] = text;
+			const { min, max } = targetRange(habit.direction, habit.period, habit.countMode);
+			const number = Number(text);
+			if (!/^\d+$/.test(text) || number < min || number > max) {
+				errors[field] = `Pick a number from ${min} to ${max}.`;
+			} else if (number !== prorateTarget(habit, startDate)) {
+				targets[habit.id] = number;
+			}
+		}
+		if (Object.keys(errors).length > 0)
+			return fail(400, { targetErrors: errors, targetValues: values });
+
+		const next = complete({ ...draft, targets }, 'targets');
+		await saveDraft(db, user.id, next);
+		redirect(303, `/card/build/${nextStep(next, 'targets')}`);
+	},
+
+	rewards: async ({ locals, request }) => {
+		const { user, db, card, draft } = await builderContext(locals);
+		if (!canOpen(draft, 'rewards')) redirect(303, `/card/build/${firstOpenStep(draft)}`);
+		const size: CardSize | null = draft.size ?? card?.size ?? null;
+		if (size === null) redirect(303, '/card/build/size');
+		await pickedHabits(db, user.id, draft, size);
+
+		const form = await request.formData();
+		const text = (name: string) => {
+			const raw = form.get(name);
+			return typeof raw === 'string' ? raw : '';
+		};
+		const typed = { bingo: text('bingo'), sixty: text('sixty'), blackout: text('blackout') };
+		const result = validateRewards(typed);
+		if (!result.ok) {
+			return fail(400, { errors: { [result.field]: result.message }, rewardValues: typed });
+		}
+
+		const next = complete({ ...draft, rewards: result.value }, 'rewards');
+		await saveDraft(db, user.id, next);
+		redirect(303, `/card/build/${nextStep(next, 'rewards')}`);
 	},
 
 	createHabit: async ({ locals, request }) => {

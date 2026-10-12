@@ -4,6 +4,8 @@
 	import Button from '#lib/components/Button.svelte';
 	import HabitForm from '#lib/components/HabitForm.svelte';
 	import HabitPicker from '#lib/components/HabitPicker.svelte';
+	import TargetList from '#lib/components/TargetList.svelte';
+	import TextField from '#lib/components/TextField.svelte';
 	import SizePicker from '#lib/components/SizePicker.svelte';
 	import type { PageProps } from './$types';
 
@@ -13,9 +15,31 @@
 	const createForm = $derived(form && 'errors' in form ? form : null);
 	// svelte-ignore state_referenced_locally
 	let picked = $state<string[]>(
-		(form && 'selected' in form ? form.selected : undefined) ?? data.draft.habitIds
+		(form && 'selected' in form ? form.selected : undefined) ??
+			// A habit archived after it was picked is no longer a choice.
+			data.draft.habitIds.filter((id) => data.habits.some((h) => h.id === id))
 	);
 	let creating = $state(false);
+
+	const targetForm = $derived(form && 'targetValues' in form ? form : null);
+	const rewardForm = $derived(form && 'rewardValues' in form ? form : null);
+	/** The target rows, showing what was typed after a refused submit. */
+	const targetRows = $derived(
+		(data.targets?.rows ?? []).map((row) => ({
+			...row,
+			value: targetForm?.targetValues?.[`target:${row.habit.id}`] ?? row.value
+		}))
+	);
+	const rewardErrors = $derived<Record<string, string>>(rewardForm?.errors ?? {});
+	const rewardValues = $derived(rewardForm?.rewardValues ?? data.draft.rewards);
+
+	/** Keeps what was typed after a refused submit, then moves focus to the first problem. */
+	function focusFirstError(formElement: HTMLFormElement) {
+		return async ({ update }: { update: (options?: { reset?: boolean }) => Promise<void> }) => {
+			await update({ reset: false });
+			formElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+		};
+	}
 
 	/** Stays on the Habits step: the new habit is added to the picks without losing the rest. */
 	function trackCreated(formElement: HTMLFormElement) {
@@ -116,6 +140,59 @@
 					errorId={message ? 'step-error' : undefined}
 				/>
 			{/if}
+			<div><Button type="submit">Continue</Button></div>
+		</form>
+	{:else if data.step === 'targets' && data.targets}
+		<!-- novalidate: the server explains every out-of-range number on its own row. -->
+		<form
+			method="POST"
+			action="?/targets"
+			novalidate
+			use:enhance={({ formElement }) => focusFirstError(formElement)}
+			class="flex flex-col gap-6"
+		>
+			<TargetList
+				rows={targetRows}
+				daysLeft={data.targets.daysLeft}
+				monthName={data.monthName}
+				startDate={data.targets.startDate}
+				errors={targetForm?.targetErrors ?? {}}
+			/>
+			<div><Button type="submit">Continue</Button></div>
+		</form>
+	{:else if data.step === 'rewards'}
+		<div>
+			<h2 class="text-2xl font-black">Pick your rewards</h2>
+			<p class="mt-1 text-ink/75">Three treats to work toward.</p>
+		</div>
+		<form
+			method="POST"
+			action="?/rewards"
+			novalidate
+			use:enhance={({ formElement }) => focusFirstError(formElement)}
+			class="flex flex-col gap-6"
+		>
+			<TextField
+				label="First bingo"
+				name="bingo"
+				value={rewardValues.bingo}
+				hint="What will you treat yourself to?"
+				error={rewardErrors.bingo}
+			/>
+			<TextField
+				label="{data.sixtyThreshold} squares"
+				name="sixty"
+				value={rewardValues.sixty}
+				hint="What will you treat yourself to?"
+				error={rewardErrors.sixty}
+			/>
+			<TextField
+				label="Blackout"
+				name="blackout"
+				value={rewardValues.blackout}
+				hint="What will you treat yourself to?"
+				error={rewardErrors.blackout}
+			/>
 			<div><Button type="submit">Continue</Button></div>
 		</form>
 	{:else}

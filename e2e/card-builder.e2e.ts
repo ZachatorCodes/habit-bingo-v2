@@ -119,6 +119,98 @@ test("another person's habit id is refused", async ({ browser, page }) => {
 	await other.close();
 });
 
+async function startAtTargets(page: Page): Promise<void> {
+	await startAtHabits(page);
+	await pickHabits(page, 9);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/targets$/);
+	await waitForHydration(page);
+}
+
+test('targets show the days left and accept an override', async ({ page }) => {
+	await newMemberWithHabits(page, 9);
+	await startAtTargets(page);
+	await expect(page.getByRole('heading', { name: /\d+ days? left in \w+/ })).toBeVisible();
+	const first = page.getByRole('spinbutton').first();
+	await first.fill('2');
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/rewards$/);
+
+	// The override is saved with the draft.
+	await page.goto('/card/build/targets');
+	await expect(page.getByRole('spinbutton').first()).toHaveValue('2');
+});
+
+test('an out-of-range target is explained on that row', async ({ page }) => {
+	await newMemberWithHabits(page, 9);
+	await startAtTargets(page);
+	const first = page.getByRole('spinbutton').first();
+	await first.fill('0');
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/targets$/);
+	await expect(page.getByText(/Pick a number from 1 to \d+\./)).toBeVisible();
+	await expect(first).toHaveAttribute('aria-invalid', 'true');
+	await expect(first).toHaveAccessibleDescription(/Pick a number from 1 to \d+\./);
+	// What was typed is kept.
+	await expect(first).toHaveValue('0');
+});
+
+test('rewards are required', async ({ page }) => {
+	await newMemberWithHabits(page, 9);
+	await startAtTargets(page);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/rewards$/);
+	await waitForHydration(page);
+	await page.getByLabel('Blackout').fill('A weekend away');
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page.getByText('Write a reward (up to 80 characters).')).toBeVisible();
+	await expect(page.getByLabel('First bingo')).toHaveAttribute('aria-invalid', 'true');
+	await expect(page.getByLabel('Blackout')).toHaveValue('A weekend away');
+
+	await page.getByLabel('First bingo').fill('Ice cream');
+	await page.getByLabel('5 squares').fill('Movie night');
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/board$/);
+});
+
+test('a habit archived after picking sends the person back to Habits', async ({ page }) => {
+	await newMemberWithHabits(page, 10);
+	await startAtHabits(page);
+	const name = (
+		await page
+			.locator('label')
+			.filter({ has: page.getByRole('checkbox') })
+			.first()
+			.locator('.font-extrabold')
+			.innerText()
+	).trim();
+	await pickHabits(page, 9);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/targets$/);
+
+	await page.goto('/me/habits');
+	await waitForHydration(page);
+	await page.getByRole('button', { name: `Archive ${name}`, exact: true }).click();
+	await expect(page.getByRole('button', { name: `Archive ${name}`, exact: true })).toHaveCount(0);
+
+	await page.goto('/card/build/targets');
+	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+	await page.goto('/card/build/rewards');
+	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+	await waitForHydration(page);
+	await expect(page.getByText('8 of 9 picked')).toBeVisible();
+
+	// Another habit takes its place and the builder carries on.
+	const unpicked = page
+		.locator('label')
+		.filter({ has: page.getByRole('checkbox', { checked: false }) })
+		.first();
+	await unpicked.click();
+	await expect(page.getByText('9 of 9 picked')).toBeVisible();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/targets$/);
+});
+
 test('later steps redirect back until earlier ones are done', async ({ page }) => {
 	await newMemberWithHabits(page, 9);
 	await page.goto('/card/build/targets');
