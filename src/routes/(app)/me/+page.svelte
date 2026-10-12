@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance, type SubmitFunction } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
 	import EmojiPicker from '#lib/components/EmojiPicker.svelte';
 	import TextField from '#lib/components/TextField.svelte';
@@ -69,6 +70,18 @@
 		<h1 class="text-3xl leading-tight font-black">Me</h1>
 		<p class="mt-2 text-lg text-ink/75">Your profile, settings and sign-in.</p>
 	</div>
+
+	<a
+		href={resolve('/(app)/me/habits')}
+		class="flex items-center gap-4 rounded-2xl border-2 border-line bg-white p-5 shadow-[0_3px_0_var(--color-line)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+	>
+		<span aria-hidden="true" class="text-3xl">📚</span>
+		<span class="flex-1">
+			<span class="block text-lg font-black">Habit library</span>
+			<span class="block text-ink/75">Create and organize the habits you put on cards.</span>
+		</span>
+		<span aria-hidden="true" class="text-xl">→</span>
+	</a>
 
 	<section aria-labelledby="profile-heading" class="flex flex-col gap-3">
 		<h2 id="profile-heading" class="text-xl font-black">Profile</h2>

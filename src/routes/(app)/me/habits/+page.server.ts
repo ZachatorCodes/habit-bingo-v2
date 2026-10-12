@@ -1,0 +1,63 @@
+import { error, fail } from '@sveltejs/kit';
+import { CATEGORIES, isCategoryId, type CategoryId } from '#lib/game/categories.ts';
+import { requireUser } from '#lib/server/auth/guards.ts';
+import { getDb } from '#lib/server/db/client.ts';
+import { archiveHabit, listHabits, restoreHabit } from '#lib/server/habits.ts';
+import type { Actions, PageServerLoad } from './$types';
+
+const FULL_MESSAGE = 'You can have up to 100 habits. Archive some to add more.';
+
+function requireDb() {
+	const db = getDb();
+	if (!db) error(503, 'Your habits are not available right now.');
+	return db;
+}
+
+async function habitId(request: Request): Promise<string> {
+	const id = (await request.formData()).get('id');
+	return typeof id === 'string' ? id : '';
+}
+
+export const load: PageServerLoad = async ({ locals, url }) => {
+	const user = requireUser(locals);
+	const db = requireDb();
+	const requested = url.searchParams.get('category') ?? '';
+	const category: CategoryId | null = isCategoryId(requested) ? requested : null;
+	const archived = url.searchParams.get('archived') === '1';
+
+	// One query for the whole view; filtering and counting happen here so the chips show totals.
+	const all = await listHabits(db, user.id, { archived });
+	const counts = Object.fromEntries(CATEGORIES.map((c) => [c.id, 0])) as Record<CategoryId, number>;
+	for (const habit of all) counts[habit.category] += 1;
+	const archivedCount = archived
+		? all.length
+		: (await listHabits(db, user.id, { archived: true })).length;
+
+	return {
+		habits: category ? all.filter((habit) => habit.category === category) : all,
+		category,
+		archived,
+		counts,
+		archivedCount,
+		created: url.searchParams.get('created') === '1',
+		saved: url.searchParams.get('saved') === '1'
+	};
+};
+
+export const actions: Actions = {
+	archive: async ({ locals, request }) => {
+		const user = requireUser(locals);
+		if (!(await archiveHabit(requireDb(), user.id, await habitId(request), new Date()))) {
+			error(404, 'Not found');
+		}
+		return { archived: true };
+	},
+
+	restore: async ({ locals, request }) => {
+		const user = requireUser(locals);
+		const result = await restoreHabit(requireDb(), user.id, await habitId(request));
+		if (result === false) error(404, 'Not found');
+		if (result === 'full') return fail(400, { message: FULL_MESSAGE });
+		return { restored: true };
+	}
+};
