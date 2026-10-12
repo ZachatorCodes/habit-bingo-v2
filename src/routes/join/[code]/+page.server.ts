@@ -1,10 +1,11 @@
 import { error, fail, redirect, type Cookies } from '@sveltejs/kit';
 import * as z from 'zod';
-import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from '$app/env/private';
+import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, IP_LIMIT_MULTIPLIER } from '$app/env/private';
 import { INVITE_COOKIE } from '#lib/server/auth/create-auth.ts';
 import { redirectToGoogle, startGoogleSignIn } from '#lib/server/auth/google.ts';
 import { getAuth } from '#lib/server/auth/index.ts';
 import { getInviteStatus } from '#lib/server/auth/invites.ts';
+import { checkAndRecordIp, TOO_MANY_ATTEMPTS_MESSAGE } from '#lib/server/auth/ip-limit.ts';
 import { checkPassword, PASSWORD_MESSAGES } from '#lib/server/auth/password-policy.ts';
 import { signUpWithPassword, USERNAME_RULES_MESSAGE } from '#lib/server/auth/sign-up.ts';
 import { getDb } from '#lib/server/db/client.ts';
@@ -76,7 +77,7 @@ export const actions: Actions = {
 		setInviteCookie(cookies, params.code);
 		redirectToGoogle(await startGoogleSignIn(getAuth(), request.headers, '/today'));
 	},
-	signup: async ({ request, cookies, locals }) => {
+	signup: async ({ request, cookies, locals, getClientAddress }) => {
 		if (locals.user) redirect(303, '/today');
 		const formData = await request.formData();
 		const text = (key: string) => {
@@ -85,6 +86,20 @@ export const actions: Actions = {
 		};
 		// Echoed back on errors so nobody retypes them. Never the password.
 		const values = { username: text('username'), name: text('name') };
+
+		const db = getDb();
+		if (!db) error(503, 'Sign-up is not available right now.');
+		const ipAllowed = await checkAndRecordIp(
+			db,
+			'signup',
+			getClientAddress(),
+			new Date(),
+			IP_LIMIT_MULTIPLIER
+		);
+		if (!ipAllowed) {
+			const errors: Partial<Record<Field, string>> = { form: TOO_MANY_ATTEMPTS_MESSAGE };
+			return fail(429, { values, errors });
+		}
 
 		const parsed = await signUpForm.safeParseAsync({
 			username: formData.get('username'),

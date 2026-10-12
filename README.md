@@ -48,6 +48,9 @@ Google sign-in only works on production and `localhost`, because Google needs ex
 
 "Local" means your `.env` file. Do not add `BETTER_AUTH_SECRET` to Vercel's Development environment.
 
+`IP_LIMIT_MULTIPLIER` (not in the table) multiplies the per-IP sign-in, sign-up and reset limits.
+Only the E2E server sets it, because every E2E test comes from one IP. Never set it on Vercel.
+
 ## Scripts
 
 | Script                  | What it does                                 |

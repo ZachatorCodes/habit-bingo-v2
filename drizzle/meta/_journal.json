@@ -22,6 +22,13 @@
       "when": 1791763018510,
       "tag": "0002_reset_created_by_set_null",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791780747478,
+      "tag": "0003_auth_attempt",
+      "breakpoints": true
     }
   ]
 }

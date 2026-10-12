@@ -1,5 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
+import { IP_LIMIT_MULTIPLIER } from '$app/env/private';
 import { getAuth } from '#lib/server/auth/index.ts';
+import { checkAndRecordIp, TOO_MANY_ATTEMPTS_MESSAGE } from '#lib/server/auth/ip-limit.ts';
 import { getResetStatus, useResetLink } from '#lib/server/auth/password-reset.ts';
 import { isPwnedPassword } from '#lib/server/auth/pwned.ts';
 import { getDb } from '#lib/server/db/client.ts';
@@ -19,8 +21,16 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ params, request }) => {
+	default: async ({ params, request, getClientAddress }) => {
 		const db = requireDb();
+		const ipAllowed = await checkAndRecordIp(
+			db,
+			'reset',
+			getClientAddress(),
+			new Date(),
+			IP_LIMIT_MULTIPLIER
+		);
+		if (!ipAllowed) return fail(429, { errors: { form: TOO_MANY_ATTEMPTS_MESSAGE } });
 		const value = (await request.formData()).get('newPassword');
 		const newPassword = typeof value === 'string' ? value : '';
 		if (!newPassword) return fail(400, { errors: { newPassword: 'Enter a new password.' } });

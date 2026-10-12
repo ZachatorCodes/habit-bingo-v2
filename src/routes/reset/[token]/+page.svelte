@@ -47,9 +47,15 @@
 			use:enhance={({ formElement }) =>
 				async ({ update }) => {
 					await update();
-					formElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+					formElement.querySelector<HTMLElement>('[aria-invalid="true"], [role="alert"]')?.focus();
 				}}
 		>
+			{#if errors.form}
+				<p role="alert" tabindex="-1" class="rounded-xl bg-risk px-4 py-3 font-bold text-ink">
+					<span aria-hidden="true">⚠</span>
+					{errors.form}
+				</p>
+			{/if}
 			<TextField
 				label="New password"
 				name="newPassword"
