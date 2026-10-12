@@ -19,7 +19,12 @@ test('a new sign-up completes onboarding and reaches Today', async ({ page }) =>
 	await expect(page.getByLabel('Username')).toHaveCount(0);
 	await expect(page.getByLabel('Display name')).toHaveValue('New Friend');
 
-	await page.getByRole('radio', { name: '🦊' }).check({ force: true });
+	// Click the visible label: the radio itself is visually hidden.
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: '🦊' }) })
+		.click();
+	await expect(page.getByRole('radio', { name: '🦊' })).toBeChecked();
 	await page.getByRole('button', { name: "Let's go" }).click();
 	await expect(page).toHaveURL(/\/today$/);
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();

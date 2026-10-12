@@ -45,7 +45,12 @@ test('the Me page shows the profile and no Google rows when Google is off', asyn
 test('the profile can be changed', async ({ page }) => {
 	await newUser(page);
 	await page.getByLabel('Display name').fill('  Renamed  ');
-	await page.getByRole('radio', { name: '🐙' }).check({ force: true });
+	// Click the visible label: the radio itself is visually hidden.
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: '🐙' }) })
+		.click();
+	await expect(page.getByRole('radio', { name: '🐙' })).toBeChecked();
 	await page.getByRole('button', { name: 'Save profile' }).click();
 	await expect(page.getByText('Profile saved.')).toBeVisible();
 	await page.reload();
