@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import { describeRule } from '#lib/game/habit-rules.ts';
 	import type { Habit } from '#lib/server/habits.ts';
 
@@ -26,15 +27,12 @@
 		<p class="text-sm text-ink/75">{describeRule(habit)}</p>
 	</div>
 	{#if !archived}
-		<!-- The edit route arrives with the habit form (M2 Task 4); resolve() only types existing routes. -->
-		<!-- eslint-disable svelte/no-navigation-without-resolve -->
 		<a
-			href={`/me/habits/${habit.id}`}
+			href={resolve('/(app)/me/habits/[id]', { id: habit.id })}
 			aria-label={`Edit ${habit.name}`}
 			class="rounded-xl px-3 py-1.5 font-bold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 			>Edit</a
 		>
-		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 	{/if}
 	<form method="POST" action={`?/${action}`} use:enhance>
 		<input type="hidden" name="id" value={habit.id} />

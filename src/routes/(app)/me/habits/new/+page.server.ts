@@ -1,0 +1,36 @@
+import { error, fail, redirect } from '@sveltejs/kit';
+import { requireUser } from '#lib/server/auth/guards.ts';
+import { getDb } from '#lib/server/db/client.ts';
+import { libraryUrl, readHabitForm } from '#lib/server/habit-form.ts';
+import { createHabit, type HabitInput } from '#lib/server/habits.ts';
+import type { Actions, PageServerLoad } from './$types';
+
+const DEFAULTS: HabitInput = {
+	emoji: '',
+	name: '',
+	category: 'other',
+	direction: 'atLeast',
+	period: 'week',
+	countMode: 'days',
+	target: 3,
+	isPrivate: false
+};
+
+export const load: PageServerLoad = ({ locals }) => {
+	requireUser(locals);
+	return { values: DEFAULTS };
+};
+
+export const actions: Actions = {
+	default: async ({ locals, request }) => {
+		const user = requireUser(locals);
+		const db = getDb();
+		if (!db) error(503, 'Your habits are not available right now.');
+		const values = await readHabitForm(request);
+		const result = await createHabit(db, user.id, values);
+		if (!result.ok) {
+			return fail(400, { values, errors: { [result.field]: result.message } });
+		}
+		redirect(303, libraryUrl(result.habit.category, 'created'));
+	}
+};

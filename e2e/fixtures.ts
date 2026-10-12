@@ -34,6 +34,23 @@ export async function newMember(page: Page): Promise<{ username: string; passwor
 	return { username, password };
 }
 
+/** `newMember` for a context with JavaScript disabled: plain form posts, no hydration to wait for. */
+export async function newMemberWithoutJs(
+	page: Page
+): Promise<{ username: string; password: string }> {
+	const username = uniqueUsername();
+	const password = 'a long new password 1';
+	await page.goto('/join/E2E-OPEN');
+	await page.getByLabel('Username').fill(username);
+	await page.getByLabel('Display name').fill('Habit Tester');
+	await page.getByLabel('Password').fill(password);
+	await page.getByRole('button', { name: 'Create account' }).click();
+	await page.waitForURL(/\/onboarding$/);
+	await page.getByRole('button', { name: "Let's go" }).click();
+	await page.waitForURL((url) => !url.pathname.startsWith('/onboarding'));
+	return { username, password };
+}
+
 /** A username no other test uses: `e2e_` and 8 random lowercase letters or digits. */
 export function uniqueUsername(): string {
 	const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
