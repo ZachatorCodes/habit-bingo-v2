@@ -27,7 +27,9 @@ export default defineConfig({
 					'connect-src': ['self'],
 					'frame-ancestors': ['none'],
 					'base-uri': ['self'],
-					'form-action': ['self'],
+					// Also limits where a form submission may redirect: the Google button posts to our
+					// action, which 303s to Google's sign-in page.
+					'form-action': ['self', 'https://accounts.google.com'],
 					'object-src': ['none']
 				}
 			},
@@ -67,6 +69,10 @@ export default defineConfig({
 				test: {
 					name: 'server',
 					environment: 'node',
+					// PGlite migrations and scrypt hashing make a module's first database test slow when
+					// the whole suite runs in parallel.
+					testTimeout: 15000,
+					hookTimeout: 15000,
 					include: ['src/**/*.{test,spec}.{js,ts}'],
 					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
 				}

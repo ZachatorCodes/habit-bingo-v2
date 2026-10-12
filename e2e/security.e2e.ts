@@ -9,7 +9,7 @@ const expectedHeaders = {
 	'cross-origin-opener-policy': 'same-origin'
 };
 
-for (const path of ['/', '/privacy', '/sitemap.xml', '/api/health']) {
+for (const path of ['/', '/privacy', '/sitemap.xml', '/api/health', '/api/auth/ok']) {
 	test(`${path} carries the security headers`, async ({ request }) => {
 		const response = await request.get(path);
 		expect(response.headers()).toMatchObject(expectedHeaders);
@@ -20,6 +20,18 @@ test('HTML responses carry a CSP that forbids framing', async ({ request }) => {
 	const csp = (await request.get('/')).headers()['content-security-policy'];
 	expect(csp).toContain("frame-ancestors 'none'");
 	expect(csp).toContain("default-src 'self'");
+});
+
+test('CSP lets forms redirect to Google sign-in and nowhere else', async ({ request }) => {
+	const csp = (await request.get('/signin')).headers()['content-security-policy'];
+	const formAction = csp
+		.split(';')
+		.map((directive) => directive.trim())
+		.find((directive) => directive.startsWith('form-action '));
+	expect(formAction?.split(/\s+/).slice(1).sort()).toEqual([
+		"'self'",
+		'https://accounts.google.com'
+	]);
 });
 
 test('the CSP uses hashes, not nonces, so CDN-cached pages stay protected', async ({ request }) => {
