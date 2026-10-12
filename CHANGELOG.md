@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.3.0](https://github.com/ZachatorCodes/habit-bingo-v2/compare/habit-bingo-v0.2.0...habit-bingo-v0.3.0) (2026-10-12)
+
+
+### Features
+
+* **game:** habit rules and categories ([#42](https://github.com/ZachatorCodes/habit-bingo-v2/issues/42)) ([059b342](https://github.com/ZachatorCodes/habit-bingo-v2/commit/059b3420e0df3081d063bef7c4f798dc8e8f48ec))
+* **habits:** allow per-day limits ([#51](https://github.com/ZachatorCodes/habit-bingo-v2/issues/51)) ([dee6ce0](https://github.com/ZachatorCodes/habit-bingo-v2/commit/dee6ce0483cd8710c0049b604feb9e9eb02d5ccc))
+* **habits:** create and edit habits ([#46](https://github.com/ZachatorCodes/habit-bingo-v2/issues/46)) ([ff875ce](https://github.com/ZachatorCodes/habit-bingo-v2/commit/ff875ce7316c6b76aaf17789774407af4de6de85))
+* **habits:** habit library page ([#45](https://github.com/ZachatorCodes/habit-bingo-v2/issues/45)) ([312dd6c](https://github.com/ZachatorCodes/habit-bingo-v2/commit/312dd6c202373cce6912a518de3253800fdeae4c))
+* **habits:** habit table and library service ([#43](https://github.com/ZachatorCodes/habit-bingo-v2/issues/43)) ([fff1fe9](https://github.com/ZachatorCodes/habit-bingo-v2/commit/fff1fe94b58e232dba9365f33ae24b67f08cc786))
+* **habits:** quick start suggestions after onboarding ([#49](https://github.com/ZachatorCodes/habit-bingo-v2/issues/49)) ([c7c8b0c](https://github.com/ZachatorCodes/habit-bingo-v2/commit/c7c8b0c04e2dea96afaa6bd6eba6e59c88561f11))
+
+
+### Bug Fixes
+
+* **a11y:** avatar errors, banner landmark and reset username field ([#48](https://github.com/ZachatorCodes/habit-bingo-v2/issues/48)) ([662774d](https://github.com/ZachatorCodes/habit-bingo-v2/commit/662774dd7c93294c58be59719e11a510b99d78a9))
+
 ## [0.2.0](https://github.com/ZachatorCodes/habit-bingo-v2/compare/habit-bingo-v0.1.1...habit-bingo-v0.2.0) (2026-10-12)
 
 
