@@ -52,4 +52,6 @@
 	</div>
 </header>
 
-{@render children()}
+<main class="flex-1">
+	{@render children()}
+</main>

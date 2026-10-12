@@ -2,7 +2,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { IP_LIMIT_MULTIPLIER } from '$app/env/private';
 import { getAuth } from '#lib/server/auth/index.ts';
 import { checkAndRecordIp, TOO_MANY_ATTEMPTS_MESSAGE } from '#lib/server/auth/ip-limit.ts';
-import { getResetStatus, useResetLink } from '#lib/server/auth/password-reset.ts';
+import { getResetStatus, getResetUsername, useResetLink } from '#lib/server/auth/password-reset.ts';
 import { isPwnedPassword } from '#lib/server/auth/pwned.ts';
 import { getDb } from '#lib/server/db/client.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -17,7 +17,12 @@ function requireDb() {
 }
 
 export const load: PageServerLoad = async ({ params }) => {
-	return { status: await getResetStatus(requireDb(), params.token, new Date()) };
+	const db = requireDb();
+	const now = new Date();
+	const status = await getResetStatus(db, params.token, now);
+	// Only a usable link names its account.
+	const username = status === 'valid' ? await getResetUsername(db, params.token, now) : null;
+	return { status, username };
 };
 
 export const actions: Actions = {

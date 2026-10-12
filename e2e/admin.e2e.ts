@@ -131,6 +131,10 @@ test('an admin reset link lets a user set a new password and sign in', async ({
 	expect(response?.headers()['referrer-policy']).toBe('strict-origin');
 	await expect(visitor.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
 	await waitForHydration(visitor);
+	// Password managers save the new password against the right account.
+	const usernameField = visitor.locator('input[autocomplete="username"]');
+	await expect(usernameField).toHaveValue(username);
+	await expect(usernameField).toBeHidden();
 
 	await visitor.getByLabel('New password').fill(username);
 	await visitor.getByRole('button', { name: 'Set new password' }).click();
@@ -165,6 +169,7 @@ test('an admin reset link lets a user set a new password and sign in', async ({
 
 test('an unknown reset link shows a friendly page and no form', async ({ page }) => {
 	const response = await page.goto('/reset/not-a-real-token');
+	await expect(page.locator('input[autocomplete="username"]')).toHaveCount(0);
 	expect(response?.status()).toBe(200);
 	await expect(
 		page.getByRole('heading', { name: "We couldn't find that reset link." })

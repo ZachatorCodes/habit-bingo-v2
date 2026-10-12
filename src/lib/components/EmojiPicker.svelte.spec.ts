@@ -33,4 +33,24 @@ describe('EmojiPicker', () => {
 		await userEvent.keyboard('{ArrowLeft}{ArrowLeft}');
 		await expect.element(page.getByRole('radio', { name: '🤓' })).toBeChecked();
 	});
+
+	it('marks the group invalid and links the error when one is given', async () => {
+		render(EmojiPicker, {
+			name: 'avatarEmoji',
+			value: '',
+			options,
+			label: 'Avatar',
+			error: 'Pick an avatar.'
+		});
+		const group = page.getByRole('radiogroup', { name: 'Avatar' });
+		await expect.element(group).toHaveAttribute('aria-invalid', 'true');
+		await expect.element(group).toHaveAccessibleDescription(/Pick an avatar./);
+	});
+
+	it('has no error state without an error', async () => {
+		render(EmojiPicker, { name: 'avatarEmoji', value: '🙂', options, label: 'Avatar' });
+		await expect
+			.element(page.getByRole('radiogroup', { name: 'Avatar' }))
+			.not.toHaveAttribute('aria-invalid');
+	});
 });

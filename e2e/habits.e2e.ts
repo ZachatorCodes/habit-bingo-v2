@@ -186,6 +186,9 @@ test("someone else's habit is a 404", async ({ browser }) => {
 	await newMember(pageB);
 	const view = await pageB.goto(habitUrl);
 	expect(view?.status()).toBe(404);
+	// The error page still has its main landmark inside the signed-in area.
+	await expect(pageB.getByRole('main')).toHaveCount(1);
+	await expect(pageB.getByRole('main')).toContainText('Page not found');
 	const origin = new URL(habitUrl).origin;
 	for (const action of ['save', 'archive']) {
 		const post = await pageB.request.post(`${habitUrl}?/${action}`, {

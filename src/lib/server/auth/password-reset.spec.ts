@@ -9,6 +9,7 @@ import { PASSWORD_MESSAGES } from './password-policy.ts';
 import {
 	createResetLink,
 	getResetStatus,
+	getResetUsername,
 	RESET_LINK_TTL_MS,
 	UNKNOWN_USERNAME_MESSAGE,
 	useResetLink
@@ -138,6 +139,20 @@ describe('createResetLink', () => {
 		expect(
 			(await createResetLink(db, { username: 'google_only', createdBy: adminId }, NOW)).ok
 		).toBe(true);
+	});
+});
+
+describe('getResetUsername', () => {
+	it('names the account only while the link is usable', async () => {
+		await makeUser('alice', 'old password 1234');
+		const token = await issue('alice', adminId);
+		expect(await getResetUsername(db, token, NOW)).toBe('alice');
+		const later = new Date(NOW.getTime() + RESET_LINK_TTL_MS + 1000);
+		expect(await getResetUsername(db, token, later)).toBeNull();
+		expect(await getResetUsername(db, 'x'.repeat(43), NOW)).toBeNull();
+		expect(await getResetUsername(db, 'not a token', NOW)).toBeNull();
+		await useResetLink(auth, db, token, NEW_PASSWORD, NOW, notPwned);
+		expect(await getResetUsername(db, token, NOW)).toBeNull();
 	});
 });
 

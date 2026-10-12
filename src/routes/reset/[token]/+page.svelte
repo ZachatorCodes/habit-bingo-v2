@@ -56,6 +56,17 @@
 					{errors.form}
 				</p>
 			{/if}
+			{#if data.username}
+				<!-- For password managers: saves the new password against this account. -->
+				<input
+					type="text"
+					name="username"
+					autocomplete="username"
+					value={data.username}
+					readonly
+					hidden
+				/>
+			{/if}
 			<TextField
 				label="New password"
 				name="newPassword"

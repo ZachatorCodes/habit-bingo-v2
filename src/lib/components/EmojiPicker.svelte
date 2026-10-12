@@ -5,17 +5,26 @@
 		options: readonly string[];
 		/** Visible group label. */
 		label?: string;
+		/** Shown under the grid and linked to the group. */
+		error?: string;
 	};
 
-	let { name, value = $bindable(), options, label = 'Avatar' }: Props = $props();
+	let { name, value = $bindable(), options, label = 'Avatar', error }: Props = $props();
 
 	const labelId = $props.id();
+	const errorId = `${labelId}-error`;
 </script>
 
 <!-- Native radios: one tab stop, arrow keys move and select, and it posts without JavaScript. -->
 <div class="flex flex-col gap-1.5">
 	<span id={labelId} class="font-extrabold">{label}</span>
-	<div role="radiogroup" aria-labelledby={labelId} class="grid grid-cols-6 gap-2">
+	<div
+		role="radiogroup"
+		aria-labelledby={labelId}
+		aria-invalid={error ? 'true' : undefined}
+		aria-describedby={error ? errorId : undefined}
+		class="grid grid-cols-6 gap-2"
+	>
 		{#each options as emoji (emoji)}
 			<label class="relative block">
 				<input type="radio" {name} value={emoji} bind:group={value} class="peer sr-only" />
@@ -36,4 +45,10 @@
 			</label>
 		{/each}
 	</div>
+	{#if error}
+		<p id={errorId} class="text-sm font-bold text-ink">
+			<span aria-hidden="true">⚠</span>
+			{error}
+		</p>
+	{/if}
 </div>
