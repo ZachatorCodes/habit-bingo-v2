@@ -207,3 +207,53 @@ test("someone else's habit is a 404", async ({ browser }) => {
 	await a.close();
 	await b.close();
 });
+
+test('after onboarding, new members land on Quick start and can add a starter', async ({
+	page
+}) => {
+	await newMember(page);
+	await expect(page).toHaveURL(/\/me\/habits\?welcome=1$/);
+	await waitForHydration(page);
+	await expect(page.getByText('Welcome! Start your habit library.')).toBeVisible();
+	await page.getByRole('button', { name: 'Add Meditate' }).click();
+	await expect(page.getByRole('button', { name: 'Meditate added' })).toBeDisabled();
+	await expect(page.getByRole('region', { name: /Mind/ }).getByText('Meditate')).toBeVisible();
+	await page.getByRole('link', { name: /Continue to Today/ }).click();
+	await expect(page).toHaveURL(/\/today$/);
+});
+
+test('double-tapping a starter adds it once', async ({ page }) => {
+	await newMember(page);
+	await waitForHydration(page);
+	const bike = page.getByRole('button', { name: 'Add Go biking' });
+	await bike.dblclick();
+	await expect(page.getByRole('button', { name: 'Go biking added' })).toBeDisabled();
+	await page.goto('/me/habits?category=fitness');
+	await expect(page.getByRole('region', { name: /Fitness/ }).getByRole('listitem')).toHaveCount(1);
+});
+
+test('two posts of the same starter add it once', async ({ page }) => {
+	await newMember(page);
+	const origin = new URL(page.url()).origin;
+	const post = () =>
+		page.request.post('/me/habits?/addStarter', {
+			form: { starterId: 'water' },
+			headers: { origin }
+		});
+	await Promise.all([post(), post()]);
+	await page.goto('/me/habits?category=health');
+	await expect(page.getByRole('region', { name: /Health/ }).getByRole('listitem')).toHaveCount(1);
+});
+
+test('archiving while filtered keeps the filter', async ({ page }) => {
+	await newMember(page);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Add Go biking' }).click();
+	await page.getByRole('button', { name: 'Add Meditate' }).click();
+	await expect(page.getByRole('button', { name: 'Meditate added' })).toBeDisabled();
+	await page.goto('/me/habits?category=fitness');
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Archive Go biking' }).click();
+	await expect(page.getByText('No habits in Fitness yet.')).toBeVisible();
+	await expect(page.getByRole('link', { name: /Fitness/ })).toHaveAttribute('aria-current', 'true');
+});
