@@ -47,7 +47,7 @@
 	<BuilderSteps steps={data.steps} current={data.step} completed={data.draft.completed} />
 
 	{#if message}
-		<p role="alert" class="rounded-xl bg-risk px-4 py-3 font-bold text-ink">
+		<p id="step-error" role="alert" class="rounded-xl bg-risk px-4 py-3 font-bold text-ink">
 			<span aria-hidden="true">⚠</span>
 			{message}
 		</p>
@@ -55,7 +55,11 @@
 
 	{#if data.step === 'size'}
 		<form method="POST" action="?/size" use:enhance class="flex flex-col gap-6">
-			<SizePicker selected={data.draft.size} habitCount={data.habits.length} />
+			<SizePicker
+				selected={data.draft.size}
+				habitCount={data.habits.length}
+				errorId={message ? 'step-error' : undefined}
+			/>
 			<div><Button type="submit">Continue</Button></div>
 		</form>
 	{:else if data.step === 'habits'}
@@ -105,7 +109,12 @@
 					You have no habits yet. Add one above.
 				</p>
 			{:else if data.need !== null}
-				<HabitPicker habits={data.habits} bind:selected={picked} need={data.need} />
+				<HabitPicker
+					habits={data.habits}
+					bind:selected={picked}
+					need={data.need}
+					errorId={message ? 'step-error' : undefined}
+				/>
 			{/if}
 			<div><Button type="submit">Continue</Button></div>
 		</form>

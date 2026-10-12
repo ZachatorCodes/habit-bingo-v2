@@ -46,4 +46,10 @@ describe('HabitPicker', () => {
 		await page.getByRole('checkbox', { name: /Bike/ }).click();
 		await expect.element(counter).toHaveTextContent('2 of 9 picked');
 	});
+
+	it('describes the habit group by its error', async () => {
+		render(HabitPicker, { habits, selected: [], need: 9, errorId: 'problem' });
+		const group = page.getByRole('group', { name: 'Your habits' });
+		await expect.element(group).toHaveAttribute('aria-describedby', 'problem');
+	});
 });

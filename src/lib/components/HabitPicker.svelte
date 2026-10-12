@@ -3,8 +3,8 @@
 	import { describeRule } from '#lib/game/habit-rules.ts';
 	import type { Habit } from '#lib/server/habits.ts';
 
-	type Props = { habits: Habit[]; selected: string[]; need: number };
-	let { habits, selected = $bindable(), need }: Props = $props();
+	type Props = { habits: Habit[]; selected: string[]; need: number; errorId?: string };
+	let { habits, selected = $bindable(), need, errorId }: Props = $props();
 
 	const groups = $derived(
 		CATEGORIES.map((category) => ({
@@ -14,7 +14,7 @@
 	);
 </script>
 
-<div class="flex flex-col gap-5">
+<div class="flex flex-col gap-5" role="group" aria-label="Your habits" aria-describedby={errorId}>
 	<p aria-live="polite" class="font-extrabold">{selected.length} of {need} picked</p>
 	{#each groups as group (group.category.id)}
 		<fieldset class="flex flex-col gap-2">
