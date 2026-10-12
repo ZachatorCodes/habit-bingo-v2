@@ -26,13 +26,12 @@ test('admins see the Admin link', async ({ page }) => {
 });
 
 test('signed-out visitors are sent to sign in and come back after', async ({ page }) => {
-	// /me arrives later in M1; any (app) path with a query string shows the round trip.
-	await page.goto('/today?from=link');
-	await expect(page).toHaveURL(/\/signin\?next=%2Ftoday%3Ffrom%3Dlink$/);
+	await page.goto('/me');
+	await expect(page).toHaveURL(/\/signin\?next=%2Fme$/);
 	await page.getByLabel('Username').fill(MEMBER.username);
 	await page.getByLabel('Password').fill(MEMBER.password);
 	await page.getByRole('button', { name: 'Sign in' }).click();
-	await expect(page).toHaveURL(/\/today\?from=link$/);
+	await expect(page).toHaveURL(/\/me$/);
 });
 
 test('the sign-in page offers help and no Google button when Google is off', async ({ page }) => {

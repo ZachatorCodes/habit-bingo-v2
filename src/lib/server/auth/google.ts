@@ -27,6 +27,10 @@ export async function startGoogleSignIn(
 		},
 		headers
 	});
+	return checkedGoogleURL(url);
+}
+
+function checkedGoogleURL(url: string | undefined): string {
 	if (!url) throw new Error('Google sign-in did not return a URL.');
 	// Without a configured base URL, Better Auth's server-side calls know no origin and would send
 	// Google a relative redirect_uri, which Google rejects with an error page.
@@ -34,6 +38,26 @@ export async function startGoogleSignIn(
 		throw new Error('Google sign-in needs BETTER_AUTH_URL to be set.');
 	}
 	return url;
+}
+
+/** Where linking Google lands, on success and (with `?error=`) on failure. */
+export const GOOGLE_LINK_PATH = '/me';
+
+/**
+ * Starts linking Google to the signed-in user (the session in `headers`) and returns Google's
+ * authorization URL. Linking only ever happens this way, never implicitly by email.
+ */
+export async function startGoogleLink(auth: Auth, headers: Headers): Promise<string> {
+	const { url } = await auth.api.linkSocialAccount({
+		body: {
+			provider: 'google',
+			callbackURL: GOOGLE_LINK_PATH,
+			errorCallbackURL: GOOGLE_LINK_PATH,
+			disableRedirect: true
+		},
+		headers
+	});
+	return checkedGoogleURL(url);
 }
 
 /** The only external origin our sign-in forms may redirect to (see also CSP `form-action`). */
@@ -54,4 +78,16 @@ export const GOOGLE_FAILED_MESSAGE = "Google sign-in didn't work. Try again.";
 export function googleErrorMessage(code: string | null): string | null {
 	if (!code) return null;
 	return code.toUpperCase() === 'INVITE_REQUIRED' ? INVITE_REQUIRED_MESSAGE : GOOGLE_FAILED_MESSAGE;
+}
+
+export const GOOGLE_LINKED_ELSEWHERE_MESSAGE =
+	'That Google account is already linked to someone else.';
+export const GOOGLE_LINK_FAILED_MESSAGE = "Linking Google didn't work. Try again.";
+
+/** The message for a Google linking error code that Better Auth put in `?error=`, if any. */
+export function googleLinkErrorMessage(code: string | null): string | null {
+	if (!code) return null;
+	return code.toLowerCase() === 'account_already_linked_to_different_user'
+		? GOOGLE_LINKED_ELSEWHERE_MESSAGE
+		: GOOGLE_LINK_FAILED_MESSAGE;
 }

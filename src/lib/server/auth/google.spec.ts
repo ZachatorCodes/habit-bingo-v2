@@ -5,7 +5,14 @@ import type { Db } from '#lib/server/db/client.ts';
 import { account, invite, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import type { Auth } from './create-auth.ts';
-import { googleErrorMessage, redirectToGoogle, startGoogleSignIn } from './google.ts';
+import {
+	GOOGLE_LINK_PATH,
+	googleErrorMessage,
+	googleLinkErrorMessage,
+	redirectToGoogle,
+	startGoogleLink,
+	startGoogleSignIn
+} from './google.ts';
 import { createInvite } from './invites.ts';
 import { createTestAuth } from './test-auth.ts';
 
@@ -207,5 +214,59 @@ describe('redirectToGoogle', () => {
 		const redirect = thrown(() => redirectToGoogle('https://evil.example/o/oauth2/v2/auth'));
 
 		expect(isRedirect(redirect)).toBe(false);
+	});
+});
+
+describe('startGoogleLink', () => {
+	async function signedInHeaders() {
+		const { headers } = await auth.api.signUpEmail({
+			body: {
+				email: `${crypto.randomUUID()}@users.invalid`,
+				password: 'correct horse battery',
+				name: 'Linker',
+				username: 'linker'
+			},
+			headers: new Headers({ cookie: `hb_invite=${await newInvite()}` }),
+			returnHeaders: true
+		});
+		const cookie = headers
+			.getSetCookie()
+			.map((c) => c.split(';')[0])
+			.join('; ');
+		return new Headers({ cookie });
+	}
+
+	it('links to the signed-in user and comes back to /me, with default scopes only', async () => {
+		const url = new URL(await startGoogleLink(auth, await signedInHeaders()));
+		expect(url.host).toBe('accounts.google.com');
+		expect(url.searchParams.get('scope')?.split(' ').sort()).toEqual([
+			'email',
+			'openid',
+			'profile'
+		]);
+		const context = await auth.$context;
+		const stored = await context.internalAdapter.findVerificationValue(
+			`auth-state:${url.searchParams.get('state')}`
+		);
+		const [linker] = await db.select().from(user).where(eq(user.username, 'linker'));
+		expect(JSON.parse(stored?.value ?? '{}')).toMatchObject({
+			callbackURL: GOOGLE_LINK_PATH,
+			errorURL: GOOGLE_LINK_PATH,
+			link: { userId: linker.id }
+		});
+	});
+
+	it('needs a session', async () => {
+		await expect(startGoogleLink(auth, new Headers())).rejects.toThrow();
+	});
+});
+
+describe('googleLinkErrorMessage', () => {
+	it('explains an account linked elsewhere, and is generic otherwise', () => {
+		expect(googleLinkErrorMessage('account_already_linked_to_different_user')).toBe(
+			'That Google account is already linked to someone else.'
+		);
+		expect(googleLinkErrorMessage('anything_else')).toBe("Linking Google didn't work. Try again.");
+		expect(googleLinkErrorMessage(null)).toBeNull();
 	});
 });
