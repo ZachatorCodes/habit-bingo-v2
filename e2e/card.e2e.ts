@@ -65,11 +65,18 @@ test('shuffle changes the board but keeps the habits', async ({ page }) => {
 	await newMemberWithHabits(page, 9);
 	await buildToBoard(page);
 	const before = await squareNames(page);
+	// A shuffle can land on the same order by chance (1 in 362,880), so try a few times.
 	let after = before;
-	for (let tries = 0; tries < 5 && after.join() === before.join(); tries++) {
+	for (let tries = 0; tries < 3 && after.join() === before.join(); tries++) {
+		const saved = page.waitForResponse(
+			(r) => r.url().includes('/card/build/board') && r.request().method() === 'POST'
+		);
 		await page.getByRole('button', { name: 'Shuffle again' }).click();
-		// The page reloads its data; give it a moment, then read the board.
-		await page.waitForTimeout(500);
+		await saved;
+		await expect
+			.poll(async () => (await squareNames(page)).join(), { timeout: 3000 })
+			.not.toBe(after.join())
+			.catch(() => {});
 		after = await squareNames(page);
 	}
 	expect(after.join()).not.toBe(before.join());
@@ -140,6 +147,7 @@ test('a habit archived before starting sends you back to Habits', async ({ page,
 		form: {}
 	});
 	expect(response.url()).toContain('/card/build/habits');
+	expect(await response.text()).toContain('One of your habits is no longer available.');
 	await page.goto('/card/build/board');
 	await expect(page).toHaveURL(/\/card\/build\/habits/);
 	await page.goto('/card');
