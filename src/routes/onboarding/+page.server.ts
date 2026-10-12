@@ -62,6 +62,7 @@ export const actions: Actions = {
 			const errors: Partial<Record<Field, string>> = { [result.field as Field]: result.message };
 			return fail(400, { values, errors });
 		}
-		redirect(303, '/today');
+		// Step 2 of first-run onboarding (spec §4.2): start the habit library.
+		redirect(303, '/me/habits?welcome=1');
 	}
 };

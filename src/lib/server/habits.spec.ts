@@ -4,6 +4,8 @@ import type { Db } from '#lib/server/db/client.ts';
 import { habit, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import {
+	addStarter,
+	addedStarterIds,
 	archiveHabit,
 	createHabit,
 	getHabit,
@@ -197,4 +199,69 @@ it('deleting a user deletes their habits', async () => {
 	await created(me);
 	await db.delete(user).where(eq(user.id, me));
 	expect(await db.select().from(habit)).toEqual([]);
+});
+
+describe('addStarter', () => {
+	it('adding a starter creates the habit once', async () => {
+		const me = await makeUser();
+		expect(await addStarter(db, me, 'bike')).toEqual({ ok: true, added: true });
+		expect(await addStarter(db, me, 'bike')).toEqual({ ok: true, added: false });
+		const habits = await listHabits(db, me);
+		expect(habits).toHaveLength(1);
+		expect(habits[0]).toMatchObject({
+			emoji: '🚴',
+			name: 'Go biking',
+			category: 'fitness',
+			direction: 'atLeast',
+			period: 'month',
+			countMode: 'times',
+			target: 3,
+			isPrivate: false
+		});
+	});
+
+	it('treats a same-named habit in another casing as already added', async () => {
+		const me = await makeUser();
+		await created(me, { name: 'go BIKING' });
+		expect(await addStarter(db, me, 'bike')).toEqual({ ok: true, added: false });
+	});
+
+	it('two simultaneous adds create one habit', async () => {
+		const me = await makeUser();
+		await Promise.all([addStarter(db, me, 'water'), addStarter(db, me, 'water')]);
+		expect(await listHabits(db, me)).toHaveLength(1);
+	});
+
+	it('a starter matching an archived habit is added again', async () => {
+		const me = await makeUser();
+		await addStarter(db, me, 'meditate');
+		const [old] = await listHabits(db, me);
+		await archiveHabit(db, me, old.id, new Date());
+		expect(await addStarter(db, me, 'meditate')).toEqual({ ok: true, added: true });
+		expect(await listHabits(db, me)).toHaveLength(1);
+	});
+
+	it('unknown starter ids are refused', async () => {
+		const me = await makeUser();
+		expect(await addStarter(db, me, 'skydiving')).toEqual({
+			ok: false,
+			message: 'Unknown suggestion.'
+		});
+	});
+
+	it('respects the 100-habit cap', async () => {
+		const me = await makeUser();
+		for (let i = 0; i < 100; i++) await created(me, { name: `Habit ${i}` });
+		expect(await addStarter(db, me, 'naps')).toEqual({
+			ok: false,
+			message: 'You can have up to 100 habits. Archive some to add more.'
+		});
+	});
+
+	it('reports which starters are already in the library', async () => {
+		const me = await makeUser();
+		await addStarter(db, me, 'bike');
+		await addStarter(db, me, 'naps');
+		expect(addedStarterIds(await listHabits(db, me))).toEqual(['bike', 'naps']);
+	});
 });

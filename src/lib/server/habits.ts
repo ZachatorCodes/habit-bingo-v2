@@ -3,6 +3,7 @@
 import { and, count, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { CATEGORIES, isCategoryId, type CategoryId } from '#lib/game/categories.ts';
 import { isSingleEmoji, normalizeRule, type HabitRule } from '#lib/game/habit-rules.ts';
+import { STARTERS } from '#lib/game/starters.ts';
 import type { Db } from '#lib/server/db/client.ts';
 import { habit } from '#lib/server/db/schema.ts';
 
@@ -174,4 +175,46 @@ export async function restoreHabit(
 		.set({ archivedAt: null })
 		.where(and(eq(habit.id, habitId), eq(habit.userId, userId)));
 	return true;
+}
+
+const sameName = (a: string, b: string) =>
+	a.localeCompare(b, undefined, { sensitivity: 'base' }) === 0;
+
+/** Ids of starters whose names already match one of these (active) habits. */
+export function addedStarterIds(habits: readonly Habit[]): string[] {
+	return STARTERS.filter((starter) => habits.some((h) => sameName(h.name, starter.name))).map(
+		(starter) => starter.id
+	);
+}
+
+/**
+ * Adds a suggestion to the library unless an active habit already has its name. Runs under a
+ * per-user lock so a double tap can't insert it twice.
+ */
+export async function addStarter(
+	db: Db,
+	userId: string,
+	starterId: string
+): Promise<{ ok: true; added: boolean } | { ok: false; message: string }> {
+	const starter = STARTERS.find((s) => s.id === starterId);
+	if (!starter) return { ok: false, message: 'Unknown suggestion.' };
+	return db.transaction(async (tx) => {
+		await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${'starter:' + userId}))`);
+		const active = await tx
+			.select({ name: habit.name })
+			.from(habit)
+			.where(and(eq(habit.userId, userId), isNull(habit.archivedAt)));
+		if (active.some((row) => sameName(row.name, starter.name))) return { ok: true, added: false };
+		if (active.length >= MAX_ACTIVE_HABITS) return { ok: false, message: CAP_MESSAGE };
+		await tx.insert(habit).values({
+			id: crypto.randomUUID(),
+			userId,
+			emoji: starter.emoji,
+			name: starter.name,
+			category: starter.category,
+			isPrivate: false,
+			...starter.rule
+		});
+		return { ok: true, added: true };
+	});
 }

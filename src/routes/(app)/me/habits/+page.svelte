@@ -3,6 +3,7 @@
 	import Button from '#lib/components/Button.svelte';
 	import CategoryFilter from '#lib/components/CategoryFilter.svelte';
 	import HabitRow from '#lib/components/HabitRow.svelte';
+	import StarterHabits from '#lib/components/StarterHabits.svelte';
 	import { CATEGORIES } from '#lib/game/categories.ts';
 	import type { PageProps } from './$types';
 
@@ -15,6 +16,17 @@
 		})).filter((group) => group.habits.length > 0)
 	);
 	const selectedLabel = $derived(CATEGORIES.find((c) => c.id === data.category)?.label);
+	/** This view's query, carried through form actions so posting keeps the same view. */
+	const keep = $derived(
+		[
+			data.category ? `category=${data.category}` : '',
+			data.archived ? 'archived=1' : '',
+			data.welcome ? 'welcome=1' : ''
+		]
+			.filter(Boolean)
+			.map((part) => `&${part}`)
+			.join('')
+	);
 	const toggleQuery = $derived(
 		data.archived
 			? data.category
@@ -55,6 +67,17 @@
 		</p>
 	{/if}
 
+	{#if data.welcome}
+		<div class="rounded-2xl bg-cream p-4">
+			<p class="text-lg font-black">Welcome! Start your habit library.</p>
+			<p class="text-ink/75">Add a few habits now; you'll pick from them when you build a card.</p>
+		</div>
+	{/if}
+
+	{#if !data.archived && (data.welcome || data.activeCount === 0)}
+		<StarterHabits addedIds={data.addedIds} {keep} />
+	{/if}
+
 	<CategoryFilter selected={data.category} counts={data.counts} archived={data.archived} />
 
 	{#if groups.length === 0}
@@ -81,7 +104,7 @@
 				</h2>
 				<ul class="flex flex-col gap-2">
 					{#each group.habits as habit (habit.id)}
-						<HabitRow {habit} archived={data.archived} />
+						<HabitRow {habit} archived={data.archived} {keep} />
 					{/each}
 				</ul>
 			</section>
@@ -98,4 +121,12 @@
 		>
 	</p>
 	<!-- eslint-enable svelte/no-navigation-without-resolve -->
+
+	{#if data.welcome}
+		<p>
+			<a href={resolve('/(app)/today')} class="font-bold underline underline-offset-4"
+				>Continue to Today <span aria-hidden="true">→</span></a
+			>
+		</p>
+	{/if}
 </section>

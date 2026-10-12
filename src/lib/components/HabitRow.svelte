@@ -4,8 +4,16 @@
 	import { describeRule } from '#lib/game/habit-rules.ts';
 	import type { Habit } from '#lib/server/habits.ts';
 
-	type Props = { habit: Habit; archived?: boolean };
-	let { habit, archived = false }: Props = $props();
+	type Props = {
+		habit: Habit;
+		archived?: boolean;
+		/**
+		 * The page's own query (e.g. "&category=fitness"), appended to form actions: an action URL
+		 * like "?/archive" replaces the query, so without it the page would lose its view after posting.
+		 */
+		keep?: string;
+	};
+	let { habit, archived = false, keep = '' }: Props = $props();
 
 	const action = $derived(archived ? 'restore' : 'archive');
 	const actionLabel = $derived(archived ? 'Restore' : 'Archive');
@@ -34,7 +42,7 @@
 			>Edit</a
 		>
 	{/if}
-	<form method="POST" action={`?/${action}`} use:enhance>
+	<form method="POST" action={`?/${action}${keep}`} use:enhance>
 		<input type="hidden" name="id" value={habit.id} />
 		<button
 			type="submit"
