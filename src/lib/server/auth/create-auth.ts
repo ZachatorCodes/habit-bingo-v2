@@ -212,6 +212,18 @@ export function createAuth(db: Db, options: AuthOptions) {
 							if (!anyUser) return { data: { ...newUser, isAdmin: true } };
 						}
 						if (!(await consumeInvite(db, code, new Date()))) throw inviteRequired();
+					},
+					// The invite is spent: clear its cookie, for Google sign-ups (whose callback is Better
+					// Auth's own route) as well as password ones. Set on Better Auth's response, so it reaches
+					// the browser from the OAuth callback and, via sveltekitCookies, from our form actions.
+					after: async (_created, ctx) => {
+						ctx?.setCookie(INVITE_COOKIE, '', {
+							httpOnly: true,
+							secure: true,
+							sameSite: 'lax',
+							path: '/',
+							maxAge: 0
+						});
 					}
 				}
 			}

@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Db } from '#lib/server/db/client.ts';
 import { account, invite, session, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
@@ -238,6 +238,88 @@ describe('invites at sign-up', () => {
 		const { user: created } = await signUp('invited', PASSWORD, code);
 		expect(created.username).toBe('invited');
 		expect(await usesOf(code)).toBe(1);
+	});
+
+	it('clears the invite cookie once an account is created from it, by any sign-up method', async () => {
+		const { headers } = await auth.api.signUpEmail({
+			body: {
+				email: `${crypto.randomUUID()}@users.invalid`,
+				password: PASSWORD,
+				name: 'Zach',
+				username: 'clears'
+			},
+			headers: inviteHeaders(inviteCode),
+			returnHeaders: true
+		});
+		const cleared = headers.getSetCookie().find((c) => c.startsWith('hb_invite='));
+		expect(cleared).toBeDefined();
+		expect(cleared).toMatch(/^hb_invite=;/);
+		expect(cleared).toMatch(/Max-Age=0/i);
+		expect(cleared).toMatch(/Path=\//i);
+	});
+
+	it('clears the invite cookie on the Google callback that creates the account', async () => {
+		const google = createTestAuth(db, { google: { clientId: 'id', clientSecret: 'secret' } });
+		const started = await google.api.signInSocial({
+			body: { provider: 'google', callbackURL: '/today', disableRedirect: true },
+			returnHeaders: true
+		});
+		const state = new URL(started.response.url ?? '').searchParams.get('state') ?? '';
+		const stateCookies = started.headers.getSetCookie().map((c) => c.split(';')[0]);
+		// Google's token endpoint, answering with an (unsigned) ID token for a new person.
+		const claims = {
+			sub: 'google-123',
+			email: 'new@example.com',
+			email_verified: true,
+			name: 'New'
+		};
+		const idToken = [{ alg: 'none' }, claims, {}]
+			.map((part) => Buffer.from(JSON.stringify(part)).toString('base64url'))
+			.join('.')
+			.replace(/\.[^.]*$/, '.sig');
+		const fetchSpy = vi
+			.spyOn(globalThis, 'fetch')
+			.mockImplementation(async () =>
+				Response.json({
+					access_token: 'at',
+					id_token: idToken,
+					token_type: 'Bearer',
+					expires_in: 3600
+				})
+			);
+		try {
+			const res = await google.handler(
+				new Request(`http://localhost/api/auth/callback/google?state=${state}&code=abc`, {
+					headers: { cookie: [...stateCookies, `hb_invite=${inviteCode}`].join('; ') }
+				})
+			);
+			expect(res.status).toBe(302);
+			expect(res.headers.get('location')).not.toContain('error');
+			expect(await db.select().from(user).where(eq(user.email, 'new@example.com'))).toHaveLength(1);
+			const cleared = res.headers.getSetCookie().find((c) => c.startsWith('hb_invite='));
+			expect(cleared).toMatch(/^hb_invite=;.*Max-Age=0/i);
+		} finally {
+			fetchSpy.mockRestore();
+		}
+	});
+
+	it('keeps the invite cookie when a sign-up is refused, so the person can retry', async () => {
+		await signUp('taken');
+		const outcome = await auth.api
+			.signUpEmail({
+				body: {
+					email: `${crypto.randomUUID()}@users.invalid`,
+					password: PASSWORD,
+					name: 'Zach',
+					username: 'taken'
+				},
+				headers: inviteHeaders(inviteCode),
+				returnHeaders: true
+			})
+			.catch((e: { headers?: HeadersInit }) => e);
+		expect(outcome).toBeInstanceOf(Error);
+		const setCookies = new Headers(outcome.headers).getSetCookie();
+		expect(setCookies.some((c) => c.startsWith('hb_invite='))).toBe(false);
 	});
 
 	it('refuses a used-up invite', async () => {
