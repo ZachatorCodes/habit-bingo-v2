@@ -80,6 +80,10 @@
 			/>
 			<Button type="submit" class="mt-2 w-full">Create account</Button>
 		</form>
+
+		<p class="text-center text-ink/75">
+			Already have an account? <a class="font-bold underline" href={resolve('/signin')}>Sign in</a>
+		</p>
 	{:else}
 		<div
 			class="rounded-2xl border-2 border-line bg-white p-6 text-center shadow-[0_3px_0_var(--color-line)]"

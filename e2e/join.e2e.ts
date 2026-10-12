@@ -76,3 +76,12 @@ test('every invalid field is reported at once and the first one gets focus', asy
 		/Use at least 10 characters\./
 	);
 });
+
+test('a valid invite offers people who already have an account a way to sign in', async ({
+	page
+}) => {
+	await page.goto('/join/E2E-OPEN');
+	await expect(page.getByText('Already have an account?')).toBeVisible();
+	await page.getByRole('link', { name: 'Sign in' }).click();
+	await expect(page).toHaveURL(/\/signin$/);
+});

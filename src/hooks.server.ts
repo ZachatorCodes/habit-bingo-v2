@@ -3,6 +3,7 @@ import { sequence } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { building } from '$app/env';
 import { tryGetAuth } from '#lib/server/auth/index.ts';
+import { isSharedCacheable, PUBLIC_CACHED_ROUTES } from '#lib/server/cache.ts';
 import { toAppError } from '#lib/server/errors.ts';
 import { SECURITY_HEADERS } from '#lib/server/security-headers.ts';
 
@@ -13,6 +14,9 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 	// Without a database or secret the app still serves public pages; nobody is signed in.
 	const auth = building ? null : tryGetAuth();
 	if (!auth) return resolve(event);
+	// CDN-cached public pages are the same for everyone and never read `locals.user`. Looking the
+	// session up there could refresh it and put the visitor's Set-Cookie into a shared cache.
+	if (event.route.id && PUBLIC_CACHED_ROUTES.has(event.route.id)) return resolve(event);
 
 	try {
 		const result = await auth.api.getSession({ headers: event.request.headers });
@@ -46,6 +50,16 @@ function editHeaders(response: Response, set: (headers: Headers) => void): Respo
 	}
 }
 
+/**
+ * Backstop for the auth hook's skip: a response a shared cache may store never carries a cookie,
+ * or the CDN would hand one visitor's session to everyone.
+ */
+export const publicCacheCookieHandle: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+	if (!isSharedCacheable(response.headers) || !response.headers.has('set-cookie')) return response;
+	return editHeaders(response, (headers) => headers.delete('set-cookie'));
+};
+
 export const securityHeadersHandle: Handle = async ({ event, resolve }) =>
 	editHeaders(await resolve(event), setSecurityHeaders);
 
@@ -74,8 +88,13 @@ export const routeHeadersHandle: Handle = async ({ event, resolve }) => {
 
 // Security headers wrap auth so Better Auth's own /api/auth responses get them too (spec §5.4).
 // Route headers sit inside them, so the security hook sees (and keeps) the reset page's stricter
-// Referrer-Policy.
-export const handle = sequence(securityHeadersHandle, routeHeadersHandle, authHandle);
+// Referrer-Policy. The public-cache cookie backstop is outermost, so it sees the final headers.
+export const handle = sequence(
+	publicCacheCookieHandle,
+	securityHeadersHandle,
+	routeHeadersHandle,
+	authHandle
+);
 
 /**
  * Only `strict-origin` (origin only, never the path) may replace the default, for pages with a

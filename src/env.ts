@@ -38,5 +38,17 @@ export const variables = defineEnvVars({
 		description:
 			'Invite code that lets the first person sign up (as admin) while no users exist. Optional; inert once anyone has signed up.',
 		schema: optional
+	},
+	IP_LIMIT_MULTIPLIER: {
+		description:
+			'Multiplies the per-IP sign-in, sign-up and reset limits (30/10/10 per 15 minutes). Optional, default 1. Only the E2E server sets it, because every E2E test comes from one IP; leave it unset everywhere else.',
+		schema: (value) => {
+			if (!value) return undefined;
+			const multiplier = Number(value);
+			if (!Number.isInteger(multiplier) || multiplier < 1) {
+				throw new Error('IP_LIMIT_MULTIPLIER must be a positive integer');
+			}
+			return multiplier;
+		}
 	}
 });

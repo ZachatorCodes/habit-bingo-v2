@@ -1,11 +1,12 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from '$app/env/private';
+import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, IP_LIMIT_MULTIPLIER } from '$app/env/private';
 import {
 	googleErrorMessage,
 	redirectToGoogle,
 	startGoogleSignIn
 } from '#lib/server/auth/google.ts';
 import { getAuth } from '#lib/server/auth/index.ts';
+import { checkAndRecordIp, TOO_MANY_ATTEMPTS_MESSAGE } from '#lib/server/auth/ip-limit.ts';
 import {
 	DEFAULT_SIGNED_IN_PATH,
 	safeNextPath,
@@ -46,7 +47,7 @@ export const actions: Actions = {
 		if (!googleEnabled()) error(404, 'Google sign-in is not available.');
 		redirectToGoogle(await startGoogleSignIn(getAuth(), request.headers, next));
 	},
-	signin: async ({ request, locals }) => {
+	signin: async ({ request, locals, getClientAddress }) => {
 		const formData = await request.formData();
 		const text = (key: string) => stringField(formData, key);
 		const next = safeNextPath(text('next'));
@@ -57,7 +58,20 @@ export const actions: Actions = {
 		// Echoed back on errors so nobody retypes it. Never the password.
 		const values = { username };
 
-		const failWith = (errors: Partial<Record<Field, string>>) => fail(400, { values, errors });
+		const failWith = (errors: Partial<Record<Field, string>>, status = 400) =>
+			fail(status, { values, errors });
+
+		const db = getDb();
+		if (!db) error(503, 'Sign-in is not available right now.');
+		// Per-IP limit first, so a blocked client never reaches Better Auth or the username lockout.
+		const ipAllowed = await checkAndRecordIp(
+			db,
+			'signin',
+			getClientAddress(),
+			new Date(),
+			IP_LIMIT_MULTIPLIER
+		);
+		if (!ipAllowed) return failWith({ form: TOO_MANY_ATTEMPTS_MESSAGE }, 429);
 
 		const errors: Partial<Record<Field, string>> = {};
 		if (!username) errors.username = 'Enter your username.';
@@ -65,8 +79,6 @@ export const actions: Actions = {
 		if (errors.username || errors.password) return failWith(errors);
 		if (username.length > MAX_USERNAME_INPUT) return failWith({ form: WRONG_CREDENTIALS_MESSAGE });
 
-		const db = getDb();
-		if (!db) error(503, 'Sign-in is not available right now.');
 		const result = await signInWithPassword(
 			getAuth(),
 			db,

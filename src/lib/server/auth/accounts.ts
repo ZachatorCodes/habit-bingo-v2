@@ -5,7 +5,7 @@ import type { Db } from '#lib/server/db/client.ts';
 import { account, user } from '#lib/server/db/schema.ts';
 import type { Auth } from './create-auth.ts';
 import { PASSWORD_MESSAGES } from './password-policy.ts';
-import { USERNAME_RULES_MESSAGE, USERNAME_TAKEN_MESSAGE } from './sign-up.ts';
+import { isUniqueViolation, USERNAME_RULES_MESSAGE, USERNAME_TAKEN_MESSAGE } from './sign-up.ts';
 
 export type Invalid = { ok: false; field: string; message: string };
 export type Result = { ok: true } | Invalid;
@@ -34,13 +34,6 @@ export function validateSettingsInput(input: {
 	if (input.weekStartsOn !== 'monday' && input.weekStartsOn !== 'sunday')
 		return { ok: false, field: 'weekStartsOn', message: 'Pick Monday or Sunday.' };
 	return { ok: true, timezone: input.timezone, weekStartsOn: input.weekStartsOn };
-}
-
-function isUniqueViolation(error: unknown): boolean {
-	for (let e = error as { code?: string; cause?: unknown } | undefined; e; e = e.cause as never) {
-		if (e.code === '23505') return true;
-	}
-	return false;
 }
 
 /**

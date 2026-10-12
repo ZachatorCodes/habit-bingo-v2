@@ -1,7 +1,9 @@
 name: Deploy smoke test
 
 # Vercel reports each finished deployment (preview or production) to GitHub.
-# This checks the deployed app is up and connected to its own database.
+# This checks the deployed app is up, connected to its own database, and serving sign-in.
+# Previews have no BETTER_AUTH_SECRET until it is added for the Preview environment in Vercel
+# (a human setup step); the auth checks below need it.
 on:
   deployment_status:
 
@@ -47,3 +49,11 @@ jobs:
       - name: Vercel Web Analytics script is served
         run: |
           curl -sS -f -o /dev/null -H "x-vercel-protection-bypass: $BYPASS" "$URL/_vercel/insights/script.js"
+      - name: Sign-in page renders
+        run: |
+          body=$(curl -sS -f -H "x-vercel-protection-bypass: $BYPASS" "$URL/signin")
+          echo "$body" | grep -q 'Sign in'
+      - name: Auth session endpoint responds
+        run: |
+          # Signed out, this returns JSON null with a 200.
+          curl -sS -f -H "x-vercel-protection-bypass: $BYPASS" "$URL/api/auth/get-session"

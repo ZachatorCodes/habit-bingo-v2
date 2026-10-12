@@ -1,4 +1,4 @@
-import { betterAuth } from 'better-auth';
+import { betterAuth, type BetterAuthPlugin } from 'better-auth';
 import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { username } from 'better-auth/plugins';
@@ -28,26 +28,63 @@ export type AuthOptions = {
 /**
  * Every Better Auth route that would let a password be set, checked or changed, or an account be
  * changed, without our invite, lockout and breach rules, or that would reveal whether a username
- * exists. Our own form actions call `auth.api.*` on the server instead, which still works.
+ * exists, plus every route the app does not use. Our own form actions call `auth.api.*` on the
+ * server instead, which still works: this list only applies to HTTP requests. Reachable over HTTP:
+ * `/callback/:id` (Google's redirect back), `/get-session`, `/sign-out`, `/ok` and `/error`.
  */
 export const DISABLED_PATHS = [
 	'/sign-up/email',
 	'/sign-in/email',
 	'/sign-in/username',
+	// Google sign-in and linking start from our form actions (auth.api.signInSocial/linkSocialAccount).
+	'/sign-in/social',
 	'/change-password',
 	'/set-password',
 	'/reset-password',
 	'/request-password-reset',
 	'/update-user',
 	'/delete-user',
+	'/delete-user/callback',
 	'/revoke-sessions',
+	'/revoke-session',
+	'/revoke-other-sessions',
+	'/list-sessions',
+	'/update-session',
 	'/link-social',
 	'/unlink-account',
+	'/list-accounts',
+	'/account-info',
+	'/get-access-token',
+	'/refresh-token',
+	'/verify-email',
+	'/send-verification-email',
+	'/change-email',
 	// Unauthenticated "is this username taken?": a username-existence oracle.
 	'/is-username-available',
 	// Session-holder password guessing with no lockout.
 	'/verify-password'
 ];
+
+/**
+ * Parameterized routes to disable (`/reset-password/:token`). Better Auth's `disabledPaths` only
+ * matches exact paths, so these are refused by the plugin below.
+ */
+export const DISABLED_PATH_PREFIXES = ['/reset-password/'];
+
+/** Answers 404 for every route under DISABLED_PATH_PREFIXES, before Better Auth routes it. */
+function disabledPathPrefixes(): BetterAuthPlugin {
+	return {
+		id: 'hb-disabled-path-prefixes',
+		onRequest: async (request, ctx) => {
+			const basePath = ctx.options.basePath ?? '/api/auth';
+			const { pathname } = new URL(request.url);
+			const path = pathname.startsWith(basePath) ? pathname.slice(basePath.length) : pathname;
+			if (DISABLED_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))) {
+				return { response: new Response('Not Found', { status: 404 }) };
+			}
+		}
+	};
+}
 
 /** Cookie holding the invite code a visitor arrived with; set by the invite page. */
 export const INVITE_COOKIE = 'hb_invite';
@@ -127,6 +164,9 @@ export function createAuth(db: Db, options: AuthOptions) {
 		session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
 		rateLimit: { enabled: true, storage: 'database' },
 		advanced: { cookiePrefix: 'hb' },
+		// OAuth failures Better Auth cannot attribute to a sign-in (missing or forged state) land on
+		// /signin?error=..., which shows the generic Google message, not Better Auth's bare error page.
+		onAPIError: { errorURL: '/signin' },
 		disabledPaths: DISABLED_PATHS,
 		hooks: {
 			// Runs before the endpoint (and before the username plugin's checks), so a rejected password
@@ -172,6 +212,18 @@ export function createAuth(db: Db, options: AuthOptions) {
 							if (!anyUser) return { data: { ...newUser, isAdmin: true } };
 						}
 						if (!(await consumeInvite(db, code, new Date()))) throw inviteRequired();
+					},
+					// The invite is spent: clear its cookie, for Google sign-ups (whose callback is Better
+					// Auth's own route) as well as password ones. Set on Better Auth's response, so it reaches
+					// the browser from the OAuth callback and, via sveltekitCookies, from our form actions.
+					after: async (_created, ctx) => {
+						ctx?.setCookie(INVITE_COOKIE, '', {
+							httpOnly: true,
+							secure: true,
+							sameSite: 'lax',
+							path: '/',
+							maxAge: 0
+						});
 					}
 				}
 			}
@@ -182,6 +234,7 @@ export function createAuth(db: Db, options: AuthOptions) {
 				maxUsernameLength: 20,
 				usernameValidator: (value) => /^[a-z0-9_]+$/i.test(value)
 			}),
+			disabledPathPrefixes(),
 			// Must stay last: it copies Better Auth's Set-Cookie headers onto the SvelteKit response.
 			// sveltekitCookies skips setting cookies when there is no event.
 			sveltekitCookies(() => (options.getRequestEvent?.() ?? undefined) as unknown as RequestEvent)

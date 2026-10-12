@@ -27,6 +27,14 @@ const ERRORS: Record<string, { field: 'username' | 'password' | 'form'; message:
 	)
 };
 
+/** Whether `error`, or anything in its `cause` chain, is a Postgres unique violation (23505). */
+export function isUniqueViolation(error: unknown): boolean {
+	for (let e = error as { code?: string; cause?: unknown } | undefined; e; e = e.cause as never) {
+		if (e.code === '23505') return true;
+	}
+	return false;
+}
+
 /**
  * Creates a password account and signs it in (Better Auth sets the session cookie on the current
  * request). The invite comes from the `hb_invite` cookie in `headers`; it is only used when the
@@ -53,6 +61,9 @@ export async function signUpWithPassword(
 		const code = error instanceof APIError ? error.body?.code : undefined;
 		const mapped = code ? ERRORS[code] : undefined;
 		if (mapped) return { ok: false, ...mapped };
+		// Two sign-ups for the same username can both pass Better Auth's "is it taken?" check; the
+		// unique index then rejects the slower one.
+		if (isUniqueViolation(error)) return { ok: false, ...ERRORS.USERNAME_IS_ALREADY_TAKEN };
 		throw error;
 	}
 }

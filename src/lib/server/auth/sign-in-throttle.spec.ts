@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from '#lib/server/db/client.ts';
 import { signInFailure } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
-import { clearFailures, isLockedOut, recordFailure } from './sign-in-throttle.ts';
+import { clearFailures, isLockedOut, recordFailure, reserveAttempt } from './sign-in-throttle.ts';
 
 const MINUTE = 60_000;
 const start = new Date('2026-10-11T12:00:00Z');
@@ -59,5 +59,14 @@ describe('sign-in throttle', () => {
 		await clearFailures(db, 'ZACH');
 		expect(await isLockedOut(db, 'zach', start)).toBe(false);
 		expect(await db.select().from(signInFailure)).toHaveLength(1);
+	});
+
+	it('deletes failures older than a day, for every username, when an attempt is reserved', async () => {
+		const DAY = 24 * 60 * MINUTE;
+		await fail('old', 1, new Date(start.getTime() - DAY - MINUTE));
+		await fail('recent', 1, new Date(start.getTime() - DAY + MINUTE));
+		await reserveAttempt(db, 'zach', start);
+		const rows = await db.select().from(signInFailure);
+		expect(rows.map((row) => row.username).sort()).toEqual(['recent', 'zach']);
 	});
 });

@@ -1,4 +1,5 @@
-// Our account tables: invites, admin-issued password resets, and failed sign-ins for lockout.
+// Our account tables: invites, admin-issued password resets, failed sign-ins for lockout, and
+// per-IP auth attempts.
 import { index, integer, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
 import { user } from './auth.ts';
 
@@ -33,4 +34,15 @@ export const signInFailure = pgTable(
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(table) => [index('sign_in_failure_username_created_at_idx').on(table.username, table.createdAt)]
+);
+
+/** Sign-in, sign-up and reset attempts per client IP, keyed `${scope}:${ip}` (see ip-limit.ts). */
+export const authAttempt = pgTable(
+	'auth_attempt',
+	{
+		id: serial('id').primaryKey(),
+		key: text('key').notNull(),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [index('auth_attempt_key_created_at_idx').on(table.key, table.createdAt)]
 );

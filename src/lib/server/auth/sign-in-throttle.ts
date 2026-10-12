@@ -1,4 +1,4 @@
-import { and, count, eq, gt, lte } from 'drizzle-orm';
+import { and, count, eq, gt, lt, lte } from 'drizzle-orm';
 import type { Db } from '#lib/server/db/client.ts';
 import { signInFailure } from '#lib/server/db/schema.ts';
 
@@ -6,6 +6,8 @@ import { signInFailure } from '#lib/server/db/schema.ts';
 export const MAX_FAILURES = 5;
 /** How far back failures count, and so how long a lock lasts. */
 export const LOCKOUT_WINDOW_MS = 15 * 60 * 1000;
+/** Failures older than this no longer matter and are deleted. */
+const RETENTION_MS = 24 * 60 * 60 * 1000;
 
 /** Failures are kept per lowercased username, whether or not an account has it. */
 function key(username: string): string {
@@ -53,6 +55,10 @@ export async function reserveAttempt(db: Db, username: string, now: Date): Promi
 				lte(signInFailure.id, reserved.id)
 			)
 		);
+	// Opportunistic cleanup, so the table stays small without a scheduled job.
+	await db
+		.delete(signInFailure)
+		.where(lt(signInFailure.createdAt, new Date(now.getTime() - RETENTION_MS)));
 	if (row.attempts <= MAX_FAILURES) return reserved.id;
 	await releaseAttempt(db, reserved.id);
 	return null;

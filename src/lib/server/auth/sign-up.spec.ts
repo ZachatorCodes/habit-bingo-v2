@@ -1,3 +1,4 @@
+import { APIError } from 'better-auth/api';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from '#lib/server/db/client.ts';
@@ -6,7 +7,7 @@ import { createTestDb } from '#lib/server/db/test-db.ts';
 import type { Auth } from './create-auth.ts';
 import { createInvite } from './invites.ts';
 import { PASSWORD_MESSAGES } from './password-policy.ts';
-import { signUpWithPassword } from './sign-up.ts';
+import { signUpWithPassword, USERNAME_TAKEN_MESSAGE } from './sign-up.ts';
 import { createTestAuth } from './test-auth.ts';
 
 const PASSWORD = 'correct horse battery';
@@ -113,5 +114,51 @@ describe('signUpWithPassword', () => {
 		await signUp({ username: 'other', password: 'short' });
 		await signUp({ username: 'bad name' });
 		expect(await usesOfInvite()).toBe(1);
+	});
+});
+
+describe('concurrent sign-ups for the same username', () => {
+	const uniqueViolation = () =>
+		Object.assign(
+			new Error('duplicate key value violates unique constraint "user_username_unique"'),
+			{
+				code: '23505'
+			}
+		);
+
+	/** An auth whose user insert loses the race: Postgres rejects it as a duplicate. */
+	const losingAuth = (error: unknown) =>
+		({ api: { signUpEmail: () => Promise.reject(error) } }) as unknown as Auth;
+
+	it.each([
+		['the raw driver error', uniqueViolation()],
+		['a wrapped driver error', new Error('Failed query', { cause: uniqueViolation() })],
+		[
+			'a Better Auth error caused by it',
+			new APIError('UNPROCESSABLE_ENTITY', {
+				message: 'Failed to create user',
+				code: 'FAILED_TO_CREATE_USER',
+				cause: new Error('Failed query', { cause: uniqueViolation() })
+			})
+		]
+	])('reports the loser as a taken username, given %s', async (_, error) => {
+		expect(
+			await signUpWithPassword(
+				losingAuth(error),
+				{ username: 'racer', password: PASSWORD, name: 'Racer' },
+				new Headers()
+			)
+		).toEqual({ ok: false, field: 'username', message: USERNAME_TAKEN_MESSAGE });
+	});
+
+	it('still throws other database errors', async () => {
+		const outage = Object.assign(new Error('connection refused'), { code: 'ECONNREFUSED' });
+		await expect(
+			signUpWithPassword(
+				losingAuth(outage),
+				{ username: 'racer', password: PASSWORD, name: 'Racer' },
+				new Headers()
+			)
+		).rejects.toBe(outage);
 	});
 });

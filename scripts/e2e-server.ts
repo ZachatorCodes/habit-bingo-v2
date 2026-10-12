@@ -31,7 +31,9 @@ const child = spawn(
 	['node_modules/vite/bin/vite.js', 'preview', '--port', String(APP_PORT)],
 	{
 		stdio: 'inherit',
-		env: { ...process.env, DATABASE_URL, BETTER_AUTH_SECRET }
+		// Every E2E test comes from 127.0.0.1, so the per-IP auth limits are raised here (and only
+		// here) to keep the suite from tripping them. Production leaves the multiplier unset (1).
+		env: { ...process.env, DATABASE_URL, BETTER_AUTH_SECRET, IP_LIMIT_MULTIPLIER: '1000' }
 	}
 );
 
