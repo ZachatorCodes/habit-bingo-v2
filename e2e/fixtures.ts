@@ -51,6 +51,27 @@ export async function newMemberWithoutJs(
 	return { username, password };
 }
 
+/**
+ * `newMember`, then adds the first `count` Quick start suggestions (at most 10) to the habit
+ * library, so a card can be built right away.
+ */
+export async function newMemberWithHabits(
+	page: Page,
+	count: number
+): Promise<{ username: string; password: string }> {
+	const member = await newMember(page);
+	await page.goto('/me/habits?welcome=1');
+	await waitForHydration(page);
+	const labels = await page
+		.getByRole('button', { name: /^Add / })
+		.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label') ?? ''));
+	for (const label of labels.slice(0, count)) {
+		await page.getByRole('button', { name: label, exact: true }).click();
+		await page.getByRole('button', { name: `${label.slice(4)} added`, exact: true }).waitFor();
+	}
+	return member;
+}
+
 /** A username no other test uses: `e2e_` and 8 random lowercase letters or digits. */
 export function uniqueUsername(): string {
 	const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
