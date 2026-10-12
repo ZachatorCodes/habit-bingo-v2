@@ -29,6 +29,13 @@
       "when": 1791780747478,
       "tag": "0003_auth_attempt",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791815934161,
+      "tag": "0004_habits",
+      "breakpoints": true
     }
   ]
 }
