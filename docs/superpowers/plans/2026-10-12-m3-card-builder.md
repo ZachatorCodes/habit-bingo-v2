@@ -26,8 +26,8 @@ Zod 4, Vitest 4, Playwright.
   server load and form action under `(app)`, form actions carry the page's query when they post.
 - **One card per user per calendar month (`YYYY-MM`)**, unique (`userId`, `month`). A card can be
   created on any day of the month. The month and "today" are **user-local** (the profile timezone).
-- **Sizes (spec §3.3):** 3×3 (9 habits), 4×4 (16 habits), 5×5 (24 habits + FREE center at index
-  12). Multipliers ×1, ×1.5, ×2. Middle reward thresholds 3×3 → 5, 4×4 → 10, 5×5 → 15 squares
+- **Sizes (spec §3.3):** 3×3 (9 habits) and 5×5 (24 habits + FREE center at index
+  12). Multipliers ×1, ×2. Middle reward thresholds 3×3 → 5, 5×5 → 15 squares
   (FREE counts).
 - **Snapshot (spec §3.3):** each square stores the habit's `emoji`, `name`, `category`,
   `direction`, `period`, `countMode`, `target` (after proration and overrides) and `isPrivate`.
@@ -96,9 +96,9 @@ month)`. Editability is `now < editableUntil`.
   - `proration.ts`: `prorateTarget(rule: HabitRule, startDate: string): number`. Round half up in
     integers, never floats: `round(N × R / D) = floor((2·N·R + D) / (2·D))`.
   - `card-layout.ts`:
-    - `type CardSize = 3 | 4 | 5`; `isCardSize(value: unknown): value is CardSize`
+    - `type CardSize = 3 | 5`; `isCardSize(value: unknown): value is CardSize`
     - `CARD_SIZES: Record<CardSize, { habits: number; squares: number; multiplier: number; sixtyThreshold: number; freePosition: number | null }>`
-      = `3: 9, 9, 1, 5, null` · `4: 16, 16, 1.5, 10, null` · `5: 24, 25, 2, 15, 12`.
+      = `3: 9, 9, 1, 5, null` · `5: 24, 25, 2, 15, 12`.
     - `shuffleLayout<T>(items: readonly T[], size: CardSize, random: () => number): (T | null)[]`
       — Fisher–Yates over `items`, then `null` inserted at `freePosition`; throws `RangeError` when
       `items.length !== CARD_SIZES[size].habits`.
@@ -130,9 +130,9 @@ it.each([
   [{ direction: 'atMost', period: 'day', countMode: 'times', target: 1 }, '2026-10-31', 1]       // day keeps N
 ])('prorates %o from %s to %i', ...)
 // card-layout.spec.ts
-it('sizes match the spec', ...) // the CARD_SIZES table above, exactly
+it('sizes match the spec', ...) // the CARD_SIZES table above, exactly; isCardSize(4) === false
 it('shuffles every item exactly once, deterministically for a given random', ...)
-it('puts FREE at index 12 on 5×5 only', ...) // layout[12] === null; no other null; 3×3/4×4 have none
+it('puts FREE at index 12 on 5×5 only', ...) // layout[12] === null; no other null; 3×3 has none
 it('refuses the wrong number of items', ...) // RangeError for 8 items on 3×3
 it('validates layouts', ...) // accepts a shuffle; rejects wrong length, missing/duplicate item, null off-center, 5×5 without null
 it('initial states: earn empty, protect held, free free', ...)
@@ -163,7 +163,7 @@ it('initial states: earn empty, protect held, free free', ...)
   `nextMonth`); M2 `normalizeRule`, `listHabits`, `Habit`, `CategoryId`.
 - Produces:
   - Table `card`: `id` text pk, `user_id` → user **cascade**, `month` text, `size` integer (CHECK in
-    3, 4, 5), `start_date` text, `editable_until` timestamptz, `week_starts_on` text (CHECK),
+    3, 5), `start_date` text, `editable_until` timestamptz, `week_starts_on` text (CHECK),
     `reward_bingo`, `reward_sixty`, `reward_blackout` text, `created_at`, `updated_at`; unique
     (`user_id`, `month`).
   - Table `card_square`: `id` text pk, `card_id` → card **cascade**, `position` integer, `is_free`
@@ -283,7 +283,7 @@ it('never returns another user\'s card; deleting a user deletes their cards', ..
     list labelled "Card builder steps" — Size, Habits, Targets, Rewards, Board — completed steps link
     back, the current one has `aria-current="step"` and "Step {i} of {n}" text.
   - `SizePicker.svelte` props `{ selected: CardSize | null; habitCount: number }`: three radio cards
-    "3×3", "4×4", "5×5" with "{n} habits · ×{multiplier}" and "You have {X} habits / need {Y}", and
+    "3×3" and "5×5" with "{n} habits · ×{multiplier}" and "You have {X} habits / need {Y}", and
     "Add {Y − X} more in the next step." when short.
   - `HabitPicker.svelte` props `{ habits: Habit[]; selected: string[]; need: number }`: checkboxes
     grouped by category (emoji, name, `describeRule`), a polite live counter "{k} of {need} picked".
@@ -376,7 +376,9 @@ test('rewards are required', ...) // empty "First bingo" → "Write a reward (up
   `src/routes/(app)/card/+page.server.ts`, `+page.svelte`, `e2e/card.e2e.ts`
 - Modify: `src/routes/(app)/card/build/[step]/+page.server.ts`, `+page.svelte`,
   `src/routes/(app)/today/+page.svelte` (+ new `+page.server.ts`),
-  `src/routes/(app)/+layout.svelte` (nav), `src/routes/(app)/me/habits/+page.svelte` (welcome link)
+  `src/routes/(app)/+layout.svelte` (nav), `src/routes/(app)/me/habits/+page.svelte` (welcome link),
+  `src/routes/+page.svelte` (landing copy: "Pick habits for a 3×3 or 5×5 card and set your own
+  rewards.")
 
 **Interfaces:**
 
@@ -392,7 +394,7 @@ test('rewards are required', ...) // empty "First bingo" → "Write a reward (up
     start." and a "Start card" button; plus "Shuffle again".
   - `CardBoard.svelte` props `{ size: CardSize; squares: { emoji: string; name: string; state: SquareState }[] }`:
     a `size`-column grid of `BingoSquare`, labelled "{Month} card" by its parent; names shown on
-    3×3 and 4×4 at `sm` and up.
+    3×3 at `sm` and up.
   - `/card` load: this month's card or `null`, whether a draft exists, `editable`, `deadline`
     (`formatEditDeadline`). Page: no card → "No card for {Month} yet." + "Build your card" (or
     "Continue building" with a draft) → `/card/build`; card → heading "{Month} card", status
