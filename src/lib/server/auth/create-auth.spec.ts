@@ -133,30 +133,63 @@ describe('createAuth', () => {
 		await expect(signUp('longpw', 'a'.repeat(129))).rejects.toThrow();
 	});
 
-	// Routes that would bypass our invite, lockout and breach rules, or reveal whether a username
-	// exists. Listed here as well as in DISABLED_PATHS so dropping one from the config fails a test.
+	// Routes that would bypass our invite, lockout and breach rules, reveal whether a username
+	// exists, or that the app simply does not use. Listed here as well as in DISABLED_PATHS so
+	// dropping one from the config fails a test.
 	const MUST_NOT_BE_ROUTED = [
 		...DISABLED_PATHS,
 		'/sign-in/username',
 		'/is-username-available',
-		'/verify-password'
+		'/verify-password',
+		'/sign-in/social',
+		'/get-access-token',
+		'/refresh-token',
+		'/account-info',
+		'/list-accounts',
+		'/list-sessions',
+		'/revoke-session',
+		'/revoke-other-sessions',
+		'/update-session',
+		'/verify-email',
+		'/send-verification-email',
+		'/change-email',
+		'/delete-user/callback',
+		// Parameterized: Better Auth's disabledPaths only matches exact paths.
+		'/reset-password/some-token',
+		'/reset-password/some-token/',
+		'/reset-password/some-token?callbackURL=/somewhere'
 	];
 
-	it.each([...new Set(MUST_NOT_BE_ROUTED)])('does not route %s over HTTP', async (path) => {
-		const res = await auth.handler(
-			new Request(`http://localhost/api/auth${path}`, {
+	describe.each(['GET', 'POST'])('over HTTP %s', (method) => {
+		it.each([...new Set(MUST_NOT_BE_ROUTED)])('does not route %s', async (path) => {
+			const res = await auth.handler(
+				new Request(`http://localhost/api/auth${path}`, {
+					method,
+					headers: { 'content-type': 'application/json', origin: 'http://localhost' },
+					body: method === 'POST' ? '{}' : undefined
+				})
+			);
+			expect(res.status).toBe(404);
+			expect(await res.text()).toBe('Not Found');
+		});
+	});
+
+	it('still answers the routes the app uses', async () => {
+		const google = createTestAuth(db, { google: { clientId: 'id', clientSecret: 'secret' } });
+		const get = (path: string) => google.handler(new Request(`http://localhost/api/auth${path}`));
+		// Control: the handler itself is mounted and answering.
+		expect((await get('/ok')).status).toBe(200);
+		expect((await get('/get-session')).status).toBe(200);
+		// The Google OAuth callback (here without state, so it redirects with an error).
+		expect((await get('/callback/google')).status).toBe(302);
+		const signOut = await google.handler(
+			new Request('http://localhost/api/auth/sign-out', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json', origin: 'http://localhost' },
 				body: '{}'
 			})
 		);
-		expect(res.status).toBe(404);
-		expect(await res.text()).toBe('Not Found');
-	});
-
-	it('still answers routes that are not disabled', async () => {
-		// Control: the handler itself is mounted and answering.
-		expect((await auth.handler(new Request('http://localhost/api/auth/ok'))).status).toBe(200);
+		expect(signOut.status).toBe(200);
 	});
 
 	it.each([
