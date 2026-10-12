@@ -16,7 +16,8 @@ async function join(page: Page, inviteUrl: string, username: string): Promise<vo
 	await expect(page).toHaveURL(/\/onboarding$/);
 	await waitForHydration(page);
 	await page.getByRole('button', { name: "Let's go" }).click();
-	await expect(page).toHaveURL(/\/today$/);
+	// Onboarding ends on the habit library Quick start (spec §4.2 step 2).
+	await expect(page).toHaveURL(/\/me\/habits\?welcome=1$/);
 }
 
 async function newPage(browser: Browser): Promise<Page> {

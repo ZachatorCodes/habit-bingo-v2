@@ -2,7 +2,13 @@ import { error, fail } from '@sveltejs/kit';
 import { CATEGORIES, isCategoryId, type CategoryId } from '#lib/game/categories.ts';
 import { requireUser } from '#lib/server/auth/guards.ts';
 import { getDb } from '#lib/server/db/client.ts';
-import { archiveHabit, listHabits, restoreHabit } from '#lib/server/habits.ts';
+import {
+	addStarter,
+	addedStarterIds,
+	archiveHabit,
+	listHabits,
+	restoreHabit
+} from '#lib/server/habits.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 const FULL_MESSAGE = 'You can have up to 100 habits. Archive some to add more.';
@@ -29,6 +35,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const all = await listHabits(db, user.id, { archived });
 	const counts = Object.fromEntries(CATEGORIES.map((c) => [c.id, 0])) as Record<CategoryId, number>;
 	for (const habit of all) counts[habit.category] += 1;
+	const active = archived ? await listHabits(db, user.id) : all;
 	const archivedCount = archived
 		? all.length
 		: (await listHabits(db, user.id, { archived: true })).length;
@@ -39,12 +46,27 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		archived,
 		counts,
 		archivedCount,
+		addedIds: addedStarterIds(active),
+		activeCount: active.length,
+		welcome: url.searchParams.get('welcome') === '1',
 		created: url.searchParams.get('created') === '1',
 		saved: url.searchParams.get('saved') === '1'
 	};
 };
 
 export const actions: Actions = {
+	addStarter: async ({ locals, request }) => {
+		const user = requireUser(locals);
+		const starterId = (await request.formData()).get('starterId');
+		const result = await addStarter(
+			requireDb(),
+			user.id,
+			typeof starterId === 'string' ? starterId : ''
+		);
+		if (!result.ok) return fail(400, { message: result.message });
+		return { addedStarter: result.added };
+	},
+
 	archive: async ({ locals, request }) => {
 		const user = requireUser(locals);
 		if (!(await archiveHabit(requireDb(), user.id, await habitId(request), new Date()))) {

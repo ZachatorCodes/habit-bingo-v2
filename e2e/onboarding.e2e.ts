@@ -26,8 +26,9 @@ test('a new sign-up completes onboarding and reaches Today', async ({ page }) =>
 		.click();
 	await expect(page.getByRole('radio', { name: '🦊' })).toBeChecked();
 	await page.getByRole('button', { name: "Let's go" }).click();
-	await expect(page).toHaveURL(/\/today$/);
-	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	// Step 2 of onboarding: start the habit library (spec §4.2).
+	await expect(page).toHaveURL(/\/me\/habits\?welcome=1$/);
+	await expect(page.getByRole('heading', { name: 'Quick start' })).toBeVisible();
 
 	// Onboarded: the page is no longer reachable.
 	await page.goto('/onboarding');
@@ -71,5 +72,5 @@ test('a browser timezone the server does not know falls back to UTC instead of b
 		el.value = 'Mars/Olympus';
 	});
 	await page.getByRole('button', { name: "Let's go" }).click();
-	await expect(page).toHaveURL(/\/today$/);
+	await expect(page).toHaveURL(/\/me\/habits\?welcome=1$/);
 });
