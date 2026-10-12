@@ -44,7 +44,9 @@ Set these in Vercel (Settings, Environment Variables) and, for local work, in `.
 | `BOOTSTRAP_INVITE_CODE` | Production                 | Yes    | One-time invite code that creates the first admin. Delete it afterwards (see below).           |
 
 Google sign-in only works on production and `localhost`, because Google needs exact redirect URIs
-(`/api/auth/callback/google` on each). Preview deployments use email and password only.
+(`/api/auth/callback/google` on each). Preview deployments use username and password only.
+
+"Local" means your `.env` file. Do not add `BETTER_AUTH_SECRET` to Vercel's Development environment.
 
 ## Scripts
 
@@ -77,6 +79,7 @@ Google sign-in only works on production and `localhost`, because Google needs ex
 - **Health check:** `GET /api/health` returns `{"status":"ok","db":"ok"}` when the app can reach its
   database. The **Deploy smoke test** workflow checks this, plus the security headers, after every
   deployment (previews are reached with the `VERCEL_AUTOMATION_BYPASS_SECRET` repo secret).
+  Its sign-in and session checks need `BETTER_AUTH_SECRET` set for Preview.
 
 ## Bootstrapping the first admin
 
