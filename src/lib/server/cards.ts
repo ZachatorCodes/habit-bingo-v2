@@ -1,6 +1,6 @@
 // Monthly cards: a snapshot of nine or twenty-four habits, laid out on a board. Every query is
 // scoped to the signed-in user.
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { monthName, monthOf, nextMonth } from '#lib/game/calendar.ts';
 import { CARD_SIZES, isValidLayout, type CardSize } from '#lib/game/card-layout.ts';
 import type { CategoryId } from '#lib/game/categories.ts';
@@ -125,43 +125,53 @@ export async function getCard(db: Db, userId: string, month: string): Promise<Ca
 
 type Resolved = {
 	rewards: Rewards;
-	/** Habit and final target by board position; null at the FREE square. */
-	board: ({ habit: Habit; target: number } | null)[];
+	/**
+	 * By board position, null at the FREE square. `habit` is set for habits new to the card, which
+	 * get a fresh snapshot; a habit already on the card keeps its square as it is.
+	 */
+	board: ({ habitId: string; target: number; habit: Habit | null } | null)[];
 };
 
-/** Checks a plan against the person's active habits and works out each square's target. */
+type KeptSquare = Extract<CardSquare, { isFree: false }>;
+
+/**
+ * Checks a plan and works out each square's target. Habits must be the person's active habits,
+ * except ones already on the card (`kept`, by habit id), which stay as snapshotted: their rule is
+ * the square's, and their target only changes through an override.
+ */
 async function resolvePlan(
 	db: Db,
 	userId: string,
 	size: CardSize,
 	plan: Omit<CardPlan, 'size'>,
-	startDate: string
+	startDate: string,
+	kept: ReadonlyMap<string, KeptSquare> = new Map()
 ): Promise<{ ok: true; value: Resolved } | CardError> {
 	const active = new Map((await listHabits(db, userId)).map((h) => [h.id, h]));
 	const ids = plan.habitIds;
 	if (
 		ids.length !== CARD_SIZES[size].habits ||
 		new Set(ids).size !== ids.length ||
-		ids.some((id) => !active.has(id))
+		ids.some((id) => !active.has(id) && !kept.has(id))
 	) {
 		return { ok: false, field: 'habits', message: 'Pick from your habits.' };
 	}
 
 	const targets = new Map<string, number>();
 	for (const id of ids) {
-		const habit = active.get(id)!;
+		const source = kept.get(id) ?? active.get(id)!;
 		const override = Object.hasOwn(plan.targets, id) ? plan.targets[id] : undefined;
 		if (override === undefined) {
-			targets.set(id, prorateTarget(habit, startDate));
+			targets.set(id, kept.has(id) ? kept.get(id)!.target : prorateTarget(source, startDate));
 			continue;
 		}
-		const rule = normalizeRule({ ...habit, target: override });
+		const rule = normalizeRule({ ...source, target: override });
 		if (!rule.ok) {
-			const { min, max } = targetRange(habit.direction, habit.period, habit.countMode);
+			const { min, max } = targetRange(source.direction, source.period, source.countMode);
 			return {
 				ok: false,
 				field: 'targets',
-				message: `Pick a number from ${min} to ${max} for ${habit.name}.`
+				message: `Pick a number from ${min} to ${max} for ${source.name}.`
 			};
 		}
 		targets.set(id, rule.rule.target);
@@ -178,7 +188,9 @@ async function resolvePlan(
 		value: {
 			rewards: rewards.value,
 			board: plan.layout.map((id) =>
-				id === null ? null : { habit: active.get(id)!, target: targets.get(id)! }
+				id === null
+					? null
+					: { habitId: id, target: targets.get(id)!, habit: kept.has(id) ? null : active.get(id)! }
 			)
 		}
 	};
@@ -232,7 +244,7 @@ export async function startCard(
 					cardId,
 					position,
 					isFree: entry === null,
-					...(entry ? snapshot(entry.habit, entry.target) : {})
+					...(entry ? snapshot(entry.habit!, entry.target) : {})
 				}))
 			);
 		});
@@ -256,26 +268,31 @@ export async function updateCard(
 	now: Date
 ): Promise<{ ok: true; card: Card } | CardError> {
 	const month = currentMonth(user, now);
-	const existing = await getCard(db, user.id, month);
-	if (!existing) {
-		return { ok: false, field: 'exists', message: `There's no card for ${monthName(month)} yet.` };
-	}
-	if (!isEditable(existing, now)) {
-		return { ok: false, field: 'locked', message: 'This card is locked.' };
-	}
-	const resolved = await resolvePlan(db, user.id, existing.size, plan, existing.startDate);
-	if (!resolved.ok) return resolved;
+	// Reading and writing under one per-person lock keeps simultaneous updates from interleaving.
+	return db.transaction(async (tx) => {
+		await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${'card:' + user.id}))`);
+		const existing = await getCard(tx, user.id, month);
+		if (!existing) {
+			return {
+				ok: false as const,
+				field: 'exists' as const,
+				message: `There's no card for ${monthName(month)} yet.`
+			};
+		}
+		if (!isEditable(existing, now)) {
+			return { ok: false as const, field: 'locked' as const, message: 'This card is locked.' };
+		}
+		const kept = new Map<string, KeptSquare>();
+		for (const square of existing.squares) {
+			if (!square.isFree && square.habitId) kept.set(square.habitId, square);
+		}
+		const resolved = await resolvePlan(tx, user.id, existing.size, plan, existing.startDate, kept);
+		if (!resolved.ok) return resolved;
 
-	const keptIds = new Map<string, string>();
-	for (const square of existing.squares) {
-		if (!square.isFree && square.habitId) keptIds.set(square.habitId, square.id);
-	}
-	const planned = new Set(plan.habitIds);
-	const dropped = existing.squares.filter(
-		(s) => !s.isFree && (s.habitId === null || !planned.has(s.habitId))
-	);
-
-	await db.transaction(async (tx) => {
+		const planned = new Set(plan.habitIds);
+		const dropped = existing.squares.filter(
+			(s) => !s.isFree && (s.habitId === null || !planned.has(s.habitId))
+		);
 		await tx
 			.update(card)
 			.set({
@@ -303,22 +320,22 @@ export async function updateCard(
 		}
 		for (const [position, entry] of resolved.value.board.entries()) {
 			if (entry === null) continue;
-			const keptId = keptIds.get(entry.habit.id);
-			if (keptId) {
+			const keptSquare = kept.get(entry.habitId);
+			if (keptSquare) {
 				await tx
 					.update(cardSquare)
 					.set({ position, target: entry.target })
-					.where(eq(cardSquare.id, keptId));
+					.where(eq(cardSquare.id, keptSquare.id));
 			} else {
 				await tx.insert(cardSquare).values({
 					id: crypto.randomUUID(),
 					cardId: existing.id,
 					position,
 					isFree: false,
-					...snapshot(entry.habit, entry.target)
+					...snapshot(entry.habit!, entry.target)
 				});
 			}
 		}
+		return { ok: true as const, card: (await getCard(tx, user.id, month))! };
 	});
-	return { ok: true, card: (await getCard(db, user.id, month))! };
 }

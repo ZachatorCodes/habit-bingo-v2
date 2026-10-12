@@ -320,6 +320,76 @@ describe('updateCard', () => {
 		expect(await db.select().from(cardSquare)).toHaveLength(9);
 	});
 
+	it('keeps the snapshot rule of a kept habit after the library changes it', async () => {
+		const me = await makeUser();
+		const habits = await makeHabits(me.id, 9);
+		const before = await started(me, habits);
+		await updateHabit(db, me.id, habits[0].id, {
+			emoji: '🍎',
+			name: 'Renamed',
+			category: 'health',
+			direction: 'atLeast',
+			period: 'day',
+			target: 1,
+			isPrivate: false
+		});
+		const keep = withoutSize(plan(habits));
+		const same = await updateCard(db, me, keep, OCT_19);
+		if (!same.ok) throw new Error(same.message);
+		expect(same.card.squares).toEqual(before.squares);
+
+		// 6 is valid for the snapshot (3 days a week, up to 7), not for the edited library habit.
+		const override = await updateCard(db, me, { ...keep, targets: { [habits[0].id]: 6 } }, OCT_19);
+		if (!override.ok) throw new Error(override.message);
+		expect(override.card.squares[0]).toMatchObject({
+			period: 'week',
+			countMode: 'days',
+			target: 6,
+			name: 'Habit 0'
+		});
+		const tooHigh = await updateCard(db, me, { ...keep, targets: { [habits[0].id]: 8 } }, OCT_19);
+		expect(tooHigh).toEqual({
+			ok: false,
+			field: 'targets',
+			message: 'Pick a number from 1 to 7 for Habit 0.'
+		});
+	});
+
+	it('lets an archived habit stay on the card but not be newly added', async () => {
+		const me = await makeUser();
+		const habits = await makeHabits(me.id, 10);
+		const before = await started(me, habits.slice(0, 9));
+		await archiveHabit(db, me.id, habits[0].id, OCT_19);
+		const keep = withoutSize(plan(habits.slice(0, 9)));
+		const kept = await updateCard(
+			db,
+			me,
+			{ ...keep, rewards: { ...rewards, bingo: 'Tacos' } },
+			OCT_19
+		);
+		if (!kept.ok) throw new Error(kept.message);
+		expect(kept.card.rewards.bingo).toBe('Tacos');
+		expect(kept.card.squares).toEqual(before.squares);
+
+		await archiveHabit(db, me.id, habits[9].id, OCT_19);
+		const added = withoutSize(plan([...habits.slice(1, 9), habits[9]]));
+		expect(await updateCard(db, me, added, OCT_19)).toMatchObject({ ok: false, field: 'habits' });
+	});
+
+	it('serialises simultaneous updates', async () => {
+		const me = await makeUser();
+		const habits = await makeHabits(me.id, 9);
+		await started(me, habits);
+		const a = withoutSize(plan(habits));
+		const b = { ...a, layout: [...a.layout].reverse() };
+		const results = await Promise.all([
+			updateCard(db, me, a, OCT_19),
+			updateCard(db, me, b, OCT_19)
+		]);
+		expect(results.every((r) => r.ok)).toBe(true);
+		expect(await db.select().from(cardSquare)).toHaveLength(9);
+	});
+
 	it('refuses updates after the window', async () => {
 		const me = await makeUser();
 		const habits = await makeHabits(me.id, 9);
