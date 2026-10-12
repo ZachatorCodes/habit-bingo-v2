@@ -3,7 +3,7 @@ import { requireUser } from '#lib/server/auth/guards.ts';
 import { createInvite, listInvites } from '#lib/server/auth/invites.ts';
 import { createResetLink } from '#lib/server/auth/password-reset.ts';
 import { getDb } from '#lib/server/db/client.ts';
-import type { Actions, PageServerLoad, RequestEvent } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 const INVITE_LIMITS = {
 	expiresInDays: { min: 1, max: 30, default: 7 },
@@ -47,11 +47,6 @@ function whole(value: string, field: keyof typeof INVITE_LIMITS): number | null 
 	return n >= min && n <= max ? n : null;
 }
 
-/** Results carry links (one of them a reset secret): never let a cache keep them. */
-function noStore(setHeaders: RequestEvent['setHeaders']) {
-	setHeaders({ 'cache-control': 'private, no-store' });
-}
-
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = requireAdmin(locals);
 	const db = requireDb();
@@ -76,10 +71,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	createInvite: async ({ request, locals, url, setHeaders }) => {
+	createInvite: async ({ request, locals, url }) => {
 		const user = requireAdmin(locals);
 		const db = requireDb();
-		noStore(setHeaders);
 		const text = await readForm(request);
 		const values = { expiresInDays: text('expiresInDays'), maxUses: text('maxUses') };
 		const expiresInDays = whole(values.expiresInDays, 'expiresInDays');
@@ -98,10 +92,9 @@ export const actions: Actions = {
 		return { section: 'invite' as const, inviteLink: `${url.origin}/join/${code}` };
 	},
 
-	resetLink: async ({ request, locals, url, setHeaders }) => {
+	resetLink: async ({ request, locals, url }) => {
 		const user = requireAdmin(locals);
 		const db = requireDb();
-		noStore(setHeaders);
 		const text = await readForm(request);
 		const values = { username: text('username') };
 		if (!values.username)

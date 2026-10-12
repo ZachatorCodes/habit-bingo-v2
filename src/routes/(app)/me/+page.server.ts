@@ -16,6 +16,7 @@ import {
 	startGoogleLink
 } from '#lib/server/auth/google.ts';
 import { requireUser } from '#lib/server/auth/guards.ts';
+import { retireResetLinks } from '#lib/server/auth/password-reset.ts';
 import { getAuth } from '#lib/server/auth/index.ts';
 import { getDb } from '#lib/server/db/client.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -111,16 +112,18 @@ export const actions: Actions = {
 			newPassword: text('newPassword')
 		});
 		if (!result.ok) return failed('password', result.field, result.message);
+		await retireResetLinks(db, user.id, new Date());
 		return { section: 'password', saved: true };
 	},
 
 	setPassword: async ({ request, locals }) => {
-		requireUser(locals);
+		const user = requireUser(locals);
 		const text = await readForm(request);
 		const result = await setUserPassword(getAuth(), request.headers, {
 			newPassword: text('newPassword')
 		});
 		if (!result.ok) return failed('password', result.field, result.message);
+		await retireResetLinks(requireDb(), user.id, new Date());
 		return { section: 'password', saved: true };
 	},
 

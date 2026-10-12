@@ -3,16 +3,10 @@ import { getAuth } from '#lib/server/auth/index.ts';
 import { getResetStatus, useResetLink } from '#lib/server/auth/password-reset.ts';
 import { isPwnedPassword } from '#lib/server/auth/pwned.ts';
 import { getDb } from '#lib/server/db/client.ts';
-import type { Actions, PageServerLoad, RequestEvent } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
-/**
- * The token in this URL is a bearer secret: never cache the page and never send the URL on as a
- * referrer (the security-headers hook keeps this stricter policy). Public, so signed-in visitors
- * can use a link too.
- */
-function protectToken(setHeaders: RequestEvent['setHeaders']) {
-	setHeaders({ 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' });
-}
+// No-store and no-referrer for this route come from `routeHeadersHandle` in hooks.server.ts.
+// Public, so signed-in visitors can use a link too.
 
 function requireDb() {
 	const db = getDb();
@@ -20,14 +14,12 @@ function requireDb() {
 	return db;
 }
 
-export const load: PageServerLoad = async ({ params, setHeaders }) => {
-	protectToken(setHeaders);
+export const load: PageServerLoad = async ({ params }) => {
 	return { status: await getResetStatus(requireDb(), params.token, new Date()) };
 };
 
 export const actions: Actions = {
-	default: async ({ params, request, setHeaders }) => {
-		protectToken(setHeaders);
+	default: async ({ params, request }) => {
 		const db = requireDb();
 		const value = (await request.formData()).get('newPassword');
 		const newPassword = typeof value === 'string' ? value : '';

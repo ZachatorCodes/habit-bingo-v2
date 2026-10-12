@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Db } from '#lib/server/db/client.ts';
 import { account, passwordReset, session, signInFailure, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
@@ -23,6 +23,18 @@ const notPwned = async () => false;
 
 const sha256hex = (value: string) => createHash('sha256').update(value).digest('hex');
 
+/** scrypt is slow: every fixture password is hashed once per module. */
+const OLD_PASSWORDS = ['old password 1234', 'admin password 123'];
+const hashes = new Map<string, string>();
+beforeAll(async () => {
+	const context = await createTestAuth(await createTestDb()).$context;
+	for (const password of OLD_PASSWORDS) hashes.set(password, await context.password.hash(password));
+});
+
+async function hashOf(password: string): Promise<string> {
+	return hashes.get(password) ?? (await auth.$context).password.hash(password);
+}
+
 async function makeUser(username: string, password?: string): Promise<string> {
 	const id = crypto.randomUUID();
 	await db.insert(user).values({
@@ -33,7 +45,7 @@ async function makeUser(username: string, password?: string): Promise<string> {
 		displayUsername: username
 	});
 	if (password) {
-		const hash = await (await auth.$context).password.hash(password);
+		const hash = await hashOf(password);
 		await db.insert(account).values({
 			id: crypto.randomUUID(),
 			userId: id,
@@ -232,6 +244,20 @@ describe('useResetLink', () => {
 		const first = await passwordMatches(userId, 'first new password 1');
 		const second = await passwordMatches(userId, 'second new password 1');
 		expect(first !== second).toBe(true);
+	});
+
+	it("using a link retires the user's other outstanding links", async () => {
+		await makeUser('alice', 'old password 1234');
+		await makeUser('bob', 'old password 1234');
+		const first = await issue('alice', adminId);
+		const second = await issue('alice', adminId);
+		const bobs = await issue('bob', adminId);
+		await useResetLink(auth, db, first, NEW_PASSWORD, NOW, notPwned);
+		expect(await getResetStatus(db, second, NOW)).toBe('used');
+		expect(
+			await useResetLink(auth, db, second, 'another new password 1', NOW, notPwned)
+		).toMatchObject({ ok: false, field: 'link', status: 'used' });
+		expect(await getResetStatus(db, bobs, NOW)).toBe('valid');
 	});
 
 	it('using a link signs the user out everywhere', async () => {

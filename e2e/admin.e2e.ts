@@ -170,3 +170,94 @@ test('an unknown reset link shows a friendly page and no form', async ({ page })
 	).toBeVisible();
 	await expect(page.getByLabel('New password')).toHaveCount(0);
 });
+
+/** Signs in as the admin in a browser context with JavaScript off. */
+async function noJsAdmin(browser: Browser): Promise<Page> {
+	const context = await browser.newContext({ javaScriptEnabled: false });
+	const page = await context.newPage();
+	await page.goto('/signin');
+	await page.getByLabel('Username').fill(ADMIN.username);
+	await page.getByLabel('Password').fill(ADMIN.password);
+	await page.getByRole('button', { name: 'Sign in' }).click();
+	await expect(page).toHaveURL(/\/today$/);
+	return page;
+}
+
+test('admin forms work without JavaScript', async ({ browser }) => {
+	const username = uniqueUsername();
+	await join(await newPage(browser), '/join/E2E-OPEN', username);
+	const page = await noJsAdmin(browser);
+
+	await page.goto('/admin');
+	await page.getByRole('button', { name: 'Create invite' }).click();
+	await expect(page.getByRole('textbox', { name: 'New invite link' })).toHaveValue(/\/join\//);
+
+	await page.getByLabel('Expires in (days)').fill('0');
+	await page.getByRole('button', { name: 'Create invite' }).click();
+	await expect(page.getByLabel('Expires in (days)')).toHaveAccessibleDescription(
+		/Choose between 1 and 30 days\./
+	);
+
+	await page.getByLabel('Username').fill(username);
+	const [response] = await Promise.all([
+		page.waitForResponse((r) => r.request().method() === 'POST'),
+		page.getByRole('button', { name: 'Create reset link' }).click()
+	]);
+	expect(response.headers()['cache-control']).toBe('private, no-store');
+	await expect(page.getByRole('textbox', { name: 'Reset link' })).toHaveValue(
+		/\/reset\/[A-Za-z0-9_-]{43}$/
+	);
+});
+
+// Pending a decision: with `Referrer-Policy: no-referrer`, Chrome sends `Origin: null` on a
+// same-origin form POST navigation, so SvelteKit's CSRF check answers 403. Only the no-JS path is
+// affected (enhanced fetch submissions send a real Origin). `strict-origin` would fix it without
+// ever sending the token-bearing path anywhere.
+test.fixme('the reset form works without JavaScript', async ({ browser }) => {
+	const username = uniqueUsername();
+	await join(await newPage(browser), '/join/E2E-OPEN', username);
+	const admin = await noJsAdmin(browser);
+	await admin.goto('/admin');
+	await admin.getByLabel('Username').fill(username);
+	await admin.getByRole('button', { name: 'Create reset link' }).click();
+	const resetUrl = await admin.getByRole('textbox', { name: 'Reset link' }).inputValue();
+
+	const visitor = await (await browser.newContext({ javaScriptEnabled: false })).newPage();
+	const page = await visitor.goto(resetUrl);
+	expect(page?.headers()['cache-control']).toBe('no-store');
+	expect(page?.headers()['referrer-policy']).toBe('no-referrer');
+	await visitor.getByLabel('New password').fill('short');
+	const [response] = await Promise.all([
+		visitor.waitForResponse((r) => r.request().method() === 'POST'),
+		visitor.getByRole('button', { name: 'Set new password' }).click()
+	]);
+	expect(response.status()).toBe(400);
+	expect(response.headers()['cache-control']).toBe('no-store');
+	expect(response.headers()['referrer-policy']).toBe('no-referrer');
+	await expect(visitor.getByLabel('New password')).toHaveAccessibleDescription(
+		/Use at least 10 characters\./
+	);
+});
+
+test('changing a password on Me retires outstanding reset links', async ({ page, browser }) => {
+	const username = uniqueUsername();
+	const user = await newPage(browser);
+	await join(user, '/join/E2E-OPEN', username);
+
+	await openAdmin(page);
+	await page.getByLabel('Username').fill(username);
+	await page.getByRole('button', { name: 'Create reset link' }).click();
+	const resetUrl = await page.getByRole('textbox', { name: 'Reset link' }).inputValue();
+
+	await user.goto('/me');
+	await waitForHydration(user);
+	await user.getByLabel('Current password').fill(PASSWORD);
+	await user.getByLabel('New password').fill('a long changed password 3');
+	await user.getByRole('button', { name: 'Change password' }).click();
+	await expect(user.getByText('Password changed.')).toBeVisible();
+
+	await user.goto(resetUrl);
+	await expect(
+		user.getByRole('heading', { name: 'This reset link has already been used.' })
+	).toBeVisible();
+});

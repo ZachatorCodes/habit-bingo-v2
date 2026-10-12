@@ -76,7 +76,8 @@ export async function getResetStatus(db: Db, token: string, now: Date): Promise<
  * Sets a new password through a reset link. Runs our password policy itself (Better Auth's
  * reset route is disabled and its hooks never see a direct hash). Then, in one transaction: claims
  * the link (a conditional UPDATE, so it works exactly once even under concurrent use), sets or
- * creates the user's password, signs them out everywhere and clears any sign-in lockout.
+ * creates the user's password, retires their other links, signs them out everywhere and clears
+ * any sign-in lockout.
  */
 export async function useResetLink(
 	auth: Auth,
@@ -143,10 +144,22 @@ export async function useResetLink(
 			});
 		}
 
+		await retireResetLinks(tx, userId, now);
 		await tx.delete(session).where(eq(session.userId, userId));
 		if (link.username) {
 			await tx.delete(signInFailure).where(eq(signInFailure.username, link.username));
 		}
 		return { ok: true } as const;
 	});
+}
+
+/**
+ * Marks every unused reset link for a user as used, so links issued before a password was set
+ * (through a link or on /me) stop working.
+ */
+export async function retireResetLinks(db: Pick<Db, 'update'>, userId: string, now: Date) {
+	await db
+		.update(passwordReset)
+		.set({ usedAt: now })
+		.where(and(eq(passwordReset.userId, userId), isNull(passwordReset.usedAt)));
 }

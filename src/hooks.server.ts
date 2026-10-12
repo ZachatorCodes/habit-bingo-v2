@@ -33,20 +33,47 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 	return svelteKitHandler({ auth, event, resolve, building });
 };
 
-export const securityHeadersHandle: Handle = async ({ event, resolve }) => {
-	let response = await resolve(event);
+/** Applies `set` to the response's headers, copying the response first if they are immutable. */
+function editHeaders(response: Response, set: (headers: Headers) => void): Response {
 	try {
-		setSecurityHeaders(response.headers);
+		set(response.headers);
+		return response;
 	} catch {
 		// Some responses (Response.redirect, proxied fetch) have immutable headers; copy them first.
-		response = new Response(response.body, response);
-		setSecurityHeaders(response.headers);
+		const copy = new Response(response.body, response);
+		set(copy.headers);
+		return copy;
 	}
-	return response;
+}
+
+export const securityHeadersHandle: Handle = async ({ event, resolve }) =>
+	editHeaders(await resolve(event), setSecurityHeaders);
+
+/**
+ * Per-route headers, set once here rather than with `setHeaders` in loads and actions: a no-JS
+ * form POST runs the action and then the loads in one request, and setting a header twice throws.
+ * Covers pages, action results, redirects and error pages alike.
+ */
+const ROUTE_HEADERS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+	// The token in the URL is a bearer secret: never cached, never sent on as a referrer.
+	'/reset/[token]': { 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' },
+	// Action results carry invite and reset links.
+	'/(app)/admin': { 'cache-control': 'private, no-store' }
+};
+
+export const routeHeadersHandle: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+	const headers = event.route.id ? ROUTE_HEADERS[event.route.id] : undefined;
+	if (!headers) return response;
+	return editHeaders(response, (target) => {
+		for (const [name, value] of Object.entries(headers)) target.set(name, value);
+	});
 };
 
 // Security headers wrap auth so Better Auth's own /api/auth responses get them too (spec §5.4).
-export const handle = sequence(securityHeadersHandle, authHandle);
+// Route headers sit inside them, so the security hook sees (and keeps) the reset page's stricter
+// Referrer-Policy.
+export const handle = sequence(securityHeadersHandle, routeHeadersHandle, authHandle);
 
 /** Only `no-referrer` may replace the default, for pages with a secret in their URL (/reset). */
 const STRICTER_REFERRER_POLICY = 'no-referrer';
