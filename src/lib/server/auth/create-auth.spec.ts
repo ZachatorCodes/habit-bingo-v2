@@ -277,16 +277,14 @@ describe('invites at sign-up', () => {
 			.map((part) => Buffer.from(JSON.stringify(part)).toString('base64url'))
 			.join('.')
 			.replace(/\.[^.]*$/, '.sig');
-		const fetchSpy = vi
-			.spyOn(globalThis, 'fetch')
-			.mockImplementation(async () =>
-				Response.json({
-					access_token: 'at',
-					id_token: idToken,
-					token_type: 'Bearer',
-					expires_in: 3600
-				})
-			);
+		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+			Response.json({
+				access_token: 'at',
+				id_token: idToken,
+				token_type: 'Bearer',
+				expires_in: 3600
+			})
+		);
 		try {
 			const res = await google.handler(
 				new Request(`http://localhost/api/auth/callback/google?state=${state}&code=abc`, {
