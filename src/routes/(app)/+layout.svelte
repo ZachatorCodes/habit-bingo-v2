@@ -6,11 +6,14 @@
 
 	let { data, children }: LayoutProps = $props();
 
-	const linkClass = (href: string) => [
+	/** True on the page itself and, for `under`, anywhere beneath it. */
+	const active = (href: string, under = false) =>
+		page.url.pathname === href || (under && page.url.pathname.startsWith(`${href}/`));
+	const linkClass = (href: string, under = false) => [
 		'rounded-xl px-3 py-1.5 font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink',
-		page.url.pathname === href ? 'bg-ink text-white' : 'hover:bg-line/40'
+		active(href, under) ? 'bg-ink text-white' : 'hover:bg-line/40'
 	];
-	const current = (href: string) => (page.url.pathname === href ? 'page' : undefined);
+	const current = (href: string, under = false) => (active(href, under) ? 'page' : undefined);
 </script>
 
 <Seo
@@ -32,6 +35,11 @@
 		<nav aria-label="Main" class="flex items-center gap-1">
 			<a href={resolve('/(app)/today')} aria-current={current('/today')} class={linkClass('/today')}
 				>Today</a
+			>
+			<a
+				href={resolve('/(app)/card')}
+				aria-current={current('/card', true)}
+				class={linkClass('/card', true)}>Card</a
 			>
 			<a href={resolve('/(app)/me')} aria-current={current('/me')} class={linkClass('/me')}>Me</a>
 			{#if data.user.isAdmin}

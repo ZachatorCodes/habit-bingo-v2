@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import BuilderSteps from '#lib/components/BuilderSteps.svelte';
 	import Button from '#lib/components/Button.svelte';
+	import CardBoard from '#lib/components/CardBoard.svelte';
 	import HabitForm from '#lib/components/HabitForm.svelte';
 	import HabitPicker from '#lib/components/HabitPicker.svelte';
 	import TargetList from '#lib/components/TargetList.svelte';
@@ -11,7 +12,7 @@
 
 	let { data, form }: PageProps = $props();
 
-	const message = $derived(form && 'message' in form ? form.message : null);
+	const message = $derived(form && 'message' in form ? form.message : data.notice);
 	const createForm = $derived(form && 'errors' in form ? form : null);
 	// svelte-ignore state_referenced_locally
 	let picked = $state<string[]>(
@@ -195,10 +196,24 @@
 			/>
 			<div><Button type="submit">Continue</Button></div>
 		</form>
-	{:else}
-		<p class="rounded-2xl border-2 border-dashed border-line bg-white p-4 font-bold">
-			This step is coming soon.
-		</p>
+	{:else if data.step === 'board' && data.board}
+		<div>
+			<h2 class="text-2xl font-black">Your board</h2>
+			<p class="mt-1 text-ink/75">
+				You can change habits, targets, rewards and the board for 48 hours after you start.
+			</p>
+		</div>
+		<CardBoard size={data.board.size} squares={data.board.squares} />
+		<div class="flex flex-wrap gap-3">
+			<form method="POST" action="?/shuffle" use:enhance>
+				<Button type="submit" variant="secondary">Shuffle again</Button>
+			</form>
+			{#if !data.draft.cardId}
+				<form method="POST" action="?/start" use:enhance>
+					<Button type="submit">Start card</Button>
+				</form>
+			{/if}
+		</div>
 	{/if}
 
 	{#if data.draft.completed.length > 0}

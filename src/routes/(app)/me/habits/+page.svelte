@@ -124,8 +124,8 @@
 
 	{#if data.welcome}
 		<p>
-			<a href={resolve('/(app)/today')} class="font-bold underline underline-offset-4"
-				>Continue to Today <span aria-hidden="true">→</span></a
+			<a href={resolve('/(app)/card/build')} class="font-bold underline underline-offset-4"
+				>Build your first card <span aria-hidden="true">→</span></a
 			>
 		</p>
 	{/if}

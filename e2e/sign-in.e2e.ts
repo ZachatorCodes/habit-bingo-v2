@@ -7,7 +7,7 @@ const ADMIN = { username: 'e2e_admin', password: 'e2e admin password 1' };
 test('members sign in and reach Today', async ({ page }) => {
 	await signIn(page, MEMBER.username, MEMBER.password);
 	await expect(page).toHaveURL(/\/today$/);
-	await expect(page.getByText('Your first card arrives soon.')).toBeVisible();
+	await expect(page.getByText('No card yet.')).toBeVisible();
 	// The app header is a banner landmark, outside the page content.
 	await expect(page.getByRole('banner').getByText('@e2e_member')).toBeVisible();
 	await expect(page.getByRole('main').getByText('@e2e_member')).toHaveCount(0);

@@ -8,7 +8,7 @@
 		{
 			emoji: '🎯',
 			title: 'Build your card',
-			text: 'Pick habits for a 3×3, 4×4 or 5×5 card and set your own rewards.'
+			text: 'Pick habits for a 3×3 or 5×5 card and set your own rewards.'
 		},
 		{
 			emoji: '✅',
