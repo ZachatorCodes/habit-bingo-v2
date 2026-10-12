@@ -19,9 +19,8 @@ export const passwordReset = pgTable('password_reset', {
 	userId: text('user_id')
 		.notNull()
 		.references(() => user.id, { onDelete: 'cascade' }),
-	createdBy: text('created_by')
-		.notNull()
-		.references(() => user.id, { onDelete: 'cascade' }),
+	/** The admin who issued it. The link stays valid if that admin's account is deleted. */
+	createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
 	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 	usedAt: timestamp('used_at', { withTimezone: true })
 });

@@ -4,14 +4,26 @@
 	type Props = {
 		label: string;
 		name: string;
-		type?: 'text' | 'password';
-		value?: string;
+		type?: 'text' | 'password' | 'number';
+		value?: string | number;
 		error?: string;
 		autocomplete?: HTMLInputAttributes['autocomplete'];
 		hint?: string;
+		min?: number;
+		max?: number;
 	};
 
-	let { label, name, type = 'text', value = '', error, autocomplete, hint }: Props = $props();
+	let {
+		label,
+		name,
+		type = 'text',
+		value = '',
+		error,
+		autocomplete,
+		hint,
+		min,
+		max
+	}: Props = $props();
 
 	const id = $props.id();
 	const hintId = `${id}-hint`;
@@ -32,6 +44,8 @@
 		{type}
 		{value}
 		{autocomplete}
+		{min}
+		{max}
 		aria-invalid={error ? 'true' : undefined}
 		aria-describedby={describedBy}
 		class={[

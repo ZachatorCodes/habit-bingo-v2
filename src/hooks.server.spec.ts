@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
-import { authHandle, securityHeadersHandle } from './hooks.server';
+import {
+	authHandle,
+	handle,
+	handleError,
+	routeHeadersHandle,
+	securityHeadersHandle
+} from './hooks.server';
 import { tryGetAuth } from '#lib/server/auth/index.ts';
 import { SECURITY_HEADERS } from '#lib/server/security-headers.ts';
 
@@ -26,6 +32,19 @@ describe('securityHeadersHandle', () => {
 		expect(response.status).toBe(302);
 		expect(response.headers.get('location')).toBe('https://example.com/next');
 		expect(Object.fromEntries(response.headers)).toMatchObject(lowercase(SECURITY_HEADERS));
+	});
+
+	it('keeps a stricter Referrer-Policy a page set itself, e.g. one with a secret in its URL', async () => {
+		const response = await securityHeadersHandle({
+			event,
+			resolve: async () =>
+				new Response('ok', {
+					headers: { 'referrer-policy': 'strict-origin', 'x-frame-options': 'SAMEORIGIN' }
+				})
+		});
+		expect(response.headers.get('referrer-policy')).toBe('strict-origin');
+		// Every other header still wins over what the page set.
+		expect(response.headers.get('x-frame-options')).toBe('DENY');
 	});
 });
 
@@ -63,3 +82,64 @@ function lowercase(headers: Readonly<Record<string, string>>): Record<string, st
 		Object.entries(headers).map(([name, value]) => [name.toLowerCase(), value])
 	);
 }
+
+describe('handleError', () => {
+	it('never logs the secret token from a reset link', async () => {
+		const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+		const token = 'A'.repeat(43);
+		await handleError({
+			kind: 'unknown',
+			error: new Error('boom'),
+			event: { url: new URL(`http://localhost/reset/${token}`) },
+			status: 500,
+			message: 'Internal Error'
+		} as unknown as Parameters<typeof handleError>[0]);
+		const output = logged.mock.calls.flat().join(' ');
+		expect(output).toContain('/reset/[token]');
+		expect(output).not.toContain(token);
+		logged.mockRestore();
+	});
+});
+
+describe('routeHeadersHandle', () => {
+	const routed = (id: string | null) => ({ route: { id } }) as unknown as RequestEvent;
+
+	it('keeps reset pages out of caches and referrers, on every response', async () => {
+		for (const status of [200, 303, 400, 500]) {
+			const response = await routeHeadersHandle({
+				event: routed('/reset/[token]'),
+				resolve: async () => new Response('x', { status })
+			});
+			expect(response.headers.get('cache-control')).toBe('no-store');
+			expect(response.headers.get('referrer-policy')).toBe('strict-origin');
+		}
+	});
+
+	it('never lets a cache keep the admin page or its action results', async () => {
+		const response = await routeHeadersHandle({
+			event: routed('/(app)/admin'),
+			resolve: async () => new Response('x')
+		});
+		expect(response.headers.get('cache-control')).toBe('private, no-store');
+		expect(response.headers.get('referrer-policy')).toBeNull();
+	});
+
+	it('leaves other routes alone', async () => {
+		const response = await routeHeadersHandle({
+			event: routed('/signin'),
+			resolve: async () => new Response('x', { headers: { 'cache-control': 'public' } })
+		});
+		expect(response.headers.get('cache-control')).toBe('public');
+	});
+
+	it('survives the security headers hook in the full chain', async () => {
+		expect(handle).toBeTypeOf('function');
+		const response = await securityHeadersHandle({
+			event: routed('/reset/[token]'),
+			resolve: async (event) =>
+				routeHeadersHandle({ event, resolve: async () => Response.redirect('http://x/', 303) })
+		});
+		expect(response.headers.get('referrer-policy')).toBe('strict-origin');
+		expect(response.headers.get('cache-control')).toBe('no-store');
+	});
+});

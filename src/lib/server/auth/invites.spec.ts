@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from '#lib/server/db/client.ts';
 import { invite, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
-import { consumeInvite, createInvite, getInviteStatus } from './invites.ts';
+import { consumeInvite, createInvite, getInviteStatus, listInvites } from './invites.ts';
 
 const NOW = new Date('2026-10-11T12:00:00Z');
 const DAY = 24 * 60 * 60 * 1000;
@@ -78,5 +78,38 @@ describe('invites', () => {
 		);
 		const results = await Promise.all([consumeInvite(db, code, NOW), consumeInvite(db, code, NOW)]);
 		expect(results.sort()).toEqual([false, true]);
+	});
+});
+
+describe('listInvites', () => {
+	it('lists invites newest first with their status and uses', async () => {
+		const older = new Date(NOW.getTime() - 2 * DAY);
+		const { code: usedUp } = await createInvite(
+			db,
+			{ createdBy: adminId, expiresInDays: 7, maxUses: 1 },
+			older
+		);
+		await consumeInvite(db, usedUp, older);
+		const { code: expired } = await createInvite(
+			db,
+			{ createdBy: adminId, expiresInDays: 1, maxUses: 5 },
+			new Date(NOW.getTime() - DAY - 1000)
+		);
+		await db
+			.update(invite)
+			.set({ createdAt: new Date(NOW.getTime() - DAY) })
+			.where(eq(invite.code, expired));
+		await db.update(invite).set({ createdAt: older }).where(eq(invite.code, usedUp));
+		const { code: valid } = await createInvite(
+			db,
+			{ createdBy: adminId, expiresInDays: 7, maxUses: 3 },
+			NOW
+		);
+
+		expect(await listInvites(db, NOW)).toEqual([
+			{ code: valid, status: 'valid', uses: 0, maxUses: 3, expiresAt: expect.any(Date) },
+			{ code: expired, status: 'expired', uses: 0, maxUses: 5, expiresAt: expect.any(Date) },
+			{ code: usedUp, status: 'usedUp', uses: 1, maxUses: 1, expiresAt: expect.any(Date) }
+		]);
 	});
 });

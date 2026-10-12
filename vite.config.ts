@@ -69,6 +69,10 @@ export default defineConfig({
 				test: {
 					name: 'server',
 					environment: 'node',
+					// PGlite migrations and scrypt hashing make a module's first database test slow when
+					// the whole suite runs in parallel.
+					testTimeout: 15000,
+					hookTimeout: 15000,
 					include: ['src/**/*.{test,spec}.{js,ts}'],
 					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
 				}

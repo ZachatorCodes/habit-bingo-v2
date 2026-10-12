@@ -28,6 +28,7 @@ test('admins see the Admin link', async ({ page }) => {
 test('signed-out visitors are sent to sign in and come back after', async ({ page }) => {
 	await page.goto('/me');
 	await expect(page).toHaveURL(/\/signin\?next=%2Fme$/);
+	await waitForHydration(page);
 	await page.getByLabel('Username').fill(MEMBER.username);
 	await page.getByLabel('Password').fill(MEMBER.password);
 	await page.getByRole('button', { name: 'Sign in' }).click();
@@ -93,6 +94,7 @@ for (const next of [
 		await page.goto('/signin?next=' + encodeURIComponent(next));
 		// The page itself never carries an off-site target, whatever the action does with it.
 		await expect(page.locator('form[action="?/signin"] input[name="next"]')).toHaveValue('/today');
+		await waitForHydration(page);
 		await page.getByLabel('Username').fill(MEMBER.username);
 		await page.getByLabel('Password').fill(MEMBER.password);
 		await page.getByRole('button', { name: 'Sign in' }).click();

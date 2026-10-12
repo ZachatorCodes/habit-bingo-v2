@@ -32,6 +32,8 @@ export const load: PageServerLoad = ({ url, locals }) => {
 	return {
 		next: safeNextPath(url.searchParams.get('next')),
 		googleEnabled: googleEnabled(),
+		// Set by /reset/[token] after a new password is saved.
+		passwordUpdated: url.searchParams.get('reset') === 'done',
 		// Better Auth sends failed Google sign-ins back here with ?error=<code>.
 		googleError: googleErrorMessage(url.searchParams.get('error'))
 	};
