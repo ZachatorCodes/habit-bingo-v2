@@ -100,12 +100,12 @@ per-category breakdown. They are not shown on card squares.
 ### 3.3 Cards
 
 - One card per user per calendar month (`YYYY-MM`). A card can be created on any day of the month.
-- Sizes: **3×3** (9 habits), **4×4** (16 habits), **5×5** (24 habits + FREE center at index 12).
+- Sizes: **3×3** (9 habits) and **5×5** (24 habits + FREE center at index 12).
 - When a card is created, each square **snapshots** its habit (emoji, name, category, direction,
   period, countMode, target after proration and user overrides, isPrivate). Later library edits never affect it.
 - Habits are placed in random positions; the builder offers re-shuffle before the card starts.
 - Three rewards (free text): **first bingo**, **~60% of squares**, **blackout**.
-  Middle-tier thresholds: 3×3 → 5, 4×4 → 10, 5×5 → 15 squares. FREE counts as a square.
+  Middle-tier thresholds: 3×3 → 5, 5×5 → 15 squares. FREE counts as a square.
 - **Edit window:** for 48 hours after creation (but not beyond the month's last day), habits,
   targets, rewards and layout can be edited. Afterward the card is locked.
 
@@ -160,7 +160,7 @@ leave the window, `lost` is permanent.
 
 ### 3.6 Lines and reward tiers
 
-- Lines: every row, every column, and both diagonals (3×3: 8, 4×4: 10, 5×5: 12).
+- Lines: every row, every column, and both diagonals (3×3: 8, 5×5: 12).
 - A line is complete when all its squares count.
 - Tiers: `bingo` (≥ 1 complete line), `sixtyPercent` (counting squares ≥ threshold in §3.3),
   `blackout` (all squares count).
@@ -180,7 +180,7 @@ Each square has a base value of **10**:
 | FREE                  | `0`                                                                                                             |
 
 Bonuses: **+25** per complete line, **+100** for blackout.
-Size multiplier on the total: **3×3 ×1, 4×4 ×1.5, 5×5 ×2**. Displayed points are rounded to the
+Size multiplier on the total: **3×3 ×1, 5×5 ×2**. Displayed points are rounded to the
 nearest integer at the end of the calculation.
 
 `atLeast` day/week squares keep their earned points even after being `lost`.
@@ -263,7 +263,7 @@ progress text (e.g. "5/8 today", "2 of 3 this week"), and an add button that log
 - **Phone (and all 5×5 on narrow screens):** emoji grid. Each square shows emoji, state color and a
   thin progress bar. Tapping opens a **bottom sheet**: name, category, rule, progress, this
   week's / month's days with their counts, and a − / + stepper for the selected day. Logging never happens from a stray grid tap.
-- **Wider screens and 3×3 / 4×4:** squares also show full names.
+- **Wider screens and 3×3:** squares also show full names.
 - Private squares show to others as 🔒 with progress only.
 
 ### 4.7 Feedback & celebration
