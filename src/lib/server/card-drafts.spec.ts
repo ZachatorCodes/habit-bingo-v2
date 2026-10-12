@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from '#lib/server/db/client.ts';
+import type { Card } from '#lib/server/cards.ts';
 import { cardDraft, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import {
@@ -8,6 +9,7 @@ import {
 	type Step,
 	canOpen,
 	discardDraft,
+	draftFromCard,
 	emptyDraft,
 	firstOpenStep,
 	getDraft,
@@ -94,5 +96,56 @@ describe('card drafts', () => {
 		expect(changed.targets).toEqual({ a: 2 });
 		expect(changed.layout).toBeNull();
 		expect(changed.habitIds).toEqual(['a', 'c', 'd']);
+	});
+
+	it('draftFromCard round-trips a card into a complete editing draft', () => {
+		const rule = { direction: 'atLeast', period: 'month', countMode: 'days' } as const;
+		const square = (position: number, habitId: string, target: number) => ({
+			id: `s${position}`,
+			position,
+			isFree: false as const,
+			habitId,
+			emoji: '🏃',
+			name: habitId,
+			category: 'fitness' as const,
+			isPrivate: false,
+			...rule,
+			target
+		});
+		const ids = ['h3', 'h1', 'h2', 'h4', 'h5', 'h6', 'h7', 'h8', 'h9'];
+		const card: Card = {
+			id: 'card-1',
+			month: '2026-10',
+			size: 3,
+			startDate: '2026-10-12',
+			editableUntil: new Date('2026-10-14T00:00:00Z'),
+			weekStartsOn: 'monday',
+			rewards: { bingo: 'a', sixty: 'b', blackout: 'c' },
+			squares: ids.map((id, i) => square(i, id, i + 1))
+		};
+		expect(draftFromCard(card)).toEqual({
+			month: '2026-10',
+			cardId: 'card-1',
+			size: 3,
+			habitIds: ids,
+			// The card's own targets, so editing shows them as they are.
+			targets: { h3: 1, h1: 2, h2: 3, h4: 4, h5: 5, h6: 6, h7: 7, h8: 8, h9: 9 },
+			rewards: { bingo: 'a', sixty: 'b', blackout: 'c' },
+			layout: ids,
+			completed: ['habits', 'targets', 'rewards', 'board']
+		});
+
+		const big: Card = {
+			...card,
+			size: 5,
+			squares: Array.from({ length: 25 }, (_, i) =>
+				i === 12 ? { id: 'free', position: 12, isFree: true as const } : square(i, `h${i}`, 3)
+			)
+		};
+		const bigDraft = draftFromCard(big);
+		expect(bigDraft.layout).toHaveLength(25);
+		expect(bigDraft.layout![12]).toBeNull();
+		expect(bigDraft.habitIds).toHaveLength(24);
+		expect(Object.keys(bigDraft.targets)).toHaveLength(24);
 	});
 });

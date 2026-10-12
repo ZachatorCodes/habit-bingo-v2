@@ -25,7 +25,14 @@ import {
 	type Step
 } from '#lib/server/card-drafts.ts';
 import { localDate } from '#lib/server/clock.ts';
-import { currentMonth, getCard, startCard, validateRewards, type Card } from '#lib/server/cards.ts';
+import {
+	currentMonth,
+	getCard,
+	startCard,
+	updateCard,
+	validateRewards,
+	type Card
+} from '#lib/server/cards.ts';
 import { getDb } from '#lib/server/db/client.ts';
 import { DEFAULT_HABIT_INPUT, readHabitForm } from '#lib/server/habit-form.ts';
 import { createHabit, listHabits, type Habit } from '#lib/server/habits.ts';
@@ -75,26 +82,59 @@ function startDateOf(user: { timezone?: string | null }, card: Card | null, draf
 		: localDate(new Date(), user.timezone ?? 'UTC');
 }
 
+/** What the builder needs of a habit: its emoji, name and rule. */
+type PickedHabit = Pick<
+	Habit,
+	'id' | 'emoji' | 'name' | 'direction' | 'period' | 'countMode' | 'target'
+>;
+
+/** The squares of the card being edited, by habit id; nothing when building a new card. */
+function keptSquares(card: Card | null) {
+	const kept = new Map<string, PickedHabit>();
+	for (const square of card?.squares ?? []) {
+		if (square.isFree || !square.habitId) continue;
+		// A habit already on the card stays as snapshotted, even if the library has changed since.
+		kept.set(square.habitId, { ...square, id: square.habitId });
+	}
+	return kept;
+}
+
 /**
- * The picked habits that are still active, in pick order. A habit archived after it was picked
- * leaves the set short, so the person is sent back to re-pick instead of seeing a short list.
+ * The picked habits that can go on the card, in pick order: active habits, and habits already on
+ * the card being edited (which stay as they are even when archived since). A habit archived after
+ * it was picked leaves the set short, so the person is sent back to re-pick.
  */
 async function pickedHabits(
 	db: NonNullable<ReturnType<typeof getDb>>,
 	userId: string,
 	draft: CardDraft,
-	size: CardSize
-): Promise<Habit[]> {
+	size: CardSize,
+	kept: ReadonlyMap<string, PickedHabit>
+): Promise<PickedHabit[]> {
 	const active = new Map((await listHabits(db, userId)).map((h) => [h.id, h]));
-	const picked = draft.habitIds.flatMap((id) => active.get(id) ?? []);
+	const picked = draft.habitIds.flatMap((id) => kept.get(id) ?? active.get(id) ?? []);
 	if (picked.length !== CARD_SIZES[size].habits) redirect(303, '/card/build/habits');
 	return picked;
 }
 
-/** One row per picked habit: its prorated target and the value to show (override or prorated). */
-function targetRows(picked: Habit[], draft: CardDraft, startDate: string) {
+/** The target a habit starts at: the card's own for a habit already on it, otherwise prorated. */
+function startingTarget(
+	habit: PickedHabit,
+	kept: ReadonlyMap<string, PickedHabit>,
+	startDate: string
+) {
+	return kept.has(habit.id) ? habit.target : prorateTarget(habit, startDate);
+}
+
+/** One row per picked habit: its starting target and the value to show (override or starting). */
+function targetRows(
+	picked: PickedHabit[],
+	draft: CardDraft,
+	startDate: string,
+	kept: ReadonlyMap<string, PickedHabit>
+) {
 	return picked.map((habit) => {
-		const prorated = prorateTarget(habit, startDate);
+		const prorated = startingTarget(habit, kept, startDate);
 		return {
 			habit,
 			prorated,
@@ -107,9 +147,12 @@ function targetRows(picked: Habit[], draft: CardDraft, startDate: string) {
 export const load: PageServerLoad = async ({ locals, params, url }) => {
 	if (!isStep(params.step)) error(404, 'Not found');
 	const { user, db, month, card, draft } = await builderContext(locals);
+	// Changing a card keeps its size, so its builder starts at the habits.
+	if (params.step === 'size' && draft.cardId) redirect(303, '/card/build/habits');
 	if (!canOpen(draft, params.step)) redirect(303, `/card/build/${firstOpenStep(draft)}`);
 
 	const size: CardSize | null = draft.size ?? card?.size ?? null;
+	const kept = keptSquares(card);
 	const habits = await listHabits(db, user.id);
 	const counts = Object.fromEntries(CATEGORIES.map((c) => [c.id, 0])) as Record<CategoryId, number>;
 	for (const habit of habits) counts[habit.category] += 1;
@@ -117,13 +160,13 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 		null;
 	if (params.step === 'targets' || params.step === 'rewards') {
 		if (size === null) redirect(303, '/card/build/size');
-		const picked = await pickedHabits(db, user.id, draft, size);
+		const picked = await pickedHabits(db, user.id, draft, size, kept);
 		if (params.step === 'targets') {
 			const startDate = startDateOf(user, card, draft);
 			targets = {
 				startDate,
 				daysLeft: daysLeftInMonth(startDate),
-				rows: targetRows(picked, draft, startDate)
+				rows: targetRows(picked, draft, startDate, kept)
 			};
 		}
 	}
@@ -133,7 +176,7 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	} | null = null;
 	if (params.step === 'board') {
 		if (size === null) redirect(303, '/card/build/size');
-		const picked = await pickedHabits(db, user.id, draft, size);
+		const picked = await pickedHabits(db, user.id, draft, size, kept);
 		let layout = draft.layout;
 		if (!layout || !isValidLayout(layout, draft.habitIds, size)) {
 			layout = shuffleLayout(draft.habitIds, size, Math.random);
@@ -220,7 +263,8 @@ export const actions: Actions = {
 		if (!canOpen(draft, 'targets')) redirect(303, `/card/build/${firstOpenStep(draft)}`);
 		const size: CardSize | null = draft.size ?? card?.size ?? null;
 		if (size === null) redirect(303, '/card/build/size');
-		const picked = await pickedHabits(db, user.id, draft, size);
+		const kept = keptSquares(card);
+		const picked = await pickedHabits(db, user.id, draft, size, kept);
 		const startDate = startDateOf(user, card, draft);
 
 		const form = await request.formData();
@@ -236,7 +280,8 @@ export const actions: Actions = {
 			const number = Number(text);
 			if (!/^\d+$/.test(text) || number < min || number > max) {
 				errors[field] = `Pick a number from ${min} to ${max}.`;
-			} else if (number !== prorateTarget(habit, startDate)) {
+			} else if (draft.cardId || number !== startingTarget(habit, kept, startDate)) {
+				// Changing a card keeps every typed target: a stored target stays unless told otherwise.
 				targets[habit.id] = number;
 			}
 		}
@@ -253,7 +298,7 @@ export const actions: Actions = {
 		if (!canOpen(draft, 'rewards')) redirect(303, `/card/build/${firstOpenStep(draft)}`);
 		const size: CardSize | null = draft.size ?? card?.size ?? null;
 		if (size === null) redirect(303, '/card/build/size');
-		await pickedHabits(db, user.id, draft, size);
+		await pickedHabits(db, user.id, draft, size, keptSquares(card));
 
 		const form = await request.formData();
 		const text = (name: string) => {
@@ -276,7 +321,7 @@ export const actions: Actions = {
 		if (!canOpen(draft, 'board')) redirect(303, `/card/build/${firstOpenStep(draft)}`);
 		const size: CardSize | null = draft.size ?? card?.size ?? null;
 		if (size === null) redirect(303, '/card/build/size');
-		await pickedHabits(db, user.id, draft, size);
+		await pickedHabits(db, user.id, draft, size, keptSquares(card));
 		await saveDraft(db, user.id, {
 			...draft,
 			layout: shuffleLayout(draft.habitIds, size, Math.random)
@@ -286,30 +331,32 @@ export const actions: Actions = {
 	start: async ({ locals }) => {
 		const { user, db, draft } = await builderContext(locals);
 		if (!canOpen(draft, 'board')) redirect(303, `/card/build/${firstOpenStep(draft)}`);
-		if (draft.cardId) redirect(303, '/card');
 		if (draft.size === null) redirect(303, '/card/build/size');
 		// Opening the Board step makes the layout; without one the person has not seen a board yet.
 		if (!draft.layout) redirect(303, '/card/build/board');
 
-		const result = await startCard(
-			db,
-			{
-				id: user.id,
-				timezone: user.timezone ?? 'UTC',
-				weekStartsOn: user.weekStartsOn === 'sunday' ? 'sunday' : 'monday'
-			},
-			{
-				size: draft.size,
-				habitIds: draft.habitIds,
-				targets: draft.targets,
-				rewards: draft.rewards,
-				layout: draft.layout
-			},
-			new Date()
-		);
+		const person = {
+			id: user.id,
+			timezone: user.timezone ?? 'UTC',
+			weekStartsOn: user.weekStartsOn === 'sunday' ? ('sunday' as const) : ('monday' as const)
+		};
+		const plan = {
+			habitIds: draft.habitIds,
+			targets: draft.targets,
+			rewards: draft.rewards,
+			layout: draft.layout
+		};
+		const editing = draft.cardId !== null;
+		const result = editing
+			? await updateCard(db, person, plan, new Date())
+			: await startCard(db, person, { size: draft.size, ...plan }, new Date());
 		if (result.ok) {
 			await discardDraft(db, user.id);
-			redirect(303, '/card?started=1');
+			redirect(303, editing ? '/card?saved=1' : '/card?started=1');
+		}
+		if (result.field === 'locked') {
+			await discardDraft(db, user.id);
+			redirect(303, '/card?locked=1');
 		}
 		if (result.field === 'exists') redirect(303, '/card');
 		if (result.field === 'habits') redirect(303, '/card/build/habits?notice=habits');
@@ -331,8 +378,8 @@ export const actions: Actions = {
 	},
 
 	discard: async ({ locals }) => {
-		const { user, db } = await builderContext(locals);
+		const { user, db, draft } = await builderContext(locals);
 		await discardDraft(db, user.id);
-		redirect(303, '/card/build');
+		redirect(303, draft.cardId ? '/card' : '/card/build');
 	}
 };

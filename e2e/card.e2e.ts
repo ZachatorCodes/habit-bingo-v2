@@ -198,3 +198,116 @@ test('the welcome panel links to the builder', async ({ page }) => {
 	await page.getByRole('link', { name: /Build your first card/ }).click();
 	await expect(page).toHaveURL(/\/card\/build\/size$/);
 });
+
+/** Builds and starts a 3×3 card, ending on /card. */
+async function startCard(page: Page): Promise<void> {
+	await buildToBoard(page);
+	await page.getByRole('button', { name: 'Start card' }).click();
+	await expect(page).toHaveURL(/\/card\?started=1$/);
+	await waitForHydration(page);
+}
+
+test('within 48 hours the card can be edited', async ({ page }) => {
+	await newMemberWithHabits(page, 10);
+	await startCard(page);
+	const before = await squareNames(page);
+
+	await page.getByRole('button', { name: 'Edit card' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+	await waitForHydration(page);
+	// Swap one picked habit for the tenth.
+	const labels = page.locator('label').filter({ has: page.getByRole('checkbox') });
+	const boxes = page.getByRole('checkbox');
+	await expect(boxes).toHaveCount(10);
+	let off = -1;
+	for (let i = 0; i < 10; i++) if (!(await boxes.nth(i).isChecked())) off = i;
+	expect(off).toBeGreaterThanOrEqual(0);
+	const newName = ((await labels.nth(off).innerText()) ?? '').trim();
+	await labels.nth(off === 0 ? 1 : 0).click();
+	await labels.nth(off).click();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/targets$/);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/rewards$/);
+	await waitForHydration(page);
+	await expect(page.getByLabel('First bingo')).toHaveValue('Ice cream');
+	await page.getByLabel('First bingo').fill('Pizza night');
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/board$/);
+	await waitForHydration(page);
+	await expect(page.getByRole('button', { name: 'Start card' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Save changes' }).click();
+	await expect(page).toHaveURL(/\/card\?saved=1$/);
+	await expect(page.getByText('Changes saved.')).toBeVisible();
+	await expect(page.getByText('Pizza night')).toBeVisible();
+	const after = await squareNames(page);
+	expect(after).toHaveLength(9);
+	expect(after.join()).not.toBe(before.join());
+	expect(newName.length).toBeGreaterThan(0);
+	expect(after.some((n) => newName.includes(n.split(':')[0]))).toBe(true);
+	await expect(page.getByRole('button', { name: 'Edit card' })).toBeVisible();
+});
+
+test('editing shows the card targets and keeps them', async ({ page }) => {
+	await newMemberWithHabits(page, 9);
+	await buildToBoard(page);
+	await page.goto('/card/build/targets');
+	await waitForHydration(page);
+	const first = page.locator('input[name^="target:"]').first();
+	const original = Number(await first.inputValue());
+	const changed = original === 1 ? 2 : original - 1;
+	await first.fill(String(changed));
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/rewards$/);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/board$/);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Start card' }).click();
+	await expect(page).toHaveURL(/\/card\?started=1$/);
+	await waitForHydration(page);
+
+	await page.getByRole('button', { name: 'Edit card' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/targets$/);
+	await expect(page.locator('input[name^="target:"]').first()).toHaveValue(String(changed));
+});
+
+test('cancel editing leaves the card unchanged', async ({ page }) => {
+	await newMemberWithHabits(page, 10);
+	await startCard(page);
+	const before = await squareNames(page);
+
+	await page.getByRole('button', { name: 'Edit card' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/rewards$/);
+	await waitForHydration(page);
+	await page.getByLabel('First bingo').fill('Changed my mind');
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/board$/);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Cancel editing' }).click();
+	await expect(page).toHaveURL(/\/card$/);
+	await expect(page.getByText('Ice cream')).toBeVisible();
+	await expect(page.getByText('Changed my mind')).toHaveCount(0);
+	expect(await squareNames(page)).toEqual(before);
+
+	// The draft is gone: the builder goes straight back to the card.
+	await page.goto('/card/build/rewards');
+	await expect(page).toHaveURL(/\/card$/);
+});
+
+test('editing skips the Size step', async ({ page }) => {
+	await newMemberWithHabits(page, 9);
+	await startCard(page);
+	await page.getByRole('button', { name: 'Edit card' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+	await expect(
+		page.getByRole('list', { name: 'Card builder steps' }).getByText('Size')
+	).toHaveCount(0);
+	await page.goto('/card/build/size');
+	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+});
