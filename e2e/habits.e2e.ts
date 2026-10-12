@@ -132,21 +132,19 @@ test('archive from the edit page, then restore from the archived view', async ({
 	await expect(page.getByText('Meditate')).toBeVisible();
 });
 
-test('a limit per day posted without JS is rejected on the period field', async ({ browser }) => {
+test('a limit per day can be added without JS', async ({ browser }) => {
 	const context = await browser.newContext({ javaScriptEnabled: false });
 	const page = await context.newPage();
 	await newMemberWithoutJs(page);
 	await page.goto('/me/habits/new');
-	await page.getByRole('textbox', { name: 'Emoji' }).fill('🍔');
-	await page.getByRole('textbox', { name: 'Name' }).fill('Eat out');
+	await page.getByRole('textbox', { name: 'Emoji' }).fill('☕');
+	await page.getByRole('textbox', { name: 'Name' }).fill('Coffee');
 	await chooseRadio(page, /Limit it/);
+	await page.getByRole('spinbutton', { name: 'How many' }).fill('1');
 	await page.getByRole('combobox', { name: 'Per' }).selectOption('day');
 	await page.getByRole('button', { name: 'Add habit' }).click();
-	await expect(page.getByRole('combobox', { name: 'Per' })).toHaveAccessibleDescription(
-		/Limits can be per week or per month\./
-	);
-	await page.goto('/me/habits');
-	await expect(page.getByText('No habits yet.')).toBeVisible();
+	await expect(page).toHaveURL(/\/me\/habits\?category=other&created=1$/);
+	await expect(page.getByText('At most once a day')).toBeVisible();
 	await context.close();
 });
 

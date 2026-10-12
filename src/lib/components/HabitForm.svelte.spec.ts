@@ -19,17 +19,17 @@ const periodSelect = () => page.getByRole('combobox', { name: 'Per' });
 const countSelect = () => page.getByRole('combobox', { name: 'Counting' });
 
 describe('HabitForm', () => {
-	it('hides "a day" when Limit it is chosen', async () => {
-		render(HabitForm, { values: defaults, submitLabel: 'Add habit' });
+	it('offers "a day" for limits too, and keeps a per-day habit per day', async () => {
+		render(HabitForm, {
+			values: { ...defaults, period: 'day', target: 1 },
+			submitLabel: 'Add habit'
+		});
+		await page.getByRole('radio', { name: /Limit it/ }).click();
 		await expect.element(page.getByRole('option', { name: 'a day' })).toBeInTheDocument();
-		await page.getByRole('radio', { name: /Limit it/ }).click();
-		await expect.element(page.getByRole('option', { name: 'a day' })).not.toBeInTheDocument();
-	});
-
-	it('moves a per-day habit to per week when switched to Limit it', async () => {
-		render(HabitForm, { values: { ...defaults, period: 'day' }, submitLabel: 'Add habit' });
-		await page.getByRole('radio', { name: /Limit it/ }).click();
-		await expect.element(periodSelect()).toHaveValue('week');
+		await expect.element(periodSelect()).toHaveValue('day');
+		await expect
+			.element(page.getByRole('region', { name: 'Preview' }))
+			.toHaveTextContent(/At most once a day/);
 	});
 
 	it('hides the count mode for per-day habits', async () => {

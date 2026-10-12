@@ -63,7 +63,6 @@
 
 	function setDirection(next: Direction) {
 		direction = next;
-		if (next === 'atMost' && period === 'day') period = 'week';
 		if (!countModePicked) countMode = defaultCountMode(next);
 	}
 
@@ -172,8 +171,8 @@
 				name="target"
 				type="number"
 				value={target}
-				min={range?.min}
-				max={range?.max}
+				min={range.min}
+				max={range.max}
 				error={errors.target}
 			/>
 			<div class={field}>
@@ -186,7 +185,7 @@
 					aria-describedby={errors.period ? `${ids}-period-error` : undefined}
 					class={select}
 				>
-					{#if direction === 'atLeast'}<option value="day">a day</option>{/if}
+					<option value="day">a day</option>
 					<option value="week">a week</option>
 					<option value="month">a month</option>
 				</select>

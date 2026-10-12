@@ -83,7 +83,7 @@ describe('createHabit', () => {
 		[{ emoji: 'ab' }, 'emoji', 'Pick one emoji.'],
 		[{ emoji: '📚📚' }, 'emoji', 'Pick one emoji.'],
 		[{ category: 'sports' }, 'category', 'Pick a category.'],
-		[{ direction: 'atMost', period: 'day' }, 'period', 'Limits can be per week or per month.'],
+		[{ direction: 'atMost', period: 'day', target: '20' }, 'target', 'Pick a number from 1 to 19.'],
 		[{ target: '0' }, 'target', 'Pick a number from 1 to 100.']
 	])('rejects %o on %s', async (overrides, field, message) => {
 		const me = await makeUser();

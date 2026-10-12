@@ -83,9 +83,12 @@ Valid combinations and ranges:
 | direction \ period | day                         | week                                | month                                  |
 | ------------------ | --------------------------- | ----------------------------------- | -------------------------------------- |
 | `atLeast`          | protect, 1 ≤ N ≤ 20 per day | protect; `days`: 1–7, `times`: 1–50 | **earn**; `days`: 1–31, `times`: 1–100 |
-| `atMost`           | not offered                 | protect; `days`: 0–6, `times`: 0–50 | protect; `days`: 0–30, `times`: 0–100  |
+| `atMost`           | protect, 1 ≤ N ≤ 19 per day | protect; `days`: 0–6, `times`: 0–50 | protect; `days`: 0–30, `times`: 0–100  |
 
 - `atMost` check-ins are **slips** ("I ate out today").
+- `atMost` / `day` ("At most once a day") allows at most N slips each day. N stops at 19 because
+  check-ins cap at 20 a day, so a limit of 20 could never be broken; a limit of 0 a day is the same
+  as "None this month".
 - Habits are archived, not deleted, so past cards keep their history. Archived habits do not appear
   in the card builder.
 
@@ -118,6 +121,7 @@ lets the user override any of them before starting.
 | `atMost` / `month`  | `round(N × R / D)`                                                                                                                                                                                  |
 | `atLeast` / `day`   | Every day from the start date to month end needs N check-ins (no proration of N)                                                                                                                    |
 | `atLeast` / `week`  | Each week clipped to the card's span (start date … month end) needs `round(N × d / 7)`, where `d` is the days of that week inside the span; in `days` mode also capped at `d`. Full weeks need `N`. |
+| `atMost` / `day`    | Every day from the start date to month end allows N (no proration of N)                                                                                                                             |
 | `atMost` / `week`   | Each clipped week allows `ceil(N × d / 7)`; in `days` mode also capped at `d`. Limits round **up** so a stub week is never stricter than a full one.                                                |
 
 Week clipping applies even to cards started on the 1st, because months rarely align with weeks.
@@ -144,6 +148,7 @@ Below, "progress" over a span of dates is measured by the square's count mode (�
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `atLeast` / `day`  | Any day in the backfill window other than today (and within the card span) is not met                                                                                                                       | Any card-span day older than the backfill window is not met                         |
 | `atLeast` / `week` | The current week's progress is short by `m > 0` and the days left in that week (including today) ≤ `m`; **or** a past week is short of its requirement but its last day is still within the backfill window | A week whose last day is older than the backfill window is short of its requirement |
+| `atMost` / `day`   | Today's count = N                                                                                                                                                                                           | Any card-span day's count exceeds N                                                 |
 | `atMost` / `week`  | This week's progress = the week's limit                                                                                                                                                                     | Any week's progress exceeds its limit                                               |
 | `atMost` / `month` | This month's progress = the limit                                                                                                                                                                           | Progress exceeds the limit                                                          |
 
@@ -166,13 +171,13 @@ leave the window, `lost` is permanent.
 
 Each square has a base value of **10**:
 
-| Square                   | Points                                                                                                          |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| Earn                     | `10 × min(k, N) / N`                                                                                            |
-| `atLeast` / `day`        | `10 × Σ min(count_d, N) / (N × span days)` over span dates `d`                                                  |
-| `atLeast` / `week`       | `10 × Σ min(kᵥ, Nᵥ) / Σ Nᵥ` over weeks `w`, with `kᵥ` the week's progress (if `Σ Nᵥ = 0`, the square scores 10) |
-| `atMost` (week or month) | `10` while `held`/`atRisk`, `0` when `lost`                                                                     |
-| FREE                     | `0`                                                                                                             |
+| Square                | Points                                                                                                          |
+| --------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Earn                  | `10 × min(k, N) / N`                                                                                            |
+| `atLeast` / `day`     | `10 × Σ min(count_d, N) / (N × span days)` over span dates `d`                                                  |
+| `atLeast` / `week`    | `10 × Σ min(kᵥ, Nᵥ) / Σ Nᵥ` over weeks `w`, with `kᵥ` the week's progress (if `Σ Nᵥ = 0`, the square scores 10) |
+| `atMost` (any period) | `10` while `held`/`atRisk`, `0` when `lost`                                                                     |
+| FREE                  | `0`                                                                                                             |
 
 Bonuses: **+25** per complete line, **+100** for blackout.
 Size multiplier on the total: **3×3 ×1, 4×4 ×1.5, 5×5 ×2**. Displayed points are rounded to the
