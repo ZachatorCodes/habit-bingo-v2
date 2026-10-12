@@ -1,7 +1,14 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { CATEGORIES, type CategoryId } from '#lib/game/categories.ts';
 import { daysLeftInMonth, monthName } from '#lib/game/calendar.ts';
-import { CARD_SIZES, isCardSize, type CardSize } from '#lib/game/card-layout.ts';
+import {
+	CARD_SIZES,
+	initialSquareState,
+	isCardSize,
+	isValidLayout,
+	shuffleLayout,
+	type CardSize
+} from '#lib/game/card-layout.ts';
 import { targetRange } from '#lib/game/habit-rules.ts';
 import { prorateTarget } from '#lib/game/proration.ts';
 import { requireUser } from '#lib/server/auth/guards.ts';
@@ -18,10 +25,11 @@ import {
 	type Step
 } from '#lib/server/card-drafts.ts';
 import { localDate } from '#lib/server/clock.ts';
-import { currentMonth, getCard, validateRewards, type Card } from '#lib/server/cards.ts';
+import { currentMonth, getCard, startCard, validateRewards, type Card } from '#lib/server/cards.ts';
 import { getDb } from '#lib/server/db/client.ts';
 import { DEFAULT_HABIT_INPUT, readHabitForm } from '#lib/server/habit-form.ts';
 import { createHabit, listHabits, type Habit } from '#lib/server/habits.ts';
+import type { SquareState } from '#lib/game/square-state.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 function isStep(value: string): value is Step {
@@ -96,7 +104,7 @@ function targetRows(picked: Habit[], draft: CardDraft, startDate: string) {
 	});
 }
 
-export const load: PageServerLoad = async ({ locals, params }) => {
+export const load: PageServerLoad = async ({ locals, params, url }) => {
 	if (!isStep(params.step)) error(404, 'Not found');
 	const { user, db, month, card, draft } = await builderContext(locals);
 	if (!canOpen(draft, params.step)) redirect(303, `/card/build/${firstOpenStep(draft)}`);
@@ -119,8 +127,40 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			};
 		}
 	}
+	let board: {
+		size: CardSize;
+		squares: { emoji: string; name: string; state: SquareState }[];
+	} | null = null;
+	if (params.step === 'board') {
+		if (size === null) redirect(303, '/card/build/size');
+		const picked = await pickedHabits(db, user.id, draft, size);
+		let layout = draft.layout;
+		if (!layout || !isValidLayout(layout, draft.habitIds, size)) {
+			layout = shuffleLayout(draft.habitIds, size, Math.random);
+			await saveDraft(db, user.id, { ...draft, layout });
+		}
+		const byId = new Map(picked.map((h) => [h.id, h]));
+		board = {
+			size,
+			squares: layout.map((id) => {
+				const habit = id === null ? null : byId.get(id)!;
+				return habit
+					? {
+							emoji: habit.emoji,
+							name: habit.name,
+							state: initialSquareState({ isFree: false, ...habit })
+						}
+					: { emoji: '', name: 'Free', state: 'free' as const };
+			})
+		};
+	}
 	return {
 		step: params.step,
+		board,
+		notice:
+			url.searchParams.get('notice') === 'habits'
+				? 'One of your habits is no longer available. Pick your habits again.'
+				: null,
 		steps: stepsFor(draft),
 		draft,
 		targets,
@@ -229,6 +269,51 @@ export const actions: Actions = {
 		const next = complete({ ...draft, rewards: result.value }, 'rewards');
 		await saveDraft(db, user.id, next);
 		redirect(303, `/card/build/${nextStep(next, 'rewards')}`);
+	},
+
+	shuffle: async ({ locals }) => {
+		const { user, db, card, draft } = await builderContext(locals);
+		if (!canOpen(draft, 'board')) redirect(303, `/card/build/${firstOpenStep(draft)}`);
+		const size: CardSize | null = draft.size ?? card?.size ?? null;
+		if (size === null) redirect(303, '/card/build/size');
+		await pickedHabits(db, user.id, draft, size);
+		await saveDraft(db, user.id, {
+			...draft,
+			layout: shuffleLayout(draft.habitIds, size, Math.random)
+		});
+	},
+
+	start: async ({ locals }) => {
+		const { user, db, draft } = await builderContext(locals);
+		if (!canOpen(draft, 'board')) redirect(303, `/card/build/${firstOpenStep(draft)}`);
+		if (draft.cardId) redirect(303, '/card');
+		if (draft.size === null) redirect(303, '/card/build/size');
+		// Opening the Board step makes the layout; without one the person has not seen a board yet.
+		if (!draft.layout) redirect(303, '/card/build/board');
+
+		const result = await startCard(
+			db,
+			{
+				id: user.id,
+				timezone: user.timezone ?? 'UTC',
+				weekStartsOn: user.weekStartsOn === 'sunday' ? 'sunday' : 'monday'
+			},
+			{
+				size: draft.size,
+				habitIds: draft.habitIds,
+				targets: draft.targets,
+				rewards: draft.rewards,
+				layout: draft.layout
+			},
+			new Date()
+		);
+		if (result.ok) {
+			await discardDraft(db, user.id);
+			redirect(303, '/card?started=1');
+		}
+		if (result.field === 'exists') redirect(303, '/card');
+		if (result.field === 'habits') redirect(303, '/card/build/habits?notice=habits');
+		return fail(400, { message: result.message });
 	},
 
 	createHabit: async ({ locals, request }) => {

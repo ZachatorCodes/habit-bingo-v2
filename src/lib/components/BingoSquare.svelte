@@ -58,8 +58,10 @@
 	{:else}
 		<span aria-hidden="true" class="text-2xl leading-none">{emoji}</span>
 		{#if showLabel}
-			<span aria-hidden="true" class={['text-xs leading-tight', state === 'lost' && 'line-through']}
-				>{label}</span
+			<span
+				data-label
+				aria-hidden="true"
+				class={['text-xs leading-tight', state === 'lost' && 'line-through']}>{label}</span
 			>
 		{/if}
 	{/if}

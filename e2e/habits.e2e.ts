@@ -219,8 +219,8 @@ test('after onboarding, new members land on Quick start and can add a starter', 
 	await page.getByRole('button', { name: 'Add Meditate' }).click();
 	await expect(page.getByRole('button', { name: 'Meditate added' })).toBeDisabled();
 	await expect(page.getByRole('region', { name: /Mind/ }).getByText('Meditate')).toBeVisible();
-	await page.getByRole('link', { name: /Continue to Today/ }).click();
-	await expect(page).toHaveURL(/\/today$/);
+	await page.getByRole('link', { name: /Build your first card/ }).click();
+	await expect(page).toHaveURL(/\/card\/build\/size$/);
 });
 
 test('double-tapping a starter adds it once', async ({ page }) => {

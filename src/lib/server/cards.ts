@@ -224,8 +224,21 @@ export async function startCard(
 	const monthEnd = startOfLocalDay(`${nextMonth(month)}-01`, user.timezone);
 	const editableUntil = new Date(Math.min(now.getTime() + EDIT_WINDOW_MS, monthEnd.getTime()));
 	const cardId = crypto.randomUUID();
+	const exists: CardError = {
+		ok: false,
+		field: 'exists',
+		message: `You already have a card for ${monthName(month)}.`
+	};
 	try {
-		await db.transaction(async (tx) => {
+		const created = await db.transaction(async (tx) => {
+			// Starts by the same person queue up here, so the later one finds the card instead of
+			// failing on the unique index (which stays as the backstop).
+			await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${'card:' + user.id}))`);
+			const [already] = await tx
+				.select({ id: card.id })
+				.from(card)
+				.where(and(eq(card.userId, user.id), eq(card.month, month)));
+			if (already) return false;
 			await tx.insert(card).values({
 				id: cardId,
 				userId: user.id,
@@ -247,15 +260,11 @@ export async function startCard(
 					...(entry ? snapshot(entry.habit!, entry.target) : {})
 				}))
 			);
+			return true;
 		});
+		if (!created) return exists;
 	} catch (error) {
-		if (isUniqueViolation(error)) {
-			return {
-				ok: false,
-				field: 'exists',
-				message: `You already have a card for ${monthName(month)}.`
-			};
-		}
+		if (isUniqueViolation(error)) return exists;
 		throw error;
 	}
 	return { ok: true, card: (await getCard(db, user.id, month))! };
