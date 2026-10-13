@@ -54,6 +54,7 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 		const counts = checkIns.get(square.id) ?? new Map<string, number>();
 		const evaluation = evaluateSquare(square, card, counts, today);
 		return {
+			id: square.id,
 			emoji: square.emoji,
 			name: square.name,
 			...evaluation,

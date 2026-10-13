@@ -27,19 +27,21 @@ export async function getCheckIns(
 	return bySquare;
 }
 
+type CheckInResult =
+	{ ok: true; count: number } | { ok: false; field: 'date'; message: string } | null;
+
 /**
- * Adds (+1) or removes (−1) one check-in on a habit square of the person's current-month card.
- * Null when there is no such square for them (the route answers 404). Only today and the 3 days
- * before, inside the card's span, can change (spec §3.1).
+ * Whether the person may change check-ins on this square and date: null when it isn't a habit
+ * square of their current-month card (the route answers 404); a refusal outside today and the 3
+ * days before, inside the card's span (spec §3.1); otherwise ok.
  */
-export async function logCheckIn(
+async function checkLoggable(
 	db: Db,
 	user: { id: string; timezone: string },
 	squareId: string,
 	date: string,
-	delta: 1 | -1,
 	now: Date
-): Promise<{ ok: true; count: number } | { ok: false; field: 'date'; message: string } | null> {
+): Promise<CheckInResult> {
 	const today = localDate(now, user.timezone);
 	const [square] = await db
 		.select({ startDate: card.startDate })
@@ -57,6 +59,20 @@ export async function logCheckIn(
 	if (!canLog(date, today, square.startDate)) {
 		return { ok: false, field: 'date', message: 'You can only log today and the 3 days before.' };
 	}
+	return { ok: true, count: 0 };
+}
+
+/** Adds (+1) or removes (−1) one check-in on a square and date (see `checkLoggable`). */
+export async function logCheckIn(
+	db: Db,
+	user: { id: string; timezone: string },
+	squareId: string,
+	date: string,
+	delta: 1 | -1,
+	now: Date
+): Promise<CheckInResult> {
+	const allowed = await checkLoggable(db, user, squareId, date, now);
+	if (!allowed?.ok) return allowed;
 
 	const where = and(eq(checkIn.squareId, squareId), eq(checkIn.date, date));
 	if (delta === 1) {
@@ -81,4 +97,34 @@ export async function logCheckIn(
 	if (row) return { ok: true, count: row.count };
 	await db.delete(checkIn).where(and(where, eq(checkIn.count, 1)));
 	return { ok: true, count: 0 };
+}
+
+/**
+ * Sets a square's count for a date (0–20; 0 removes it) — the habit sheet's "Done that day" toggle,
+ * which turns a day off even when it was logged more than once. Same rules as `logCheckIn`.
+ */
+export async function setCheckIn(
+	db: Db,
+	user: { id: string; timezone: string },
+	squareId: string,
+	date: string,
+	count: number,
+	now: Date
+): Promise<CheckInResult> {
+	const allowed = await checkLoggable(db, user, squareId, date, now);
+	if (!allowed?.ok) return allowed;
+	const value = Math.min(Math.max(Math.trunc(count), 0), MAX_COUNT);
+	const where = and(eq(checkIn.squareId, squareId), eq(checkIn.date, date));
+	if (value === 0) {
+		await db.delete(checkIn).where(where);
+		return { ok: true, count: 0 };
+	}
+	await db
+		.insert(checkIn)
+		.values({ id: crypto.randomUUID(), squareId, date, count: value })
+		.onConflictDoUpdate({
+			target: [checkIn.squareId, checkIn.date],
+			set: { count: value, updatedAt: now }
+		});
+	return { ok: true, count: value };
 }

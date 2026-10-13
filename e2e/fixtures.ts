@@ -85,3 +85,32 @@ export async function setClock(page: Page, iso: string): Promise<void> {
 		.context()
 		.addCookies([{ name: 'hb_test_now', value: iso, url: 'http://localhost:4173' }]);
 }
+
+/** Builds and starts a 3×3 card from the first 8 habits through the builder UI. */
+export async function buildAndStartCard(page: Page): Promise<void> {
+	await page.goto('/card/build');
+	await waitForHydration(page);
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: /3×3/ }) })
+		.click();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await page.waitForURL(/\/card\/build\/habits$/);
+	await waitForHydration(page);
+	const labels = page.locator('label').filter({ has: page.getByRole('checkbox') });
+	for (let i = 0; i < 8; i++) await labels.nth(i).click();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await page.waitForURL(/\/card\/build\/targets$/);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await page.waitForURL(/\/card\/build\/rewards$/);
+	await waitForHydration(page);
+	await page.getByLabel('First bingo').fill('Ice cream');
+	await page.getByLabel('5 squares').fill('Movie night');
+	await page.getByLabel('Blackout').fill('A weekend away');
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await page.waitForURL(/\/card\/build\/board$/);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Start card' }).click();
+	await page.waitForURL(/\/card\?started=1$/);
+}
