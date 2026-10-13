@@ -6,6 +6,7 @@ import { requireUser } from '#lib/server/auth/guards.ts';
 import { draftFromCard, getDraft, saveDraft } from '#lib/server/card-drafts.ts';
 import { currentMonth, getCard, isEditable } from '#lib/server/cards.ts';
 import { TEST_CLOCK } from '$app/env/private';
+import { getCheckIns } from '#lib/server/check-ins.ts';
 import { formatEditDeadline, localDate, requestNow } from '#lib/server/clock.ts';
 import { getDb } from '#lib/server/db/client.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -35,7 +36,11 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 	// The center square (spec §3.5): free until the last 7 days, then it leads to next month's card.
 	const today = localDate(now, timezone);
 	const next = monthName(nextMonth(month));
-	const nextBuilt = (await getCard(db, user.id, nextMonth(month))) !== null;
+	const [nextCard, checkIns] = await Promise.all([
+		getCard(db, user.id, nextMonth(month)),
+		getCheckIns(db, card.id)
+	]);
+	const nextBuilt = nextCard !== null;
 	const state = centerState(month, today, nextBuilt);
 	const center =
 		today < nextMonthOpens(month)
@@ -55,8 +60,7 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 					: {
 							emoji: square.emoji,
 							name: square.name,
-							// Check-ins arrive with the check-in service; until then every square is fresh.
-							state: evaluateSquare(square, card, new Map(), today).state
+							...evaluateSquare(square, card, checkIns.get(square.id) ?? new Map(), today)
 						}
 			)
 		},
