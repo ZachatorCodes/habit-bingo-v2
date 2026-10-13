@@ -1,7 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { monthName, nextMonth } from '#lib/game/calendar.ts';
 import { centerState, nextMonthOpens } from '#lib/game/next-month.ts';
-import { initialSquareState } from '#lib/game/card-layout.ts';
+import { evaluateSquare } from '#lib/game/evaluate.ts';
 import { requireUser } from '#lib/server/auth/guards.ts';
 import { draftFromCard, getDraft, saveDraft } from '#lib/server/card-drafts.ts';
 import { currentMonth, getCard, isEditable } from '#lib/server/cards.ts';
@@ -52,7 +52,12 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 			squares: card.squares.map((square) =>
 				square.isCenter
 					? center
-					: { emoji: square.emoji, name: square.name, state: initialSquareState(square) }
+					: {
+							emoji: square.emoji,
+							name: square.name,
+							// Check-ins arrive with the check-in service; until then every square is fresh.
+							state: evaluateSquare(square, card, new Map(), today).state
+						}
 			)
 		},
 		hasDraft: false,

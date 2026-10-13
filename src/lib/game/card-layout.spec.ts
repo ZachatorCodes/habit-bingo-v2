@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	CARD_SIZES,
-	initialSquareState,
-	isCardSize,
-	isValidLayout,
-	shuffleLayout
-} from './card-layout';
+import { CARD_SIZES, isCardSize, isValidLayout, shuffleLayout } from './card-layout';
 
 const items = (n: number) => Array.from({ length: n }, (_, i) => `h${i}`);
 
@@ -90,19 +84,5 @@ describe('isValidLayout', () => {
 		const offCenter3 = [...three];
 		[offCenter3[4], offCenter3[0]] = [offCenter3[0], offCenter3[4]];
 		expect(isValidLayout(offCenter3, items(8), 3)).toBe(false);
-	});
-});
-
-describe('initialSquareState', () => {
-	it('earn squares start empty, protect squares held', () => {
-		const sq = (direction: 'atLeast' | 'atMost', period: 'day' | 'week' | 'month') => ({
-			direction,
-			period
-		});
-		expect(initialSquareState(sq('atLeast', 'month'))).toBe('empty');
-		expect(initialSquareState(sq('atLeast', 'week'))).toBe('held');
-		expect(initialSquareState(sq('atLeast', 'day'))).toBe('held');
-		expect(initialSquareState(sq('atMost', 'month'))).toBe('held');
-		expect(initialSquareState(sq('atMost', 'day'))).toBe('held');
 	});
 });
