@@ -1,5 +1,6 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
+import type { SheetData } from '#lib/components/HabitSheet.svelte';
 import type { Auth } from '#lib/server/auth/create-auth.ts';
 
 type AuthSession = Auth['$Infer']['Session'];
@@ -17,7 +18,10 @@ declare global {
 			session: AuthSession['session'] | null;
 		}
 		// interface PageData {}
-		// interface PageState {}
+		interface PageState {
+			/** A habit sheet shown over the card (shallow routing to /card/squares/[id]). */
+			sheet?: SheetData;
+		}
 		// interface Platform {}
 	}
 }

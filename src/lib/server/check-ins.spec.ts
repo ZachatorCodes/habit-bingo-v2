@@ -5,7 +5,7 @@ import type { Db } from '#lib/server/db/client.ts';
 import { checkIn, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import { startCard, updateCard, type Card, type CardPlan, type Rewards } from './cards';
-import { getCheckIns, logCheckIn, MAX_COUNT } from './check-ins';
+import { getCheckIns, logCheckIn, MAX_COUNT, setCheckIn } from './check-ins';
 import { createHabit, type Habit } from './habits';
 
 let db: Db;
@@ -157,6 +157,45 @@ describe('logCheckIn', () => {
 		// 2026-10-31T11:30Z is already November 1 in Kiritimati: no current card to log on.
 		const at = new Date('2026-10-31T11:30:00Z');
 		expect(await logCheckIn(db, me, habitSquare(card).id, '2026-10-31', 1, at)).toBeNull();
+	});
+});
+
+describe('setCheckIn', () => {
+	it('sets, clamps and deletes at zero', async () => {
+		const me = await makeUser();
+		const card = await cardFor(me, await makeHabits(me.id, 8), OCT_1);
+		const { id } = habitSquare(card);
+		expect(await setCheckIn(db, me, id, '2026-10-20', 3, OCT_20)).toEqual({ ok: true, count: 3 });
+		expect(await setCheckIn(db, me, id, '2026-10-20', 99, OCT_20)).toEqual({ ok: true, count: 20 });
+		expect(await setCheckIn(db, me, id, '2026-10-20', 0, OCT_20)).toEqual({ ok: true, count: 0 });
+		expect(await db.select().from(checkIn)).toHaveLength(0);
+	});
+
+	it('turning a day off that was logged twice sets it to zero', async () => {
+		// Review Focus 3: a days habit logged twice from Today.
+		const me = await makeUser();
+		const card = await cardFor(
+			me,
+			await makeHabits(me.id, 8, { period: 'week', countMode: 'days', target: 2 }),
+			OCT_1
+		);
+		const { id } = habitSquare(card);
+		await logCheckIn(db, me, id, '2026-10-19', 1, OCT_20);
+		await logCheckIn(db, me, id, '2026-10-19', 1, OCT_20);
+		expect(await setCheckIn(db, me, id, '2026-10-19', 0, OCT_20)).toEqual({ ok: true, count: 0 });
+		expect((await getCheckIns(db, card.id)).has(id)).toBe(false);
+	});
+
+	it('follows the same window and ownership rules as logCheckIn', async () => {
+		const me = await makeUser();
+		const other = await makeUser();
+		const theirs = await cardFor(other, await makeHabits(other.id, 8), OCT_1);
+		const mine = await cardFor(me, await makeHabits(me.id, 8), OCT_1);
+		expect(await setCheckIn(db, me, habitSquare(theirs).id, '2026-10-20', 1, OCT_20)).toBeNull();
+		expect(await setCheckIn(db, me, habitSquare(mine).id, '2026-10-16', 1, OCT_20)).toMatchObject({
+			ok: false,
+			field: 'date'
+		});
 	});
 });
 
