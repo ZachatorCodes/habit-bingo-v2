@@ -1,12 +1,12 @@
-import { error } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { monthName } from '#lib/game/calendar.ts';
 import { initialSquareState } from '#lib/game/card-layout.ts';
 import { requireUser } from '#lib/server/auth/guards.ts';
-import { getDraft } from '#lib/server/card-drafts.ts';
+import { draftFromCard, getDraft, saveDraft } from '#lib/server/card-drafts.ts';
 import { currentMonth, getCard, isEditable } from '#lib/server/cards.ts';
 import { formatEditDeadline } from '#lib/server/clock.ts';
 import { getDb } from '#lib/server/db/client.ts';
-import type { PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = requireUser(locals);
@@ -45,4 +45,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 		editable,
 		deadline: editable ? formatEditDeadline(card.editableUntil, timezone) : null
 	};
+};
+
+export const actions: Actions = {
+	/** Reopens the builder on the started card, while the 48 hours last. */
+	edit: async ({ locals }) => {
+		const user = requireUser(locals);
+		const db = getDb();
+		if (!db) error(503, 'Your card is not available right now.');
+		const now = new Date();
+		const card = await getCard(
+			db,
+			user.id,
+			currentMonth({ timezone: user.timezone ?? 'UTC' }, now)
+		);
+		if (!card) redirect(303, '/card/build');
+		if (!isEditable(card, now)) return fail(400, { message: 'This card is locked.' });
+		await saveDraft(db, user.id, draftFromCard(card));
+		redirect(303, '/card/build/habits');
+	}
 };

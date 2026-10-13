@@ -3,7 +3,7 @@
 	import TextField from './TextField.svelte';
 
 	type Row = {
-		habit: Habit;
+		habit: Pick<Habit, 'id' | 'emoji' | 'name' | 'direction' | 'period' | 'countMode' | 'target'>;
 		/** The target for a card started on `startDate`. */
 		prorated: number;
 		/** What the field shows: the current target, or what the person typed. */

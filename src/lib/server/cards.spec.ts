@@ -9,6 +9,7 @@ import {
 	getCard,
 	isEditable,
 	startCard,
+	editBlocked,
 	updateCard,
 	validateRewards,
 	type CardPlan,
@@ -282,6 +283,27 @@ describe('isEditable', () => {
 	});
 });
 
+describe('editBlocked', () => {
+	const editableUntil = new Date('2026-10-21T09:00:00Z');
+	const open = new Date('2026-10-21T08:59:59Z');
+	const card = { id: 'c1', editableUntil };
+
+	it('never blocks a draft that is not editing a card', () => {
+		expect(editBlocked(null, null, editableUntil)).toBe(false);
+		expect(editBlocked(null, card, editableUntil)).toBe(false);
+	});
+
+	it('blocks an edit draft once the window has closed', () => {
+		expect(editBlocked('c1', card, open)).toBe(false);
+		expect(editBlocked('c1', card, editableUntil)).toBe(true);
+	});
+
+	it('blocks an edit draft whose card is missing or a different one', () => {
+		expect(editBlocked('c1', null, open)).toBe(true);
+		expect(editBlocked('c2', card, open)).toBe(true);
+	});
+});
+
 describe('updateCard', () => {
 	it('updates within the window, keeping square ids for habits that stay', async () => {
 		const me = await makeUser();
@@ -293,6 +315,7 @@ describe('updateCard', () => {
 		const result = await updateCard(
 			db,
 			me,
+			before.id,
 			{
 				habitIds: swapped.map((h) => h.id),
 				targets: { [habits[0].id]: 6 },
@@ -334,12 +357,18 @@ describe('updateCard', () => {
 			isPrivate: false
 		});
 		const keep = withoutSize(plan(habits));
-		const same = await updateCard(db, me, keep, OCT_19);
+		const same = await updateCard(db, me, before.id, keep, OCT_19);
 		if (!same.ok) throw new Error(same.message);
 		expect(same.card.squares).toEqual(before.squares);
 
 		// 6 is valid for the snapshot (3 days a week, up to 7), not for the edited library habit.
-		const override = await updateCard(db, me, { ...keep, targets: { [habits[0].id]: 6 } }, OCT_19);
+		const override = await updateCard(
+			db,
+			me,
+			before.id,
+			{ ...keep, targets: { [habits[0].id]: 6 } },
+			OCT_19
+		);
 		if (!override.ok) throw new Error(override.message);
 		expect(override.card.squares[0]).toMatchObject({
 			period: 'week',
@@ -347,7 +376,13 @@ describe('updateCard', () => {
 			target: 6,
 			name: 'Habit 0'
 		});
-		const tooHigh = await updateCard(db, me, { ...keep, targets: { [habits[0].id]: 8 } }, OCT_19);
+		const tooHigh = await updateCard(
+			db,
+			me,
+			before.id,
+			{ ...keep, targets: { [habits[0].id]: 8 } },
+			OCT_19
+		);
 		expect(tooHigh).toEqual({
 			ok: false,
 			field: 'targets',
@@ -364,6 +399,7 @@ describe('updateCard', () => {
 		const kept = await updateCard(
 			db,
 			me,
+			before.id,
 			{ ...keep, rewards: { ...rewards, bingo: 'Tacos' } },
 			OCT_19
 		);
@@ -373,18 +409,21 @@ describe('updateCard', () => {
 
 		await archiveHabit(db, me.id, habits[9].id, OCT_19);
 		const added = withoutSize(plan([...habits.slice(1, 9), habits[9]]));
-		expect(await updateCard(db, me, added, OCT_19)).toMatchObject({ ok: false, field: 'habits' });
+		expect(await updateCard(db, me, before.id, added, OCT_19)).toMatchObject({
+			ok: false,
+			field: 'habits'
+		});
 	});
 
 	it('serialises simultaneous updates', async () => {
 		const me = await makeUser();
 		const habits = await makeHabits(me.id, 9);
-		await started(me, habits);
+		const existing = await started(me, habits);
 		const a = withoutSize(plan(habits));
 		const b = { ...a, layout: [...a.layout].reverse() };
 		const results = await Promise.all([
-			updateCard(db, me, a, OCT_19),
-			updateCard(db, me, b, OCT_19)
+			updateCard(db, me, existing.id, a, OCT_19),
+			updateCard(db, me, existing.id, b, OCT_19)
 		]);
 		expect(results.every((r) => r.ok)).toBe(true);
 		expect(await db.select().from(cardSquare)).toHaveLength(9);
@@ -394,29 +433,64 @@ describe('updateCard', () => {
 		const me = await makeUser();
 		const habits = await makeHabits(me.id, 9);
 		const before = await started(me, habits);
-		expect(await updateCard(db, me, withoutSize(plan(habits)), before.editableUntil)).toEqual({
+		expect(
+			await updateCard(db, me, before.id, withoutSize(plan(habits)), before.editableUntil)
+		).toEqual({ ok: false, field: 'locked', message: 'This card is locked.' });
+	});
+
+	it.each([
+		['UTC', '2026-10-31T20:00:00Z', '2026-11-01T00:00:05Z'],
+		['Pacific/Kiritimati', '2026-10-31T09:00:00Z', '2026-10-31T10:00:05Z'],
+		['Pacific/Pago_Pago', '2026-11-01T08:00:00Z', '2026-11-01T11:00:05Z']
+	])('says locked, not missing, once the month has ended (%s)', async (timezone, start, save) => {
+		const me = await makeUser(timezone);
+		const habits = await makeHabits(me.id, 9);
+		const before = await started(me, habits, new Date(start));
+		// The window was cut at the end of the local month, so it closes before 48 hours pass.
+		expect(before.editableUntil.getTime() - new Date(start).getTime()).toBeLessThan(48 * 3_600_000);
+		const now = new Date(save);
+		expect(currentMonth(me, now)).not.toBe(before.month);
+		expect(await updateCard(db, me, before.id, withoutSize(plan(habits)), now)).toEqual({
 			ok: false,
 			field: 'locked',
 			message: 'This card is locked.'
 		});
 	});
 
+	it("treats another user's card id as not found", async () => {
+		const me = await makeUser();
+		const other = await makeUser();
+		const habits = await makeHabits(me.id, 9);
+		const theirs = await started(other, await makeHabits(other.id, 9));
+		expect(await updateCard(db, me, theirs.id, withoutSize(plan(habits)), OCT_19)).toMatchObject({
+			ok: false,
+			field: 'exists'
+		});
+		expect(
+			await updateCard(db, me, crypto.randomUUID(), withoutSize(plan(habits)), OCT_19)
+		).toMatchObject({
+			ok: false,
+			field: 'exists'
+		});
+	});
+
 	it('says so when there is no card yet', async () => {
 		const me = await makeUser();
 		const habits = await makeHabits(me.id, 9);
-		expect(await updateCard(db, me, withoutSize(plan(habits)), OCT_19)).toEqual({
-			ok: false,
-			field: 'exists',
-			message: "There's no card for October yet."
-		});
+		expect(
+			await updateCard(db, me, crypto.randomUUID(), withoutSize(plan(habits)), OCT_19)
+		).toEqual({ ok: false, field: 'exists', message: "There's no card to change." });
 	});
 
 	it('validates like startCard', async () => {
 		const me = await makeUser();
 		const habits = await makeHabits(me.id, 9);
-		await started(me, habits);
+		const existing = await started(me, habits);
 		const short = withoutSize(plan(habits.slice(0, 8)));
-		expect(await updateCard(db, me, short, OCT_19)).toMatchObject({ ok: false, field: 'habits' });
+		expect(await updateCard(db, me, existing.id, short, OCT_19)).toMatchObject({
+			ok: false,
+			field: 'habits'
+		});
 	});
 });
 

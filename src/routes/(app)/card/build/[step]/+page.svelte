@@ -65,7 +65,9 @@
 
 <section class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
 	<div>
-		<h1 class="text-3xl leading-tight font-black">Build your {data.monthName} card</h1>
+		<h1 class="text-3xl leading-tight font-black">
+			{data.draft.cardId ? 'Edit' : 'Build'} your {data.monthName} card
+		</h1>
 		<p class="mt-2 text-lg text-ink/75">Your progress is saved as you go.</p>
 	</div>
 
@@ -208,15 +210,17 @@
 			<form method="POST" action="?/shuffle" use:enhance>
 				<Button type="submit" variant="secondary">Shuffle again</Button>
 			</form>
-			{#if !data.draft.cardId}
-				<form method="POST" action="?/start" use:enhance>
-					<Button type="submit">Start card</Button>
-				</form>
-			{/if}
+			<form method="POST" action="?/start" use:enhance>
+				<Button type="submit">{data.draft.cardId ? 'Save changes' : 'Start card'}</Button>
+			</form>
 		</div>
 	{/if}
 
-	{#if data.draft.completed.length > 0}
+	{#if data.draft.cardId}
+		<form method="POST" action="?/discard" use:enhance>
+			<Button type="submit" variant="secondary">Cancel editing</Button>
+		</form>
+	{:else if data.draft.completed.length > 0}
 		<form method="POST" action="?/discard" use:enhance>
 			<Button type="submit" variant="secondary">Start over</Button>
 		</form>

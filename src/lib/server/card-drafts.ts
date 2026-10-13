@@ -3,7 +3,7 @@
 import { eq } from 'drizzle-orm';
 import * as z from 'zod';
 import type { CardSize } from '#lib/game/card-layout.ts';
-import type { Rewards } from '#lib/server/cards.ts';
+import type { Card, Rewards } from '#lib/server/cards.ts';
 import type { Db } from '#lib/server/db/client.ts';
 import { cardDraft } from '#lib/server/db/schema.ts';
 
@@ -99,4 +99,26 @@ export function withHabits(draft: CardDraft, habitIds: string[]): CardDraft {
 		targets: Object.fromEntries(Object.entries(draft.targets).filter(([id]) => kept.has(id))),
 		layout: changed ? null : draft.layout
 	};
+}
+
+/**
+ * An editing draft that holds a started card as it is, every step done. Every habit's target is
+ * carried as an override, because updateCard keeps a kept habit's stored target unless told
+ * otherwise: the Targets step then shows the card's targets rather than freshly prorated ones.
+ */
+export function draftFromCard(card: Card): CardDraft {
+	const habitSquares = card.squares.flatMap((s) => (!s.isFree && s.habitId ? [s] : []));
+	const hasGap = card.squares.some((s) => !s.isFree && !s.habitId);
+	const draft: CardDraft = {
+		month: card.month,
+		cardId: card.id,
+		size: card.size,
+		habitIds: habitSquares.map((s) => s.habitId!),
+		targets: Object.fromEntries(habitSquares.map((s) => [s.habitId!, s.target])),
+		rewards: { ...card.rewards },
+		// A square whose habit is gone cannot be placed again; the Board step then makes a new layout.
+		layout: hasGap ? null : card.squares.map((s) => (s.isFree ? null : s.habitId)),
+		completed: []
+	};
+	return { ...draft, completed: stepsFor(draft) };
 }
