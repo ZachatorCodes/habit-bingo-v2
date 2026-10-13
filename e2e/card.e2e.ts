@@ -109,8 +109,7 @@ test('Today and the nav lead to the card', async ({ page }) => {
 	await expect(page).toHaveURL(/\/card\?started=1$/);
 
 	await page.goto('/today');
-	await expect(page.getByText(/Your \w+ card is ready\./)).toBeVisible();
-	await page.getByRole('link', { name: 'See your card' }).click();
+	await page.getByRole('link', { name: /See your \w+ card/ }).click();
 	await expect(page).toHaveURL(/\/card$/);
 });
 
