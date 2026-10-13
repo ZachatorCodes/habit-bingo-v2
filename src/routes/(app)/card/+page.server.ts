@@ -2,6 +2,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { monthName, nextMonth } from '#lib/game/calendar.ts';
 import { centerState, nextMonthOpens } from '#lib/game/next-month.ts';
 import { evaluateSquare } from '#lib/game/evaluate.ts';
+import { scoreCard, squarePoints } from '#lib/game/score.ts';
 import { requireUser } from '#lib/server/auth/guards.ts';
 import { draftFromCard, getDraft, saveDraft } from '#lib/server/card-drafts.ts';
 import { currentMonth, getCard, isEditable } from '#lib/server/cards.ts';
@@ -48,21 +49,25 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 			: state === 'buildNext'
 				? { emoji: '🗓️', name: `Build ${next}'s card`, state, link: true }
 				: { emoji: '🗓️', name: `${next} ready`, state, link: true };
+	const squares = card.squares.map((square) => {
+		if (square.isCenter) return { ...center, points: 0 };
+		const counts = checkIns.get(square.id) ?? new Map<string, number>();
+		const evaluation = evaluateSquare(square, card, counts, today);
+		return {
+			emoji: square.emoji,
+			name: square.name,
+			...evaluation,
+			points: squarePoints(square, card, counts, today, evaluation.state)
+		};
+	});
 	return {
 		monthName: monthName(month),
 		nextMonthName: next,
 		card: {
 			size: card.size,
 			rewards: card.rewards,
-			squares: card.squares.map((square) =>
-				square.isCenter
-					? center
-					: {
-							emoji: square.emoji,
-							name: square.name,
-							...evaluateSquare(square, card, checkIns.get(square.id) ?? new Map(), today)
-						}
-			)
+			squares,
+			score: scoreCard(card.size, squares)
 		},
 		hasDraft: false,
 		editable,

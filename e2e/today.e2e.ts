@@ -267,3 +267,24 @@ test('logging and undoing keep the scroll position', async ({ page }) => {
 	await expect(section(page, 'Log a slip')).toContainText('0 of');
 	expect(Math.abs((await page.evaluate(() => window.scrollY)) - before)).toBeLessThan(40);
 });
+
+test('the card header reflects check-ins', async ({ page }) => {
+	await onToday(page);
+	const pointsOf = async () => {
+		await page.goto('/card');
+		const text = await page
+			.getByText(/\d+ points?$/)
+			.first()
+			.innerText();
+		return Number(text.split(' ')[0]);
+	};
+	const before = await pointsOf();
+	await expect(page.getByText(/\d+% counting/)).toBeVisible();
+	await page.goto('/today');
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Log Go biking' }).click();
+	await expect(section(page, 'Anytime this month').filter({ hasText: 'Go biking' })).toContainText(
+		'1 of 2 this month'
+	);
+	expect(await pointsOf()).toBeGreaterThan(before);
+});
