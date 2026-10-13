@@ -247,3 +247,23 @@ test('undoing to zero keeps keyboard focus in the row', async ({ page }) => {
 	await expect(page.getByText('0/8 today')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Log Drink water' })).toBeFocused();
 });
+
+test('logging and undoing keep the scroll position', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 500 });
+	await onToday(page);
+	const slip = page.getByRole('button', { name: 'Log Eat out' });
+	await slip.scrollIntoViewIfNeeded();
+	const before = await page.evaluate(() => window.scrollY);
+	expect(before).toBeGreaterThan(100);
+	// Measure before the next click: Playwright scrolls a target into view before clicking it.
+	const logged = page.waitForResponse((r) => r.url().includes('/today/__data.json'));
+	await slip.click();
+	await logged;
+	await expect(section(page, 'Log a slip')).toContainText('1 of');
+	expect(Math.abs((await page.evaluate(() => window.scrollY)) - before)).toBeLessThan(40);
+	const undone = page.waitForResponse((r) => r.url().includes('/today/__data.json'));
+	await page.getByRole('button', { name: 'Undo one Eat out' }).click();
+	await undone;
+	await expect(section(page, 'Log a slip')).toContainText('0 of');
+	expect(Math.abs((await page.evaluate(() => window.scrollY)) - before)).toBeLessThan(40);
+});
