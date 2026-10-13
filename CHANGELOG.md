@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0](https://github.com/ZachatorCodes/habit-bingo-v2/compare/habit-bingo-v0.3.0...habit-bingo-v0.4.0) (2026-10-13)
+
+
+### Features
+
+* **cards:** 3×3 cards get a center square ([#61](https://github.com/ZachatorCodes/habit-bingo-v2/issues/61)) ([d1fd8cc](https://github.com/ZachatorCodes/habit-bingo-v2/commit/d1fd8ccbda72afb505bb7d19c91f1a2434f329d6))
+* **cards:** board preview, start and the card page ([#58](https://github.com/ZachatorCodes/habit-bingo-v2/issues/58)) ([122321b](https://github.com/ZachatorCodes/habit-bingo-v2/commit/122321bafef81e8317752f3be7e5e43c8eb06795))
+* **cards:** builder drafts, size and habits steps ([#56](https://github.com/ZachatorCodes/habit-bingo-v2/issues/56)) ([b9386b9](https://github.com/ZachatorCodes/habit-bingo-v2/commit/b9386b98d0310516bbf51b6d736fdf4326f164eb))
+* **cards:** card tables and card service ([#54](https://github.com/ZachatorCodes/habit-bingo-v2/issues/54)) ([4e3684c](https://github.com/ZachatorCodes/habit-bingo-v2/commit/4e3684c826b88a0893ebe491db1098db0c91d5b3))
+* **cards:** drafts per month and next month's card ([#63](https://github.com/ZachatorCodes/habit-bingo-v2/issues/63)) ([14c9800](https://github.com/ZachatorCodes/habit-bingo-v2/commit/14c98000665cd671c286f4a802df3f442b7f03cc))
+* **cards:** edit a card within 48 hours ([#59](https://github.com/ZachatorCodes/habit-bingo-v2/issues/59)) ([1cc3d68](https://github.com/ZachatorCodes/habit-bingo-v2/commit/1cc3d68ed8da45d543de38b327025085f433c542))
+* **cards:** next-month rules and a test clock ([#62](https://github.com/ZachatorCodes/habit-bingo-v2/issues/62)) ([26e487f](https://github.com/ZachatorCodes/habit-bingo-v2/commit/26e487f30444710df88aa991358c4efeaf3edc8c))
+* **cards:** targets and rewards steps ([#57](https://github.com/ZachatorCodes/habit-bingo-v2/issues/57)) ([30e18c9](https://github.com/ZachatorCodes/habit-bingo-v2/commit/30e18c9b7b8ec044e7f28237698e2dc5925b1c9c))
+* **cards:** the center square leads to next month's card ([#64](https://github.com/ZachatorCodes/habit-bingo-v2/issues/64)) ([bd49c04](https://github.com/ZachatorCodes/habit-bingo-v2/commit/bd49c041ccd79012cd88c09eadd6ab1379871d54))
+* **game:** card sizes, proration and month arithmetic ([#53](https://github.com/ZachatorCodes/habit-bingo-v2/issues/53)) ([33040c5](https://github.com/ZachatorCodes/habit-bingo-v2/commit/33040c56dabe23216ec5b7fdf0d999495a9a03cf))
+
 ## [0.3.0](https://github.com/ZachatorCodes/habit-bingo-v2/compare/habit-bingo-v0.2.0...habit-bingo-v0.3.0) (2026-10-12)
 
 
