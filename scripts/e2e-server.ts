@@ -39,7 +39,9 @@ const child = spawn(
 			BETTER_AUTH_SECRET,
 			IP_LIMIT_MULTIPLIER: '1000',
 			// PGlite is one session: a single connection keeps transactions from interleaving.
-			DB_POOL_MAX: '1'
+			DB_POOL_MAX: '1',
+			// Lets E2E tests set "now" with the hb_test_now cookie (see requestNow in clock.ts).
+			TEST_CLOCK: '1'
 		}
 	}
 );

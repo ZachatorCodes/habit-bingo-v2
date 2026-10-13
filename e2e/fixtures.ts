@@ -78,3 +78,10 @@ export function uniqueUsername(): string {
 	const bytes = crypto.getRandomValues(new Uint8Array(8));
 	return 'e2e_' + Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
 }
+
+/** Moves the app's clock for this browser context (the E2E server honours the cookie). */
+export async function setClock(page: Page, iso: string): Promise<void> {
+	await page
+		.context()
+		.addCookies([{ name: 'hb_test_now', value: iso, url: 'http://localhost:4173' }]);
+}

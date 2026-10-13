@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { formatEditDeadline, localDate, startOfLocalDay } from './clock';
+import type { Cookies } from '@sveltejs/kit';
+import { formatEditDeadline, localDate, requestNow, startOfLocalDay } from './clock';
 
 describe('localDate', () => {
 	it("uses the person's timezone", () => {
@@ -40,5 +41,23 @@ describe('formatEditDeadline', () => {
 		expect(
 			formatEditDeadline(startOfLocalDay('2026-11-01', 'America/New_York'), 'America/New_York')
 		).toBe('Edits close at the end of Sat, Oct 31');
+	});
+});
+
+describe('requestNow', () => {
+	const jar = (value?: string) =>
+		({ get: (name: string) => (name === 'hb_test_now' ? value : undefined) }) as unknown as Cookies;
+
+	it('uses the test clock cookie only when the test clock is on', () => {
+		const before = Date.now();
+		expect(requestNow(jar('2026-10-26T12:00:00Z'), true)).toEqual(new Date('2026-10-26T12:00:00Z'));
+		// Production: the cookie changes nothing (Review Focus 4).
+		expect(requestNow(jar('2026-10-26T12:00:00Z'), false).getTime()).toBeGreaterThanOrEqual(before);
+	});
+
+	it('falls back to the real time without a valid cookie', () => {
+		const before = Date.now();
+		expect(requestNow(jar(), true).getTime()).toBeGreaterThanOrEqual(before);
+		expect(requestNow(jar('not a date'), true).getTime()).toBeGreaterThanOrEqual(before);
 	});
 });
