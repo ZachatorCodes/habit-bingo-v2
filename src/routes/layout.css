@@ -31,3 +31,29 @@
 		@apply bg-cream font-sans text-ink antialiased;
 	}
 }
+
+/* A completed line's squares ripple gold in sequence (spec §4.7); a still outline under reduced motion. */
+@keyframes ripple {
+	0% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 var(--color-risk-edge);
+	}
+	50% {
+		transform: scale(1.08);
+		box-shadow: 0 0 0 6px var(--color-risk-edge);
+	}
+	100% {
+		transform: scale(1);
+		box-shadow: 0 0 0 3px var(--color-risk-edge);
+	}
+}
+.ripple {
+	border-radius: var(--radius-square, 1rem);
+	animation: ripple 0.6s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+	.ripple {
+		animation: none;
+		box-shadow: 0 0 0 3px var(--color-risk-edge);
+	}
+}

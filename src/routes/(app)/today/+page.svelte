@@ -3,6 +3,9 @@
 	import Button from '#lib/components/Button.svelte';
 	import DaySwitcher from '#lib/components/DaySwitcher.svelte';
 	import Toast from '#lib/components/Toast.svelte';
+	import BingoCelebration from '#lib/components/BingoCelebration.svelte';
+	import { newlyCompleted } from '#lib/celebrate-lines.ts';
+	import type { CardScore, Tier } from '#lib/game/score.ts';
 	import TodayRow from '#lib/components/TodayRow.svelte';
 	import type { PageProps } from './$types';
 
@@ -13,6 +16,21 @@
 	// A refused or failed check-in rolls back in its row and is announced here (spec §6).
 	let toast = $state<{ id: number; text: string } | null>(null);
 	const showError = (text: string) => (toast = { id: (toast?.id ?? 0) + 1, text });
+
+	// BINGO! (spec §4.7): when a log here completes a new line or reward tier. Only gains in this tab
+	// celebrate; a page load or a drop never does.
+	let celebration = $state<{ lines: number[][]; tiers: Tier[] } | null>(null);
+	let lastScore: CardScore | null = null;
+	$effect(() => {
+		const score = data.card?.score;
+		if (!score) return;
+		if (lastScore) {
+			const gained = newlyCompleted(lastScore, score);
+			if (gained.lines.length > 0 || gained.tiers.length > 0) celebration = gained;
+		}
+		lastScore = score;
+	});
+
 	const groups = [
 		{ key: 'anytime', heading: 'Anytime this month' },
 		{ key: 'slip', heading: 'Log a slip' }
@@ -86,3 +104,16 @@
 </section>
 
 <Toast message={toast} />
+
+{#if celebration && data.card}
+	<!-- A new gain remounts it, so each celebration runs from the start. -->
+	{#key celebration}
+		<BingoCelebration
+			lines={celebration.lines}
+			tiers={celebration.tiers}
+			rewards={data.card.rewards}
+			sixtyThreshold={data.card.sixtyThreshold}
+			ondone={() => (celebration = null)}
+		/>
+	{/key}
+{/if}

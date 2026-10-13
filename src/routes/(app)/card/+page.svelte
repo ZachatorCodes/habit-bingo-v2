@@ -7,6 +7,10 @@
 	import CardBoard from '#lib/components/CardBoard.svelte';
 	import HabitSheet from '#lib/components/HabitSheet.svelte';
 	import Sheet from '#lib/components/Sheet.svelte';
+	import BingoCelebration from '#lib/components/BingoCelebration.svelte';
+	import { CARD_SIZES } from '#lib/game/card-layout.ts';
+	import { newlyCompleted } from '#lib/celebrate-lines.ts';
+	import type { CardScore, Tier } from '#lib/game/score.ts';
 	import CardHeader from '#lib/components/CardHeader.svelte';
 	import type { PageProps } from './$types';
 
@@ -42,6 +46,36 @@
 	// The card behind an open sheet, refreshed after a change; real navigations bring fresh data.
 	let fresh = $state<typeof data.card | null>(null);
 	const card = $derived(fresh ?? data.card);
+
+	// BINGO! (spec §4.7): when a log here completes a new line or reward tier. Only gains in this tab
+	// celebrate; a page load or a drop never does.
+	let celebration = $state<{ lines: number[][]; tiers: Tier[] } | null>(null);
+	let lastScore: CardScore | null = null;
+	$effect(() => {
+		const score = card?.score;
+		if (!score) return;
+		if (lastScore) {
+			const gained = newlyCompleted(lastScore, score);
+			if (gained.lines.length > 0 || gained.tiers.length > 0) {
+				celebration = gained;
+				// Completed from the habit sheet: close it so the board's ripple shows.
+				closeSheet();
+			}
+		}
+		lastScore = score;
+	});
+	// Closing the sheet steps back past its history entry — once, even if ✕ and a celebration both
+	// ask at the same moment (stepping back twice would leave the card).
+	let closing = false;
+	function closeSheet() {
+		if (!page.state.sheet || closing) return;
+		closing = true;
+		history.back();
+	}
+	$effect(() => {
+		if (!page.state.sheet) closing = false;
+	});
+
 	afterNavigate(() => (fresh = null));
 
 	// After a change (or another day picked) inside the sheet: reload it and the card behind it.
@@ -94,10 +128,28 @@
 			</p>
 		{/if}
 
-		<CardBoard size={card.size} squares={card.squares} onopen={openSheet} />
+		<CardBoard
+			size={card.size}
+			squares={card.squares}
+			onopen={openSheet}
+			highlight={celebration?.lines}
+		/>
+
+		{#if celebration}
+			<!-- A new gain remounts it, so each celebration runs from the start. -->
+			{#key celebration}
+				<BingoCelebration
+					lines={celebration.lines}
+					tiers={celebration.tiers}
+					rewards={card.rewards}
+					sixtyThreshold={CARD_SIZES[card.size].sixtyThreshold}
+					ondone={() => (celebration = null)}
+				/>
+			{/key}
+		{/if}
 
 		{#if page.state.sheet}
-			<Sheet title={page.state.sheet.name} onclose={() => history.back()}>
+			<Sheet title={page.state.sheet.name} onclose={closeSheet}>
 				<HabitSheet data={page.state.sheet} onnavigate={refreshSheet} />
 			</Sheet>
 		{/if}

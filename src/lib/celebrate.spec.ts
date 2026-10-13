@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { burst, tap } from './celebrate.ts';
+import { burst, fullScreenConfetti, tap } from './celebrate.ts';
 
 afterEach(() => {
 	vi.unstubAllGlobals();
@@ -31,5 +31,15 @@ describe('tap', () => {
 	it('is silent elsewhere', () => {
 		vi.stubGlobal('navigator', {});
 		expect(() => tap()).not.toThrow();
+	});
+});
+
+describe('fullScreenConfetti', () => {
+	it('fills the screen, or does nothing under reduced motion', async () => {
+		const fire = vi.fn();
+		await fullScreenConfetti(true, fire);
+		expect(fire).not.toHaveBeenCalled();
+		await fullScreenConfetti(false, fire);
+		expect(fire.mock.calls.length).toBeGreaterThanOrEqual(2);
 	});
 });

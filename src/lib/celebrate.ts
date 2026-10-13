@@ -29,3 +29,19 @@ export async function burst(
 export function tap(): void {
 	globalThis.navigator?.vibrate?.(10);
 }
+
+/** Full-screen confetti for a completed line (spec §4.7); nothing under reduced motion. */
+export async function fullScreenConfetti(reducedMotion: boolean, fire?: Fire): Promise<void> {
+	if (reducedMotion) return;
+	const confetti = fire ?? (await import('canvas-confetti')).default;
+	for (const x of [0.2, 0.5, 0.8]) {
+		confetti({
+			origin: { x, y: 0.3 },
+			particleCount: 80,
+			spread: 100,
+			startVelocity: 40,
+			ticks: 200,
+			disableForReducedMotion: true
+		});
+	}
+}
