@@ -21,6 +21,7 @@
 
 <script lang="ts">
 	import { enhance, type SubmitFunction } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	import { prefersReducedMotion, Spring } from 'svelte/motion';
 	import { burst, tap } from '#lib/celebrate.ts';
 	import BingoSquare from './BingoSquare.svelte';
@@ -79,7 +80,11 @@
 					onerror?.(message);
 					return;
 				}
-				await update();
+				// The action redirects back to this same day (so a no-JS refresh never re-posts). With
+				// JavaScript, reload the data in place instead of following it, so the page keeps its
+				// scroll position and focus.
+				if (result.type === 'redirect') await invalidateAll();
+				else await update();
 				pending = null;
 				if (hadFocus && !submitter?.isConnected) logButton?.focus();
 			};
