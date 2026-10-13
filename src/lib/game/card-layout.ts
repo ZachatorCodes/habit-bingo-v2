@@ -1,6 +1,3 @@
-import type { Direction, Period } from './habit-rules.ts';
-import type { SquareState } from './square-state.ts';
-
 export type CardSize = 3 | 5;
 
 export function isCardSize(value: unknown): value is CardSize {
@@ -58,9 +55,4 @@ export function isValidLayout<T>(
 		remaining.splice(at, 1);
 	}
 	return true;
-}
-
-/** Placeholder until M4's live evaluation: earn squares start empty, protect squares start held. */
-export function initialSquareState(square: { direction: Direction; period: Period }): SquareState {
-	return square.direction === 'atLeast' && square.period === 'month' ? 'empty' : 'held';
 }

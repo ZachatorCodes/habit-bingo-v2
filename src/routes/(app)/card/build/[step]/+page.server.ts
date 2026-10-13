@@ -4,12 +4,12 @@ import { daysLeftInMonth, monthName, monthOf, nextMonth } from '#lib/game/calend
 import { canBuildNextMonth } from '#lib/game/next-month.ts';
 import {
 	CARD_SIZES,
-	initialSquareState,
 	isCardSize,
 	isValidLayout,
 	shuffleLayout,
 	type CardSize
 } from '#lib/game/card-layout.ts';
+import { evaluateSquare } from '#lib/game/evaluate.ts';
 import { targetRange } from '#lib/game/habit-rules.ts';
 import { prorateTarget } from '#lib/game/proration.ts';
 import { requireUser } from '#lib/server/auth/guards.ts';
@@ -214,6 +214,9 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 			await saveDraft(db, user.id, { ...draft, layout });
 		}
 		const byId = new Map(picked.map((h) => [h.id, h]));
+		// A fresh card: every square as it starts (no check-ins yet).
+		const start = startDateOf(user, card, draft, now);
+		const preview = { startDate: start, weekStartsOn: 'monday' as const };
 		board = {
 			size,
 			squares: layout.map((id) => {
@@ -222,7 +225,7 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 					? {
 							emoji: habit.emoji,
 							name: habit.name,
-							state: initialSquareState(habit)
+							state: evaluateSquare(habit, preview, new Map(), start).state
 						}
 					: { emoji: '⭐', name: 'Free', state: 'complete' as const };
 			})
