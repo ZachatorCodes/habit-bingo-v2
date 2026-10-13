@@ -212,15 +212,15 @@ test('a log bursts confetti', async ({ page }) => {
 
 test('the optimistic view follows the row after several taps', async ({ page }) => {
 	await onToday(page);
-	const biking = section(page, 'Anytime this month').filter({ hasText: 'Go biking' });
+	const biking = section(page, 'Do today').filter({ hasText: 'Drink water' });
 	// Each log is answered (and the page reloaded) before the next tap.
-	for (const text of ['1 of 2 this month', '2 of 2 this month']) {
+	for (const text of ['1/8 today', '2/8 today']) {
 		const logged = page.waitForResponse((r) => r.url().includes('/today/__data.json'));
-		await page.getByRole('button', { name: 'Log Go biking' }).click();
+		await page.getByRole('button', { name: 'Log Drink water' }).click();
 		await logged;
 		await expect(biking).toContainText(text);
 	}
-	// Go biking is 3 a month, prorated to 2 for a card started Oct 15. Hold the undo: the row must show one less than now, not what it was when − first appeared.
+	// Drink water (8 a day) can't complete in two taps, so no BINGO interrupts. Hold the undo:
 	let release = () => {};
 	const held = new Promise<void>((resolve) => (release = resolve));
 	const isUnlog = (url: URL) => url.pathname === '/today' && url.search.startsWith('?/unlog');
@@ -228,14 +228,14 @@ test('the optimistic view follows the row after several taps', async ({ page }) 
 		await held;
 		await route.continue();
 	});
-	const undo = page.getByRole('button', { name: 'Undo one Go biking' });
+	const undo = page.getByRole('button', { name: 'Undo one Drink water' });
 	await undo.click();
-	await expect(biking).toContainText('1 of 2 this month');
+	await expect(biking).toContainText('1/8 today');
 	const answered = page.waitForResponse((response) => isUnlog(new URL(response.url())));
 	release();
 	await answered;
 	await page.unroute(isUnlog);
-	await expect(biking).toContainText('1 of 2 this month');
+	await expect(biking).toContainText('1/8 today');
 });
 
 test('undoing to zero keeps keyboard focus in the row', async ({ page }) => {

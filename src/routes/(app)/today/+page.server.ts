@@ -2,11 +2,13 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { TEST_CLOCK } from '$app/env/private';
 import { backfillDates } from '#lib/game/backfill.ts';
 import { monthName } from '#lib/game/calendar.ts';
+import { CARD_SIZES } from '#lib/game/card-layout.ts';
 import { evaluateSquare } from '#lib/game/evaluate.ts';
 import { progressText, todaySection, type TodaySection } from '#lib/game/today.ts';
 import type { TodayRowData } from '#lib/components/TodayRow.svelte';
 import { requireUser } from '#lib/server/auth/guards.ts';
 import { currentMonth, getCard } from '#lib/server/cards.ts';
+import { cardView } from '#lib/server/card-view.ts';
 import { getCheckIns, logCheckIn, MAX_COUNT } from '#lib/server/check-ins.ts';
 import { localDate, requestNow } from '#lib/server/clock.ts';
 import { getDb } from '#lib/server/db/client.ts';
@@ -67,7 +69,16 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 	}
 	return {
 		monthName: monthName(month),
-		card: { today, day, days, sections },
+		card: {
+			today,
+			day,
+			days,
+			sections,
+			// The card's score, so a log that completes a line can celebrate here too (spec §4.7).
+			score: (await cardView(db, user.id, card, today)).score,
+			rewards: card.rewards,
+			sixtyThreshold: CARD_SIZES[card.size].sixtyThreshold
+		},
 		/** The page's own query, carried through the log/unlog actions. */
 		keep: day === today ? '' : `&day=${day}`
 	};

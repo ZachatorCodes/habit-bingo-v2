@@ -13,14 +13,14 @@
 	--color-accent-2: #ffb443;
 
 	--color-earn: #b8ebc6;
-	--color-earn-edge: #6bd48a;
-	--color-earn-shadow: #4cb86c;
+	--color-earn-edge: #2a8447;
+	--color-earn-shadow: #1f6b38;
 	--color-protect: #c7d9ff;
-	--color-protect-edge: #7fa8ff;
-	--color-protect-shadow: #5e8bf0;
+	--color-protect-edge: #3366cc;
+	--color-protect-shadow: #2852a8;
 	--color-risk: #ffe7a6;
-	--color-risk-edge: #f2b630;
-	--color-risk-shadow: #d99a12;
+	--color-risk-edge: #a86b00;
+	--color-risk-shadow: #875600;
 	--color-lost: #efe8df;
 
 	--radius-square: 1rem;
@@ -29,5 +29,31 @@
 @layer base {
 	body {
 		@apply bg-cream font-sans text-ink antialiased;
+	}
+}
+
+/* A completed line's squares ripple gold in sequence (spec §4.7); a still outline under reduced motion. */
+@keyframes ripple {
+	0% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 var(--color-risk-edge);
+	}
+	50% {
+		transform: scale(1.08);
+		box-shadow: 0 0 0 6px var(--color-risk-edge);
+	}
+	100% {
+		transform: scale(1);
+		box-shadow: 0 0 0 3px var(--color-risk-edge);
+	}
+}
+.ripple {
+	border-radius: var(--radius-square, 1rem);
+	animation: ripple 0.6s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+	.ripple {
+		animation: none;
+		box-shadow: 0 0 0 3px var(--color-risk-edge);
 	}
 }

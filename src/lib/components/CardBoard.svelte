@@ -19,9 +19,22 @@
 		}[];
 		/** Opens a habit sheet over the card instead of following its link (shallow routing). */
 		onopen?: (event: MouseEvent, href: string) => void;
+		/** Lines just completed: their squares ripple gold in sequence (spec §4.7). */
+		highlight?: number[][];
 	};
 
-	let { size, squares, onopen }: Props = $props();
+	let { size, squares, onopen, highlight = [] }: Props = $props();
+
+	// Each square's ripple delay: its place along the first completed line it's on.
+	const delays = $derived.by(() => {
+		const delay: Record<number, number> = {};
+		for (const line of highlight) {
+			line.forEach((index, step) => {
+				delay[index] ??= step * 80;
+			});
+		}
+		return delay;
+	});
 
 	const linkClass =
 		'block rounded-square focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
@@ -30,8 +43,32 @@
 <!-- Every square shows its name; 5×5 squares are compact on phones (smaller emoji and text). -->
 <div class="grid gap-1.5 sm:gap-2" style:grid-template-columns="repeat({size}, minmax(0, 1fr))">
 	{#each squares as square, index (index)}
-		{#if square.link}
-			<a href={resolve('/(app)/card/next')} class={linkClass}>
+		<div
+			class={[index in delays && 'ripple']}
+			style:animation-delay={index in delays ? `${delays[index]}ms` : undefined}
+		>
+			{#if square.link}
+				<a href={resolve('/(app)/card/next')} class={linkClass}>
+					<BingoSquare
+						emoji={square.emoji}
+						label={square.name}
+						state={square.state}
+						progress={square.progress}
+						compact={size === 5}
+					/>
+				</a>
+			{:else if square.id}
+				{@const href = resolve('/(app)/card/squares/[id]', { id: square.id })}
+				<a {href} onclick={(event) => onopen?.(event, href)} class={linkClass}>
+					<BingoSquare
+						emoji={square.emoji}
+						label={square.name}
+						state={square.state}
+						progress={square.progress}
+						compact={size === 5}
+					/>
+				</a>
+			{:else}
 				<BingoSquare
 					emoji={square.emoji}
 					label={square.name}
@@ -39,26 +76,7 @@
 					progress={square.progress}
 					compact={size === 5}
 				/>
-			</a>
-		{:else if square.id}
-			{@const href = resolve('/(app)/card/squares/[id]', { id: square.id })}
-			<a {href} onclick={(event) => onopen?.(event, href)} class={linkClass}>
-				<BingoSquare
-					emoji={square.emoji}
-					label={square.name}
-					state={square.state}
-					progress={square.progress}
-					compact={size === 5}
-				/>
-			</a>
-		{:else}
-			<BingoSquare
-				emoji={square.emoji}
-				label={square.name}
-				state={square.state}
-				progress={square.progress}
-				compact={size === 5}
-			/>
-		{/if}
+			{/if}
+		</div>
 	{/each}
 </div>
