@@ -11,6 +11,7 @@
 
 	const started = $derived(page.url.searchParams.get('started') === '1');
 	const saved = $derived(page.url.searchParams.get('saved') === '1');
+	const planned = $derived(page.url.searchParams.get('planned') === '1');
 	const message = $derived(
 		form && 'message' in form
 			? form.message
@@ -26,6 +27,12 @@
 		{#if started}
 			<p role="status" class="rounded-xl bg-earn px-4 py-3 font-bold text-ink">
 				<span aria-hidden="true">✓</span> Card started!
+			</p>
+		{/if}
+		{#if planned}
+			<p role="status" class="rounded-xl bg-earn px-4 py-3 font-bold text-ink">
+				<span aria-hidden="true">✓</span>
+				{data.nextMonthName} card saved. It starts {data.nextMonthName} 1.
 			</p>
 		{/if}
 		{#if saved}

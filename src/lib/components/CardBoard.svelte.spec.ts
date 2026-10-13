@@ -33,4 +33,16 @@ describe('CardBoard', () => {
 		});
 		await expect.element(page.getByRole('img', { name: 'Meditate: protected' })).toBeVisible();
 	});
+
+	it('renders a linked center square with its label and state', async () => {
+		const board: { emoji: string; name: string; state: SquareState; link?: boolean }[] = squares(9);
+		board[4] = { emoji: '🗓️', name: "Build November's card", state: 'buildNext', link: true };
+		render(CardBoard, { size: 3, squares: board });
+		const link = page.getByRole('link', {
+			name: "Build November's card: build next month's card"
+		});
+		await expect.element(link).toBeVisible();
+		await expect.element(link).toHaveAttribute('href', '/card/next');
+		expect(page.getByRole('link').elements()).toHaveLength(1);
+	});
 });
