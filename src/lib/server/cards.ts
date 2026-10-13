@@ -5,6 +5,7 @@ import { monthName, monthOf, nextMonth } from '#lib/game/calendar.ts';
 import { CARD_SIZES, isValidLayout, type CardSize } from '#lib/game/card-layout.ts';
 import type { CategoryId } from '#lib/game/categories.ts';
 import { normalizeRule, targetRange, type HabitRule } from '#lib/game/habit-rules.ts';
+import { canBuildNextMonth } from '#lib/game/next-month.ts';
 import { prorateTarget } from '#lib/game/proration.ts';
 import { isUniqueViolation } from '#lib/server/auth/sign-up.ts';
 import { localDate, startOfLocalDay } from '#lib/server/clock.ts';
@@ -47,13 +48,15 @@ export type CardPlan = {
 	/** Overrides only; a missing habit gets its prorated target. */
 	targets: Record<string, number>;
 	rewards: Rewards;
-	/** Habit ids by board position, null at the FREE square. */
+	/** Habit ids by board position, null at the center square. */
 	layout: (string | null)[];
+	/** The card's month: the person's current month (the default) or, in its last 7 days, the next. */
+	month?: string;
 };
 
 export type CardError = {
 	ok: false;
-	field: 'exists' | 'locked' | 'habits' | 'targets' | 'layout' | keyof Rewards;
+	field: 'exists' | 'locked' | 'month' | 'habits' | 'targets' | 'layout' | keyof Rewards;
 	message: string;
 };
 
@@ -236,13 +239,26 @@ export async function startCard(
 	plan: CardPlan,
 	now: Date
 ): Promise<{ ok: true; card: Card } | CardError> {
-	const startDate = localDate(now, user.timezone);
-	const month = monthOf(startDate);
+	const today = localDate(now, user.timezone);
+	const current = monthOf(today);
+	const month = plan.month ?? current;
+	const early = month !== current;
+	if (early && (month !== nextMonth(current) || !canBuildNextMonth(today))) {
+		return { ok: false, field: 'month', message: "Next month's card isn't open yet." };
+	}
+	// Next month's card starts on the 1st (so nothing is prorated) and stays editable through the 2nd.
+	const startDate = early ? `${month}-01` : today;
 	const resolved = await resolvePlan(db, user.id, plan.size, plan, startDate);
 	if (!resolved.ok) return resolved;
 
-	const monthEnd = startOfLocalDay(`${nextMonth(month)}-01`, user.timezone);
-	const editableUntil = new Date(Math.min(now.getTime() + EDIT_WINDOW_MS, monthEnd.getTime()));
+	const editableUntil = early
+		? startOfLocalDay(`${month}-03`, user.timezone)
+		: new Date(
+				Math.min(
+					now.getTime() + EDIT_WINDOW_MS,
+					startOfLocalDay(`${nextMonth(month)}-01`, user.timezone).getTime()
+				)
+			);
 	const cardId = crypto.randomUUID();
 	const exists: CardError = {
 		ok: false,

@@ -314,6 +314,91 @@ describe('editBlocked', () => {
 	});
 });
 
+describe('startCard for next month', () => {
+	const OCT_26 = new Date('2026-10-26T12:00:00Z');
+
+	it("starts next month's card in the last 7 days", async () => {
+		const me = await makeUser();
+		const read = await makeHabit(me.id, 'Read', { period: 'month', countMode: 'days', target: 10 });
+		const others = await makeHabits(me.id, 7);
+		const result = await startCard(
+			db,
+			me,
+			{ ...plan([read, ...others]), month: '2026-11' },
+			OCT_26
+		);
+		if (!result.ok) throw new Error(result.message);
+		expect(result.card.month).toBe('2026-11');
+		expect(result.card.startDate).toBe('2026-11-01');
+		// Starts on the 1st: the full target, no proration.
+		const square = result.card.squares.find((s) => !s.isCenter && s.habitId === read.id);
+		expect(square).toMatchObject({ target: 10 });
+		// Editable until the end of November 2.
+		expect(result.card.editableUntil.toISOString()).toBe('2026-11-03T00:00:00.000Z');
+		// This month's card is a separate card.
+		expect(await getCard(db, me.id, '2026-10')).toBeNull();
+	});
+
+	it('refuses next month before the window', async () => {
+		const me = await makeUser();
+		const habits = await makeHabits(me.id, 8);
+		expect(
+			await startCard(
+				db,
+				me,
+				{ ...plan(habits), month: '2026-11' },
+				new Date('2026-10-24T12:00:00Z')
+			)
+		).toEqual({ ok: false, field: 'month', message: "Next month's card isn't open yet." });
+		expect(await startCard(db, me, { ...plan(habits), month: '2026-12' }, OCT_26)).toMatchObject({
+			ok: false,
+			field: 'month'
+		});
+		expect(await db.select().from(card)).toHaveLength(0);
+	});
+
+	it("opens the window by the person's own date", async () => {
+		const at = new Date('2026-10-24T11:00:00Z');
+		const kiritimati = await makeUser('Pacific/Kiritimati');
+		const pagoPago = await makeUser('Pacific/Pago_Pago');
+		const ok = await startCard(
+			db,
+			kiritimati,
+			{ ...plan(await makeHabits(kiritimati.id, 8)), month: '2026-11' },
+			at
+		);
+		expect(ok).toMatchObject({ ok: true });
+		if (ok.ok) expect(ok.card.editableUntil.toISOString()).toBe('2026-11-02T10:00:00.000Z');
+		expect(
+			await startCard(
+				db,
+				pagoPago,
+				{ ...plan(await makeHabits(pagoPago.id, 8)), month: '2026-11' },
+				at
+			)
+		).toMatchObject({ ok: false, field: 'month' });
+	});
+
+	it("next month's card is editable until the end of the 2nd", async () => {
+		const me = await makeUser();
+		const habits = await makeHabits(me.id, 9);
+		const started = await startCard(
+			db,
+			me,
+			{ ...plan(habits.slice(0, 8)), month: '2026-11' },
+			OCT_26
+		);
+		if (!started.ok) throw new Error(started.message);
+		const swap = withoutSize(plan([...habits.slice(0, 7), habits[8]]));
+		expect(
+			await updateCard(db, me, started.card.id, swap, new Date('2026-11-02T23:59:00Z'))
+		).toMatchObject({ ok: true });
+		expect(
+			await updateCard(db, me, started.card.id, swap, new Date('2026-11-03T00:00:00Z'))
+		).toMatchObject({ ok: false, field: 'locked' });
+	});
+});
+
 describe('updateCard', () => {
 	it('updates within the window, keeping square ids for habits that stay', async () => {
 		const me = await makeUser();

@@ -288,6 +288,8 @@ test('cancel editing leaves the card unchanged', async ({ page }) => {
 	await expect(page).toHaveURL(/\/card\/build\/habits$/);
 	await waitForHydration(page);
 	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/targets$/);
+	await waitForHydration(page);
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/rewards$/);
 	await waitForHydration(page);
