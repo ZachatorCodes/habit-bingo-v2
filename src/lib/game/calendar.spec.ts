@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { daysInMonth, daysLeftInMonth, lastDayOf, monthName, monthOf, nextMonth } from './calendar';
+import {
+	addDays,
+	daysInMonth,
+	daysLeftInMonth,
+	lastDayOf,
+	monthName,
+	monthOf,
+	nextMonth,
+	weekday
+} from './calendar';
 
 describe('calendar', () => {
 	it.each([
@@ -30,5 +39,20 @@ describe('calendar', () => {
 		expect(monthOf('2026-10-19')).toBe('2026-10');
 		expect(monthName('2026-10')).toBe('October');
 		expect(monthName('2027-01')).toBe('January');
+	});
+});
+
+describe('addDays and weekday', () => {
+	it('addDays crosses months and years', () => {
+		expect(addDays('2026-10-31', 1)).toBe('2026-11-01');
+		expect(addDays('2027-01-01', -1)).toBe('2026-12-31');
+		expect(addDays('2028-02-28', 1)).toBe('2028-02-29');
+		expect(addDays('2026-10-20', -3)).toBe('2026-10-17');
+	});
+
+	it('weekday is 0 for Sunday through 6 for Saturday', () => {
+		expect(weekday('2026-10-12')).toBe(1);
+		expect(weekday('2026-11-01')).toBe(0);
+		expect(weekday('2026-10-31')).toBe(6);
 	});
 });
