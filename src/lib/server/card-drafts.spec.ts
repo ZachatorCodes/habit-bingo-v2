@@ -103,7 +103,7 @@ describe('card drafts', () => {
 		const square = (position: number, habitId: string, target: number) => ({
 			id: `s${position}`,
 			position,
-			isFree: false as const,
+			isCenter: false as const,
 			habitId,
 			emoji: '🏃',
 			name: habitId,
@@ -112,7 +112,8 @@ describe('card drafts', () => {
 			...rule,
 			target
 		});
-		const ids = ['h3', 'h1', 'h2', 'h4', 'h5', 'h6', 'h7', 'h8', 'h9'];
+		const ids = ['h3', 'h1', 'h2', 'h4', 'h5', 'h6', 'h7', 'h8'];
+		const layout = [...ids.slice(0, 4), null, ...ids.slice(4)];
 		const card: Card = {
 			id: 'card-1',
 			month: '2026-10',
@@ -121,7 +122,9 @@ describe('card drafts', () => {
 			editableUntil: new Date('2026-10-14T00:00:00Z'),
 			weekStartsOn: 'monday',
 			rewards: { bingo: 'a', sixty: 'b', blackout: 'c' },
-			squares: ids.map((id, i) => square(i, id, i + 1))
+			squares: layout.map((id, i) =>
+				id === null ? { id: 'center', position: i, isCenter: true as const } : square(i, id, i + 1)
+			)
 		};
 		expect(draftFromCard(card)).toEqual({
 			month: '2026-10',
@@ -129,9 +132,9 @@ describe('card drafts', () => {
 			size: 3,
 			habitIds: ids,
 			// The card's own targets, so editing shows them as they are.
-			targets: { h3: 1, h1: 2, h2: 3, h4: 4, h5: 5, h6: 6, h7: 7, h8: 8, h9: 9 },
+			targets: { h3: 1, h1: 2, h2: 3, h4: 4, h5: 6, h6: 7, h7: 8, h8: 9 },
 			rewards: { bingo: 'a', sixty: 'b', blackout: 'c' },
-			layout: ids,
+			layout,
 			completed: ['habits', 'targets', 'rewards', 'board']
 		});
 
@@ -139,7 +142,7 @@ describe('card drafts', () => {
 			...card,
 			size: 5,
 			squares: Array.from({ length: 25 }, (_, i) =>
-				i === 12 ? { id: 'free', position: 12, isFree: true as const } : square(i, `h${i}`, 3)
+				i === 12 ? { id: 'center', position: 12, isCenter: true as const } : square(i, `h${i}`, 3)
 			)
 		};
 		const bigDraft = draftFromCard(big);

@@ -27,12 +27,12 @@ async function startAtHabits(page: Page): Promise<void> {
 }
 
 test('the builder starts at Size and moves to Habits', async ({ page }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	await page.goto('/card/build');
 	await expect(page).toHaveURL(/\/card\/build\/size$/);
 	await expect(page.getByRole('list', { name: 'Card builder steps' })).toBeVisible();
-	await expect(page.getByText('You have 9 habits / need 9')).toBeVisible();
-	await expect(page.getByText('Add 15 more in the next step.')).toBeVisible();
+	await expect(page.getByText('You have 8 habits / need 8')).toBeVisible();
+	await expect(page.getByText('Add 16 more in the next step.')).toBeVisible();
 	await waitForHydration(page);
 
 	await page.getByRole('button', { name: 'Continue' }).click();
@@ -52,11 +52,11 @@ test('the builder starts at Size and moves to Habits', async ({ page }) => {
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/habits$/);
 	await expect(page.getByRole('heading', { name: 'Pick your habits' })).toBeVisible();
-	await expect(page.getByText('0 of 9 picked')).toBeVisible();
+	await expect(page.getByText('0 of 8 picked')).toBeVisible();
 	await waitForHydration(page);
 
-	await pickHabits(page, 9);
-	await expect(page.getByText('9 of 9 picked')).toBeVisible();
+	await pickHabits(page, 8);
+	await expect(page.getByText('8 of 8 picked')).toBeVisible();
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/targets$/);
 	await expect(page.getByRole('link', { name: 'Habits' })).toBeVisible();
@@ -65,21 +65,21 @@ test('the builder starts at Size and moves to Habits', async ({ page }) => {
 	await page.goto('/card/build');
 	await expect(page).toHaveURL(/\/card\/build\/targets$/);
 	await page.goto('/card/build/habits');
-	await expect(page.getByText('9 of 9 picked')).toBeVisible();
+	await expect(page.getByText('8 of 8 picked')).toBeVisible();
 });
 
 test('picking the wrong number of habits explains the count', async ({ page }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	await startAtHabits(page);
-	await pickHabits(page, 8);
-	await expect(page.getByText('8 of 9 picked')).toBeVisible();
+	await pickHabits(page, 7);
+	await expect(page.getByText('7 of 8 picked')).toBeVisible();
 	await page.getByRole('button', { name: 'Continue' }).click();
-	await expect(page.getByRole('alert')).toHaveText(/Pick exactly 9 habits\./);
+	await expect(page.getByRole('alert')).toHaveText(/Pick exactly 8 habits\./);
 	await expect(page.getByRole('group', { name: 'Your habits' })).toHaveAccessibleDescription(
-		/Pick exactly 9 habits\./
+		/Pick exactly 8 habits\./
 	);
 	await expect(page).toHaveURL(/\/card\/build\/habits$/);
-	await expect(page.getByText('8 of 9 picked')).toBeVisible();
+	await expect(page.getByText('7 of 8 picked')).toBeVisible();
 });
 
 test('a habit created inline is picked', async ({ page }) => {
@@ -90,20 +90,20 @@ test('a habit created inline is picked', async ({ page }) => {
 	await page.getByRole('textbox', { name: 'Name' }).fill('Stretch daily');
 	await page.getByRole('button', { name: 'Add habit' }).click();
 	await expect(page.getByRole('checkbox', { name: /Stretch daily/ })).toBeChecked();
-	await expect(page.getByText('1 of 9 picked')).toBeVisible();
+	await expect(page.getByText('1 of 8 picked')).toBeVisible();
 	await expect(page).toHaveURL(/\/card\/build\/habits$/);
 });
 
 test("another person's habit id is refused", async ({ browser, page }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	const other = await browser.newContext();
 	const otherPage = await other.newPage();
-	await newMemberWithHabits(otherPage, 9);
+	await newMemberWithHabits(otherPage, 8);
 	await startAtHabits(otherPage);
 	const foreign = await otherPage
 		.getByRole('checkbox')
 		.evaluateAll((els) => els.map((el) => (el as HTMLInputElement).value));
-	expect(foreign).toHaveLength(9);
+	expect(foreign).toHaveLength(8);
 
 	await startAtHabits(page);
 	const response = await page.request.post('/card/build/habits?/habits', {
@@ -121,14 +121,14 @@ test("another person's habit id is refused", async ({ browser, page }) => {
 
 async function startAtTargets(page: Page): Promise<void> {
 	await startAtHabits(page);
-	await pickHabits(page, 9);
+	await pickHabits(page, 8);
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/targets$/);
 	await waitForHydration(page);
 }
 
 test('targets show the days left and accept an override', async ({ page }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	await startAtTargets(page);
 	await expect(page.getByRole('heading', { name: /\d+ days? left in \w+/ })).toBeVisible();
 	const first = page.getByRole('spinbutton').first();
@@ -142,7 +142,7 @@ test('targets show the days left and accept an override', async ({ page }) => {
 });
 
 test('an out-of-range target is explained on that row', async ({ page }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	await startAtTargets(page);
 	const first = page.getByRole('spinbutton').first();
 	await first.fill('0');
@@ -156,7 +156,7 @@ test('an out-of-range target is explained on that row', async ({ page }) => {
 });
 
 test('rewards are required', async ({ page }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	await startAtTargets(page);
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/rewards$/);
@@ -174,7 +174,7 @@ test('rewards are required', async ({ page }) => {
 });
 
 test('a habit archived after picking sends the person back to Habits', async ({ page }) => {
-	await newMemberWithHabits(page, 10);
+	await newMemberWithHabits(page, 9);
 	await startAtHabits(page);
 	const name = (
 		await page
@@ -184,7 +184,7 @@ test('a habit archived after picking sends the person back to Habits', async ({ 
 			.locator('.font-extrabold')
 			.innerText()
 	).trim();
-	await pickHabits(page, 9);
+	await pickHabits(page, 8);
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/targets$/);
 
@@ -198,7 +198,7 @@ test('a habit archived after picking sends the person back to Habits', async ({ 
 	await page.goto('/card/build/rewards');
 	await expect(page).toHaveURL(/\/card\/build\/habits$/);
 	await waitForHydration(page);
-	await expect(page.getByText('8 of 9 picked')).toBeVisible();
+	await expect(page.getByText('7 of 8 picked')).toBeVisible();
 
 	// Another habit takes its place and the builder carries on.
 	const unpicked = page
@@ -206,13 +206,13 @@ test('a habit archived after picking sends the person back to Habits', async ({ 
 		.filter({ has: page.getByRole('checkbox', { checked: false }) })
 		.first();
 	await unpicked.click();
-	await expect(page.getByText('9 of 9 picked')).toBeVisible();
+	await expect(page.getByText('8 of 8 picked')).toBeVisible();
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/targets$/);
 });
 
 test('later steps redirect back until earlier ones are done', async ({ page }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	await page.goto('/card/build/targets');
 	await expect(page).toHaveURL(/\/card\/build\/size$/);
 	await waitForHydration(page);

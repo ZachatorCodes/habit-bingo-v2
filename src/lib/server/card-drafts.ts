@@ -107,8 +107,8 @@ export function withHabits(draft: CardDraft, habitIds: string[]): CardDraft {
  * otherwise: the Targets step then shows the card's targets rather than freshly prorated ones.
  */
 export function draftFromCard(card: Card): CardDraft {
-	const habitSquares = card.squares.flatMap((s) => (!s.isFree && s.habitId ? [s] : []));
-	const hasGap = card.squares.some((s) => !s.isFree && !s.habitId);
+	const habitSquares = card.squares.flatMap((s) => (!s.isCenter && s.habitId ? [s] : []));
+	const hasGap = card.squares.some((s) => !s.isCenter && !s.habitId);
 	const draft: CardDraft = {
 		month: card.month,
 		cardId: card.id,
@@ -117,7 +117,7 @@ export function draftFromCard(card: Card): CardDraft {
 		targets: Object.fromEntries(habitSquares.map((s) => [s.habitId!, s.target])),
 		rewards: { ...card.rewards },
 		// A square whose habit is gone cannot be placed again; the Board step then makes a new layout.
-		layout: hasGap ? null : card.squares.map((s) => (s.isFree ? null : s.habitId)),
+		layout: hasGap ? null : card.squares.map((s) => (s.isCenter ? null : s.habitId)),
 		completed: []
 	};
 	return { ...draft, completed: stepsFor(draft) };

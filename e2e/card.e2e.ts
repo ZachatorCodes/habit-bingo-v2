@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { newMemberWithHabits, newMemberWithoutJs, waitForHydration } from './fixtures.ts';
 
-/** Builds a 3×3 card up to the Board step with the first nine habits. */
+/** Builds a 3×3 card up to the Board step with the first eight habits. */
 async function buildToBoard(page: Page): Promise<void> {
 	await page.goto('/card/build');
 	await expect(page).toHaveURL(/\/card\/build\/size$/);
@@ -14,7 +14,7 @@ async function buildToBoard(page: Page): Promise<void> {
 	await expect(page).toHaveURL(/\/card\/build\/habits$/);
 	await waitForHydration(page);
 	const labels = page.locator('label').filter({ has: page.getByRole('checkbox') });
-	for (let i = 0; i < 9; i++) await labels.nth(i).click();
+	for (let i = 0; i < 8; i++) await labels.nth(i).click();
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/targets$/);
 	await page.getByRole('button', { name: 'Continue' }).click();
@@ -36,7 +36,7 @@ async function squareNames(page: Page): Promise<string[]> {
 }
 
 test('a new member builds and starts a 3×3 card', async ({ page }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	await buildToBoard(page);
 	await expect(
 		page.getByText(
@@ -62,7 +62,7 @@ test('a new member builds and starts a 3×3 card', async ({ page }) => {
 });
 
 test('shuffle changes the board but keeps the habits', async ({ page }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	await buildToBoard(page);
 	const before = await squareNames(page);
 	// A shuffle can land on the same order by chance (1 in 362,880), so try a few times.
@@ -85,7 +85,7 @@ test('shuffle changes the board but keeps the habits', async ({ page }) => {
 });
 
 test('Today and the nav lead to the card', async ({ page }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	await page.goto('/today');
 	await expect(page.getByText('No card yet.')).toBeVisible();
 	await page.getByRole('link', { name: 'Build one' }).click();
@@ -109,7 +109,7 @@ test('Today and the nav lead to the card', async ({ page }) => {
 });
 
 test('a draft in progress offers to continue building', async ({ page }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	await buildToBoard(page);
 	await page.goto('/card');
 	await page.getByRole('link', { name: 'Continue building' }).click();
@@ -117,7 +117,7 @@ test('a draft in progress offers to continue building', async ({ page }) => {
 });
 
 test('starting twice makes one card', async ({ page, baseURL }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	await buildToBoard(page);
 	const post = () =>
 		page.request.post('/card/build/board?/start', {
@@ -133,7 +133,7 @@ test('starting twice makes one card', async ({ page, baseURL }) => {
 });
 
 test('a habit archived before starting sends you back to Habits', async ({ page, baseURL }) => {
-	await newMemberWithHabits(page, 10);
+	await newMemberWithHabits(page, 9);
 	await buildToBoard(page);
 	const name = (await squareNames(page))[0].split(':')[0];
 
@@ -159,7 +159,7 @@ test('the whole builder works without JavaScript', async ({ browser }) => {
 	const page = await context.newPage();
 	await newMemberWithoutJs(page);
 	await page.goto('/me/habits?welcome=1');
-	for (let i = 1; i <= 9; i++) {
+	for (let i = 1; i <= 8; i++) {
 		await page.getByRole('button', { name: /^Add / }).first().click();
 		await expect(page.getByRole('button', { name: / added$/ })).toHaveCount(i);
 	}
@@ -172,7 +172,7 @@ test('the whole builder works without JavaScript', async ({ browser }) => {
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/habits$/);
 	const labels = page.locator('label').filter({ has: page.getByRole('checkbox') });
-	for (let i = 0; i < 9; i++) await labels.nth(i).click();
+	for (let i = 0; i < 8; i++) await labels.nth(i).click();
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/targets$/);
 	await page.getByRole('button', { name: 'Continue' }).click();
@@ -208,19 +208,19 @@ async function startCard(page: Page): Promise<void> {
 }
 
 test('within 48 hours the card can be edited', async ({ page }) => {
-	await newMemberWithHabits(page, 10);
+	await newMemberWithHabits(page, 9);
 	await startCard(page);
 	const before = await squareNames(page);
 
 	await page.getByRole('button', { name: 'Edit card' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/habits$/);
 	await waitForHydration(page);
-	// Swap one picked habit for the tenth.
+	// Swap one picked habit for the ninth.
 	const labels = page.locator('label').filter({ has: page.getByRole('checkbox') });
 	const boxes = page.getByRole('checkbox');
-	await expect(boxes).toHaveCount(10);
+	await expect(boxes).toHaveCount(9);
 	let off = -1;
-	for (let i = 0; i < 10; i++) if (!(await boxes.nth(i).isChecked())) off = i;
+	for (let i = 0; i < 9; i++) if (!(await boxes.nth(i).isChecked())) off = i;
 	expect(off).toBeGreaterThanOrEqual(0);
 	const newName = ((await labels.nth(off).innerText()) ?? '').trim();
 	await labels.nth(off === 0 ? 1 : 0).click();
@@ -249,7 +249,7 @@ test('within 48 hours the card can be edited', async ({ page }) => {
 });
 
 test('editing shows the card targets and keeps them', async ({ page }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	await buildToBoard(page);
 	await page.goto('/card/build/targets');
 	await waitForHydration(page);
@@ -274,7 +274,7 @@ test('editing shows the card targets and keeps them', async ({ page }) => {
 });
 
 test('cancel editing leaves the card unchanged', async ({ page }) => {
-	await newMemberWithHabits(page, 10);
+	await newMemberWithHabits(page, 9);
 	await startCard(page);
 	const before = await squareNames(page);
 
@@ -301,7 +301,7 @@ test('cancel editing leaves the card unchanged', async ({ page }) => {
 });
 
 test('editing skips the Size step', async ({ page }) => {
-	await newMemberWithHabits(page, 9);
+	await newMemberWithHabits(page, 8);
 	await startCard(page);
 	await page.getByRole('button', { name: 'Edit card' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/habits$/);

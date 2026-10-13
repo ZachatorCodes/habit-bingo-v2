@@ -5,13 +5,13 @@ import SizePicker from './SizePicker.svelte';
 
 describe('SizePicker', () => {
 	it('shows need versus have and how many to add', async () => {
-		render(SizePicker, { selected: null, habitCount: 9 });
+		render(SizePicker, { selected: null, habitCount: 8 });
 		expect(page.getByRole('radio').elements()).toHaveLength(2);
-		await expect.element(page.getByText('9 habits · ×1')).toBeInTheDocument();
+		await expect.element(page.getByText('8 habits · ×1')).toBeInTheDocument();
 		await expect.element(page.getByText('24 habits · ×2')).toBeInTheDocument();
-		await expect.element(page.getByText('You have 9 habits / need 9')).toBeInTheDocument();
-		await expect.element(page.getByText('You have 9 habits / need 24')).toBeInTheDocument();
-		await expect.element(page.getByText('Add 15 more in the next step.')).toBeInTheDocument();
+		await expect.element(page.getByText('You have 8 habits / need 8')).toBeInTheDocument();
+		await expect.element(page.getByText('You have 8 habits / need 24')).toBeInTheDocument();
+		await expect.element(page.getByText('Add 16 more in the next step.')).toBeInTheDocument();
 		expect(page.getByText(/more in the next step/).elements()).toHaveLength(1);
 	});
 

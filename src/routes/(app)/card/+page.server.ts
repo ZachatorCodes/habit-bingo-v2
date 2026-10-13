@@ -36,8 +36,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			size: card.size,
 			rewards: card.rewards,
 			squares: card.squares.map((square) =>
-				square.isFree
-					? { emoji: '', name: 'Free', state: initialSquareState({ isFree: true }) }
+				square.isCenter
+					? { emoji: '⭐', name: 'Free', state: 'complete' as const }
 					: { emoji: square.emoji, name: square.name, state: initialSquareState(square) }
 			)
 		},

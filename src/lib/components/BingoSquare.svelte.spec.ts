@@ -36,4 +36,13 @@ describe('BingoSquare', () => {
 		render(BingoSquare, { emoji: '🚴', label: 'Go biking', state: 'empty', showLabel: true });
 		await expect.element(page.getByText('Go biking')).toBeInTheDocument();
 	});
+
+	it('marks the build-next center with a pencil and text, not colour alone', async () => {
+		render(BingoSquare, { emoji: '🗓️', label: "Build November's card", state: 'buildNext' });
+		const square = page.getByRole('img', {
+			name: "Build November's card: build next month's card"
+		});
+		await expect.element(square).toBeInTheDocument();
+		await expect.element(square).toHaveTextContent('✏️');
+	});
 });

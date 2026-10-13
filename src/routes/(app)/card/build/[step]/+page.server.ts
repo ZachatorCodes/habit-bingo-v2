@@ -99,7 +99,7 @@ type PickedHabit = Pick<
 function keptSquares(card: Card | null) {
 	const kept = new Map<string, PickedHabit>();
 	for (const square of card?.squares ?? []) {
-		if (square.isFree || !square.habitId) continue;
+		if (square.isCenter || !square.habitId) continue;
 		// A habit already on the card stays as snapshotted, even if the library has changed since.
 		kept.set(square.habitId, { ...square, id: square.habitId });
 	}
@@ -198,9 +198,9 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 					? {
 							emoji: habit.emoji,
 							name: habit.name,
-							state: initialSquareState({ isFree: false, ...habit })
+							state: initialSquareState(habit)
 						}
-					: { emoji: '', name: 'Free', state: 'free' as const };
+					: { emoji: '⭐', name: 'Free', state: 'complete' as const };
 			})
 		};
 	}
