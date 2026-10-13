@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/ZachatorCodes/habit-bingo-v2/compare/habit-bingo-v0.5.0...habit-bingo-v0.6.0) (2026-10-13)
+
+
+### Features
+
+* **card:** BINGO! ([#81](https://github.com/ZachatorCodes/habit-bingo-v2/issues/81)) ([f26fe5f](https://github.com/ZachatorCodes/habit-bingo-v2/commit/f26fe5f219699c973ccc78276f1ebdee47ef93b2))
+* **card:** named squares with soft tints and border styles ([#78](https://github.com/ZachatorCodes/habit-bingo-v2/issues/78)) ([0e8e8f2](https://github.com/ZachatorCodes/habit-bingo-v2/commit/0e8e8f21536629bb410926b107fb281528563b7d))
+* **card:** the card header ([#79](https://github.com/ZachatorCodes/habit-bingo-v2/issues/79)) ([91ebb70](https://github.com/ZachatorCodes/habit-bingo-v2/commit/91ebb70f6ecd2281c05bf49284027c184b4a7cbc))
+* **card:** the habit sheet ([#80](https://github.com/ZachatorCodes/habit-bingo-v2/issues/80)) ([477af85](https://github.com/ZachatorCodes/habit-bingo-v2/commit/477af8570b3d6b73cc5c1edcac9a995e428430ef))
+* **game:** lines, reward tiers and points ([#77](https://github.com/ZachatorCodes/habit-bingo-v2/issues/77)) ([5232acf](https://github.com/ZachatorCodes/habit-bingo-v2/commit/5232acfaa28017b20103a40d1b3730fa6f885b9f))
+* **habits:** tidier habit form and deleting archived habits ([#73](https://github.com/ZachatorCodes/habit-bingo-v2/issues/73)) ([c00b07a](https://github.com/ZachatorCodes/habit-bingo-v2/commit/c00b07a8b01b7ea0ac03dc6bf03aa0575e86e9b7))
+
 ## [0.5.0](https://github.com/ZachatorCodes/habit-bingo-v2/compare/habit-bingo-v0.4.0...habit-bingo-v0.5.0) (2026-10-13)
 
 
