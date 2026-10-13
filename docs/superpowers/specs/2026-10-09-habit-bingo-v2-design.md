@@ -230,9 +230,12 @@ rank. Members without a card this month appear below those with one.
 ## 4. Screens & flows
 
 Visual direction: **Playful & chunky**: warm cream background, bright tactile "button" squares
-with a press-down shadow. Square colors: earned/complete green, protected blue, at-risk yellow,
-lost faded with strikethrough. States always pair color with an icon (✓ 🛡 ⚠ ✗). Light theme only
-to start.
+with a press-down shadow. Square colors (soft, light tints with ink text): earned/complete green,
+protected blue, at-risk yellow, lost faded. States never rely on color alone: each also has a border
+style — complete **thick solid**, protected **normal solid**, at risk **dashed**, lost **faded with the
+name struck through**, the center's "build next month" **dotted**; in progress shows its progress
+bar. Squares carry no corner icons; screen readers hear each state in words. Light theme only to
+start.
 
 ### 4.1 Public
 
@@ -283,10 +286,21 @@ progress text (e.g. "5/8 today", "2 of 3 this week"), and an add button that log
 ### 4.6 Card
 
 - Header: month, percent of squares counting, bingo count, points, reward-tier chips.
-- **Phone (and all 5×5 on narrow screens):** emoji grid. Each square shows emoji, state color and a
-  thin progress bar. Tapping opens a **bottom sheet**: name, category, rule, progress, this
-  week's / month's days with their counts, and a − / + stepper for the selected day. Logging never happens from a stray grid tap.
-- **Wider screens and 3×3:** squares also show full names.
+- **Squares** look like the habit creator's preview square: emoji and name on every square, every
+  size. On a 5×5 card on a phone the emoji shrinks and the name is small bold text, up to 2 lines,
+  cut with "…". Earn squares keep their thin progress bar.
+- **Tapping a square opens the habit sheet** — a bottom sheet on phones, a centered dialog on wider
+  screens; same content. Logging never happens from a stray grid tap.
+  - Header: emoji, name, category, the rule ("2 days a week"), the state in words ("At risk: 1 more
+    by Sunday") and progress ("1 of 2 this week").
+  - Day picker: chips for the backfill window (Today, Yesterday, then weekdays); today selected.
+  - Logging the selected day: **times** habits get a − count + stepper (0–20); **days** habits get a
+    single "Done that day" toggle. Each change saves at once (optimistic, Pop & burst, rollback
+    toast — §4.7, §6), through the same check-in rules as Today.
+  - History: this week's days (week habits) or this month's days (day and month habits) with each
+    day's count, logged days marked.
+  - Closes with ✕, Escape or a tap outside; focus returns to the square.
+- The center square keeps its own behavior (§3.5): it opens next month's card, not the sheet.
 - Private squares show to others as 🔒 with progress only.
 
 ### 4.7 Feedback & celebration
