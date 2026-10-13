@@ -53,3 +53,21 @@ export function daysLeftInMonth(date: string): number {
 export function monthName(month: string): string {
 	return MONTH_NAMES[parseMonth(month).month - 1];
 }
+
+function toUtc(date: string): number {
+	return Date.UTC(
+		Number(date.slice(0, 4)),
+		Number(date.slice(5, 7)) - 1,
+		Number(date.slice(8, 10))
+	);
+}
+
+/** The date `days` after (or before, when negative) `date`. */
+export function addDays(date: string, days: number): string {
+	return new Date(toUtc(date) + days * 86_400_000).toISOString().slice(0, 10);
+}
+
+/** 0 = Sunday … 6 = Saturday. */
+export function weekday(date: string): number {
+	return new Date(toUtc(date)).getUTCDay();
+}
