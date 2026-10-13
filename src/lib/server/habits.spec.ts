@@ -1,12 +1,14 @@
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from '#lib/server/db/client.ts';
-import { habit, user } from '#lib/server/db/schema.ts';
+import { cardSquare, habit, user } from '#lib/server/db/schema.ts';
+import { startCard } from './cards';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import {
 	addStarter,
 	addedStarterIds,
 	archiveHabit,
+	deleteHabit,
 	createHabit,
 	getHabit,
 	listHabits,
@@ -162,6 +164,60 @@ describe('updateHabit', () => {
 			field: 'name',
 			message: 'Give it a name (up to 40 characters).'
 		});
+	});
+});
+
+describe('deleteHabit', () => {
+	it('deletes an archived habit forever', async () => {
+		const me = await makeUser();
+		const mine = await created(me);
+		await archiveHabit(db, me, mine.id, new Date());
+		expect(await deleteHabit(db, me, mine.id)).toBe(true);
+		expect(await getHabit(db, me, mine.id)).toBeNull();
+		expect(await db.select().from(habit)).toEqual([]);
+	});
+
+	it('refuses an active habit', async () => {
+		const me = await makeUser();
+		const mine = await created(me);
+		expect(await deleteHabit(db, me, mine.id)).toBe('active');
+		expect(await getHabit(db, me, mine.id)).not.toBeNull();
+	});
+
+	it("never deletes another person's habit", async () => {
+		const me = await makeUser();
+		const other = await makeUser();
+		const theirs = await created(other);
+		await archiveHabit(db, other, theirs.id, new Date());
+		expect(await deleteHabit(db, me, theirs.id)).toBe(false);
+		expect(await deleteHabit(db, me, 'no-such-habit')).toBe(false);
+		expect(await getHabit(db, other, theirs.id)).not.toBeNull();
+	});
+
+	it('cards keep their copy of a deleted habit', async () => {
+		const me = await makeUser();
+		const habits = [];
+		for (let i = 0; i < 8; i++) habits.push(await created(me, { name: `Habit ${i}` }));
+		const layout: (string | null)[] = habits.map((h) => h.id);
+		layout.splice(4, 0, null);
+		const started = await startCard(
+			db,
+			{ id: me, timezone: 'UTC', weekStartsOn: 'monday' },
+			{
+				size: 3,
+				habitIds: habits.map((h) => h.id),
+				targets: {},
+				rewards: { bingo: 'a', sixty: 'b', blackout: 'c' },
+				layout
+			},
+			new Date('2026-10-12T09:00:00Z')
+		);
+		if (!started.ok) throw new Error(started.message);
+		await archiveHabit(db, me, habits[0].id, new Date());
+		expect(await deleteHabit(db, me, habits[0].id)).toBe(true);
+		const squares = await db.select().from(cardSquare).where(eq(cardSquare.name, 'Habit 0'));
+		expect(squares).toHaveLength(1);
+		expect(squares[0]).toMatchObject({ habitId: null, emoji: habits[0].emoji });
 	});
 });
 

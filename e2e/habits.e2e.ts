@@ -258,3 +258,83 @@ test('archiving while filtered keeps the filter', async ({ page }) => {
 	await expect(page.getByText('No habits in Fitness yet.')).toBeVisible();
 	await expect(page.getByRole('link', { name: /Fitness/ })).toHaveAttribute('aria-current', 'true');
 });
+
+test('the habit form puts a small emoji box beside the name', async ({ page }) => {
+	await newMember(page);
+	await page.goto('/me/habits/new');
+	const emoji = await page.getByRole('textbox', { name: 'Emoji' }).boundingBox();
+	const name = await page.getByRole('textbox', { name: 'Name' }).boundingBox();
+	const category = await page.getByRole('group', { name: 'Category' }).boundingBox();
+	expect(emoji!.width).toBeLessThan(90);
+	expect(Math.abs(emoji!.y - name!.y)).toBeLessThan(4);
+	expect(name!.x).toBeGreaterThan(emoji!.x + emoji!.width);
+	expect(category!.y).toBeLessThan(emoji!.y);
+});
+
+/** A member with "Go biking" archived, looking at the archived view. */
+async function withArchivedBiking(page: Page): Promise<void> {
+	await newMember(page);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Add Go biking' }).click();
+	await expect(page.getByRole('button', { name: 'Go biking added' })).toBeDisabled();
+	await page.goto('/me/habits');
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Archive Go biking' }).click();
+	await expect(page.getByRole('button', { name: 'Archive Go biking' })).toHaveCount(0);
+	await page.goto('/me/habits?archived=1');
+	await waitForHydration(page);
+}
+
+test('an archived habit can be deleted forever', async ({ page }) => {
+	await withArchivedBiking(page);
+	await page.getByRole('button', { name: 'Delete Go biking' }).click();
+	const dialog = page.getByRole('dialog', { name: 'Delete Go biking forever?' });
+	await expect(dialog).toBeVisible();
+	await expect(dialog).toContainText("Your cards keep their copy of it. This can't be undone.");
+	await dialog.getByRole('button', { name: 'Delete forever' }).click();
+	await expect(page).toHaveURL(/\/me\/habits\?archived=1&deleted=1$/);
+	await expect(page.getByText('Habit deleted.')).toBeVisible();
+	await expect(page.getByText('Go biking')).toHaveCount(0);
+});
+
+test('cancelling keeps the habit', async ({ page }) => {
+	await withArchivedBiking(page);
+	await page.getByRole('button', { name: 'Delete Go biking' }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
+	await expect(page.getByRole('dialog')).toBeHidden();
+	await expect(page.getByRole('button', { name: 'Restore Go biking' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Delete Go biking' })).toBeFocused();
+});
+
+test('deleting works without JavaScript', async ({ page, browser }) => {
+	await withArchivedBiking(page);
+	const context = await browser.newContext({ javaScriptEnabled: false });
+	await context.addCookies(await page.context().cookies());
+	const noJs = await context.newPage();
+	await noJs.goto('/me/habits?archived=1');
+	await noJs.getByRole('link', { name: 'Delete Go biking' }).click();
+	await expect(noJs.getByRole('heading', { name: 'Delete Go biking forever?' })).toBeVisible();
+	await noJs.getByRole('button', { name: 'Delete forever' }).click();
+	await expect(noJs.getByText('Habit deleted.')).toBeVisible();
+	await context.close();
+});
+
+test('only your own archived habits can be deleted', async ({ page, browser, baseURL }) => {
+	await newMember(page);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Add Go biking' }).click();
+	await expect(page.getByRole('button', { name: 'Go biking added' })).toBeDisabled();
+	await page.goto('/me/habits');
+	await page.getByRole('link', { name: 'Edit Go biking' }).click();
+	await page.waitForURL(/\/me\/habits\/[0-9a-f-]{36}$/);
+	const deleteUrl = `${page.url()}/delete`;
+	// Active habits must be archived first.
+	const active = await page.request.post(deleteUrl, { headers: { origin: baseURL! }, form: {} });
+	expect(active.status()).toBe(400);
+	// Someone else can't delete it, or even see the confirmation.
+	const other = await (await browser.newContext()).newPage();
+	await newMember(other);
+	expect((await other.goto(deleteUrl))?.status()).toBe(404);
+	const foreign = await other.request.post(deleteUrl, { headers: { origin: baseURL! }, form: {} });
+	expect(foreign.status()).toBe(404);
+});

@@ -50,7 +50,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		activeCount: active.length,
 		welcome: url.searchParams.get('welcome') === '1',
 		created: url.searchParams.get('created') === '1',
-		saved: url.searchParams.get('saved') === '1'
+		saved: url.searchParams.get('saved') === '1',
+		deleted: url.searchParams.get('deleted') === '1'
 	};
 };
 

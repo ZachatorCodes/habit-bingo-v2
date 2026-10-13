@@ -82,4 +82,17 @@ describe('HabitForm', () => {
 		await expect.element(target).toHaveAttribute('aria-invalid', 'true');
 		await expect.element(target).toHaveAccessibleDescription(/Pick a number from 1 to 7\./);
 	});
+
+	it('puts Category first, then the emoji and name side by side', async () => {
+		render(HabitForm, { values: defaults, submitLabel: 'Add habit' });
+		const category = page.getByRole('group', { name: 'Category' }).element();
+		const emoji = page.getByRole('textbox', { name: 'Emoji' }).element();
+		const name = page.getByRole('textbox', { name: 'Name' }).element();
+		const before = (a: Element, b: Element) =>
+			Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+		expect(before(category, emoji)).toBe(true);
+		expect(before(emoji, name)).toBe(true);
+		expect(emoji.closest('[data-field-row]')).not.toBeNull();
+		expect(emoji.closest('[data-field-row]')).toBe(name.closest('[data-field-row]'));
+	});
 });

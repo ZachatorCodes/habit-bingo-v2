@@ -91,7 +91,8 @@ Valid combinations and ranges:
   check-ins cap at 20 a day, so a limit of 20 could never be broken; a limit of 0 a day is the same
   as "None this month".
 - Habits are archived, not deleted, so past cards keep their history. Archived habits do not appear
-  in the card builder.
+  in the card builder, and can then be deleted forever (after a confirmation): cards keep their own
+  copy of every habit, so deleting never changes a card.
 
 **Categories** (fixed set; every habit has exactly one): 💪 Fitness, 🥗 Health, 🧠 Mind,
 🏠 Home, 👥 Social, 📚 Learning, 🎨 Creative, 💰 Money, ✨ Other. Categories group and filter the

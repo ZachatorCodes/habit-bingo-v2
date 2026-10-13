@@ -59,6 +59,10 @@
 		<p role="status" class="rounded-xl bg-earn px-4 py-3 font-bold text-ink">
 			<span aria-hidden="true">✓</span> Habit saved.
 		</p>
+	{:else if data.deleted}
+		<p role="status" class="rounded-xl bg-earn px-4 py-3 font-bold text-ink">
+			<span aria-hidden="true">✓</span> Habit deleted.
+		</p>
 	{/if}
 	{#if form && 'message' in form && form.message}
 		<p role="alert" class="rounded-xl bg-risk px-4 py-3 font-bold text-ink">

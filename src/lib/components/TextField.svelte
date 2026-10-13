@@ -11,6 +11,8 @@
 		hint?: string;
 		min?: number;
 		max?: number;
+		/** Extra classes for the input, e.g. a compact emoji box. */
+		inputClass?: string;
 	};
 
 	let {
@@ -22,7 +24,8 @@
 		autocomplete,
 		hint,
 		min,
-		max
+		max,
+		inputClass
 	}: Props = $props();
 
 	const id = $props.id();
@@ -50,7 +53,8 @@
 		aria-describedby={describedBy}
 		class={[
 			'w-full rounded-2xl border-2 bg-white px-4 py-2.5 text-ink shadow-[0_3px_0_var(--color-line)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink',
-			error ? 'border-accent-edge' : 'border-line'
+			error ? 'border-accent-edge' : 'border-line',
+			inputClass
 		]}
 	/>
 	{#if error}

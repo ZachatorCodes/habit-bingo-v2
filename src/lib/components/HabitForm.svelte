@@ -89,24 +89,6 @@
 
 <!-- TextField values are one-way; typing is tracked from bubbling input events. -->
 <div class="flex flex-col gap-6" oninput={trackTyping}>
-	<div class={field}>
-		<TextField label="Emoji" name="emoji" value={emoji} error={errors.emoji} hint="One emoji." />
-		<div class="flex flex-wrap gap-2" role="group" aria-label="Suggested emoji">
-			{#each picks as pick (pick)}
-				<button
-					type="button"
-					aria-label={`Use ${pick}`}
-					aria-pressed={emoji === pick}
-					onclick={() => (emoji = pick)}
-					class="flex size-11 items-center justify-center rounded-xl border-2 border-line bg-white text-2xl focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink aria-pressed:border-ink aria-pressed:bg-cream"
-					>{pick}</button
-				>
-			{/each}
-		</div>
-	</div>
-
-	<TextField label="Name" name="name" value={name} error={errors.name} hint="e.g. Go biking" />
-
 	<fieldset class={field} aria-describedby={errors.category ? `${ids}-category-error` : undefined}>
 		<legend class="mb-1.5 font-extrabold">Category</legend>
 		<div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -126,6 +108,42 @@
 		</div>
 		{@render fieldError('category')}
 	</fieldset>
+
+	<div class={field}>
+		<!-- Emoji and name side by side: a small emoji box, the name filling the rest. -->
+		<div class="flex items-end gap-3" data-field-row>
+			<div class="w-16 shrink-0">
+				<TextField
+					label="Emoji"
+					name="emoji"
+					value={emoji}
+					error={errors.emoji}
+					inputClass="h-12 px-0 text-center text-2xl leading-6"
+				/>
+			</div>
+			<div class="min-w-0 flex-1">
+				<TextField
+					label="Name"
+					name="name"
+					value={name}
+					error={errors.name}
+					hint="e.g. Go biking"
+				/>
+			</div>
+		</div>
+		<div class="flex flex-wrap gap-2" role="group" aria-label="Suggested emoji">
+			{#each picks as pick (pick)}
+				<button
+					type="button"
+					aria-label={`Use ${pick}`}
+					aria-pressed={emoji === pick}
+					onclick={() => (emoji = pick)}
+					class="flex size-11 items-center justify-center rounded-xl border-2 border-line bg-white text-2xl focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink aria-pressed:border-ink aria-pressed:bg-cream"
+					>{pick}</button
+				>
+			{/each}
+		</div>
+	</div>
 
 	<fieldset
 		class={field}
