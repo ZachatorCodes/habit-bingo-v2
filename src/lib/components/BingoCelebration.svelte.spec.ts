@@ -45,4 +45,35 @@ describe('BingoCelebration', () => {
 		});
 		await expect.poll(() => ondone.mock.calls.length, { timeout: 2000 }).toBe(1);
 	});
+
+	it('puts BINGO! into a live region that was already there', async () => {
+		const screen = render(BingoCelebration, {
+			lines: [[0, 1, 2]],
+			tiers: [],
+			rewards,
+			sixtyThreshold: 5,
+			ondone: () => {}
+		});
+		const region = screen.container.querySelector('[role="status"]');
+		expect(region?.textContent?.trim()).toBe('');
+		await expect.element(page.getByRole('status')).toHaveTextContent('BINGO!');
+		expect(page.getByRole('status').element()).toBe(region);
+	});
+
+	it('returns focus to where it was after Nice!', async () => {
+		const opener = document.createElement('button');
+		opener.textContent = 'Log Go biking';
+		document.body.append(opener);
+		opener.focus();
+		render(BingoCelebration, {
+			lines: [],
+			tiers: ['bingo'],
+			rewards,
+			sixtyThreshold: 5,
+			ondone: () => {}
+		});
+		await page.getByRole('button', { name: 'Nice!' }).click();
+		expect(document.activeElement).toBe(opener);
+		opener.remove();
+	});
 });

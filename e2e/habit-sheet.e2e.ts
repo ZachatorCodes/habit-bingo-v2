@@ -92,3 +92,58 @@ test("someone else's square, the center, or a missing one is 404", async ({ page
 	expect((await other.goto(href!))?.status()).toBe(404);
 	expect((await page.goto('/card/squares/not-a-square'))?.status()).toBe(404);
 });
+
+test('closing the sheet before a save finishes keeps it closed', async ({ page }) => {
+	await onCard(page);
+	await square(page, 'Drink water').click();
+	let release = () => {};
+	const held = new Promise<void>((resolve) => (release = resolve));
+	const isLog = (url: URL) =>
+		url.pathname.startsWith('/card/squares/') && url.search.startsWith('?/log');
+	await page.route(isLog, async (route) => {
+		await held;
+		await route.continue();
+	});
+	const answered = page.waitForResponse((r) => isLog(new URL(r.url())));
+	await page.getByRole('dialog').getByRole('button', { name: 'Add one' }).click();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog')).toBeHidden();
+	release();
+	await answered;
+	await page.waitForTimeout(500);
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await expect(page).toHaveURL(/\/card$/);
+});
+
+test('a double tap opens one sheet that still closes', async ({ page }) => {
+	await onCard(page);
+	// Two taps in the same moment, before the first sheet has loaded.
+	await square(page, 'Drink water').evaluate((link: HTMLElement) => {
+		link.click();
+		link.click();
+	});
+	await expect(page.getByRole('dialog', { name: 'Drink water' })).toBeVisible();
+	await page.getByRole('button', { name: 'Close' }).click();
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await expect(page).toHaveURL(/\/card$/);
+});
+
+test('tapping Card again keeps the latest board', async ({ page }) => {
+	await onCard(page);
+	const points = () =>
+		page
+			.getByText(/^\d+ points?$/)
+			.first()
+			.innerText();
+	const before = await points();
+	await square(page, 'Go biking').click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Add one' }).click();
+	await expect(page.getByRole('dialog').getByRole('status', { name: 'Count' })).toHaveText('1');
+	await expect.poll(points).not.toBe(before);
+	const after = await points();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Card' }).click();
+	await page.waitForTimeout(500);
+	expect(await points()).toBe(after);
+});

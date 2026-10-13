@@ -31,20 +31,38 @@
 		)
 	);
 
+	// The live region is in the page before its text, so screen readers announce "BINGO!".
+	let announced = $state(false);
+	// Focus returns here when the reward reveal closes.
+	let opener: HTMLElement | null = null;
+	function finish() {
+		reveal?.close();
+		opener?.focus();
+		ondone();
+	}
+
 	// Line ripple (on the board) → BINGO! banner → confetti → the reward reveal (spec §4.7).
 	onMount(() => {
+		opener = document.activeElement as HTMLElement | null;
+		const announce = setTimeout(() => (announced = true), 50);
 		if (lines.length > 0) void fullScreenConfetti(prefersReducedMotion.current);
 		if (earned.length > 0) {
 			const timer = setTimeout(() => reveal?.showModal(), lines.length > 0 ? 900 : 0);
-			return () => clearTimeout(timer);
+			return () => {
+				clearTimeout(timer);
+				clearTimeout(announce);
+			};
 		}
 		const timer = setTimeout(ondone, duration);
-		return () => clearTimeout(timer);
+		return () => {
+			clearTimeout(timer);
+			clearTimeout(announce);
+		};
 	});
 </script>
 
 <div role="status" class="pointer-events-none fixed inset-x-0 top-1/3 z-50 flex justify-center">
-	{#if lines.length > 0}
+	{#if announced && lines.length > 0}
 		<p
 			class="rounded-3xl border-4 border-ink bg-risk px-8 py-4 text-5xl font-black text-ink shadow-[0_6px_0_var(--color-ink)] motion-safe:animate-bounce"
 		>
@@ -59,7 +77,7 @@
 		aria-labelledby={revealId}
 		oncancel={(event) => {
 			event.preventDefault();
-			ondone();
+			finish();
 		}}
 		class="m-auto max-w-sm rounded-3xl border-4 border-ink bg-cream p-6 text-center text-ink shadow-[0_6px_0_var(--color-ink)] backdrop:bg-ink/50"
 	>
@@ -72,7 +90,7 @@
 		</ul>
 		<button
 			type="button"
-			onclick={ondone}
+			onclick={finish}
 			class="mt-5 rounded-2xl border-2 border-ink bg-accent px-5 py-2.5 font-extrabold shadow-[0_3px_0_var(--color-ink)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 			>Nice!</button
 		>

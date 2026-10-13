@@ -29,11 +29,15 @@
 
 	// Squares open their habit sheet over the card (shallow routing): the URL changes, the back button
 	// closes it, and without JavaScript the link simply opens the sheet's own page.
+	let opening = false;
 	async function openSheet(event: MouseEvent, href: string) {
 		if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
 			return;
 		event.preventDefault();
-		const result = await preloadData(href);
+		// One sheet at a time: a second tap while one is open or loading does nothing.
+		if (page.state.sheet || opening) return;
+		opening = true;
+		const result = await preloadData(href).finally(() => (opening = false));
 		if (result.type === 'loaded' && result.status === 200) {
 			// eslint-disable-next-line svelte/no-navigation-without-resolve -- href was built with resolve()
 			pushState(href, { sheet: result.data.sheet as App.PageState['sheet'] });
@@ -73,7 +77,9 @@
 		history.back();
 	}
 	$effect(() => {
-		if (!page.state.sheet) closing = false;
+		// Any change of history state ends a close in progress.
+		void page.state.sheet;
+		closing = false;
 	});
 
 	afterNavigate(() => (fresh = null));
