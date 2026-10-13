@@ -1,3 +1,4 @@
+import type { Cookies } from '@sveltejs/kit';
 // Time-zone arithmetic for a person's local day, using only Intl (no date library).
 
 /** The local calendar date (YYYY-MM-DD) in `timezone` at `now`. */
@@ -64,4 +65,17 @@ export function formatEditDeadline(editableUntil: Date, timezone: string): strin
 			.map((p) => [p.type, p.value])
 	);
 	return `Edits close ${parts.weekday} at ${parts.hour}:${parts.minute} ${parts.dayPeriod}`;
+}
+
+/**
+ * "Now" for a request. E2E runs set `TEST_CLOCK=1` and an `hb_test_now` cookie (an ISO instant)
+ * to move through the month; anywhere else the cookie is ignored.
+ */
+export function requestNow(cookies: Cookies, testClock: boolean): Date {
+	if (testClock) {
+		const value = cookies.get('hb_test_now');
+		const at = value ? new Date(value) : null;
+		if (at && !Number.isNaN(at.getTime())) return at;
+	}
+	return new Date();
 }

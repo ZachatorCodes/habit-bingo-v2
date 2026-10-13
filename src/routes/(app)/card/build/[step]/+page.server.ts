@@ -1,4 +1,4 @@
-import { error, fail, redirect } from '@sveltejs/kit';
+import { error, fail, redirect, type Cookies } from '@sveltejs/kit';
 import { CATEGORIES, type CategoryId } from '#lib/game/categories.ts';
 import { daysLeftInMonth, monthName } from '#lib/game/calendar.ts';
 import {
@@ -24,7 +24,8 @@ import {
 	type CardDraft,
 	type Step
 } from '#lib/server/card-drafts.ts';
-import { localDate } from '#lib/server/clock.ts';
+import { TEST_CLOCK } from '$app/env/private';
+import { localDate, requestNow } from '#lib/server/clock.ts';
 import {
 	currentMonth,
 	editBlocked,
@@ -45,11 +46,11 @@ function isStep(value: string): value is Step {
 }
 
 /** The person, their database and this month's draft, or a redirect when a card already exists. */
-async function builderContext(locals: App.Locals) {
+async function builderContext(locals: App.Locals, cookies: Cookies) {
 	const user = requireUser(locals);
 	const db = getDb();
 	if (!db) error(503, 'The card builder is not available right now.');
-	const now = new Date();
+	const now = requestNow(cookies, TEST_CLOCK);
 	const month = currentMonth({ timezone: user.timezone ?? 'UTC' }, now);
 	const [card, draft] = await Promise.all([
 		getCard(db, user.id, month),
@@ -62,7 +63,7 @@ async function builderContext(locals: App.Locals) {
 	}
 	// A card for this month can only be changed through a draft that is editing it.
 	if (card && draft.cardId !== card.id) redirect(303, '/card');
-	return { user, db, month, card, draft };
+	return { user, db, month, card, draft, now };
 }
 
 /** The draft with the given step marked done. */
@@ -83,10 +84,13 @@ function nextStep(draft: CardDraft, step: Step): Step {
 }
 
 /** The day the card starts: the existing card's when changing it, otherwise today. */
-function startDateOf(user: { timezone?: string | null }, card: Card | null, draft: CardDraft) {
-	return card && draft.cardId === card.id
-		? card.startDate
-		: localDate(new Date(), user.timezone ?? 'UTC');
+function startDateOf(
+	user: { timezone?: string | null },
+	card: Card | null,
+	draft: CardDraft,
+	now: Date
+) {
+	return card && draft.cardId === card.id ? card.startDate : localDate(now, user.timezone ?? 'UTC');
 }
 
 /** What the builder needs of a habit: its emoji, name and rule. */
@@ -151,9 +155,9 @@ function targetRows(
 	});
 }
 
-export const load: PageServerLoad = async ({ locals, params, url }) => {
+export const load: PageServerLoad = async ({ locals, cookies, params, url }) => {
 	if (!isStep(params.step)) error(404, 'Not found');
-	const { user, db, month, card, draft } = await builderContext(locals);
+	const { user, db, month, card, draft, now } = await builderContext(locals, cookies);
 	// Changing a card keeps its size, so its builder starts at the habits.
 	if (params.step === 'size' && draft.cardId) redirect(303, '/card/build/habits');
 	if (!canOpen(draft, params.step)) redirect(303, `/card/build/${firstOpenStep(draft)}`);
@@ -169,7 +173,7 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 		if (size === null) redirect(303, '/card/build/size');
 		const picked = await pickedHabits(db, user.id, draft, size, kept);
 		if (params.step === 'targets') {
-			const startDate = startDateOf(user, card, draft);
+			const startDate = startDateOf(user, card, draft, now);
 			targets = {
 				startDate,
 				daysLeft: daysLeftInMonth(startDate),
@@ -225,8 +229,8 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 };
 
 export const actions: Actions = {
-	size: async ({ locals, request }) => {
-		const { user, db, draft } = await builderContext(locals);
+	size: async ({ locals, cookies, request }) => {
+		const { user, db, draft } = await builderContext(locals, cookies);
 		if (draft.cardId) redirect(303, `/card/build/${firstOpenStep(draft)}`);
 		const raw = Number((await request.formData()).get('size'));
 		if (!isCardSize(raw)) return fail(400, { message: 'Pick a size.' });
@@ -239,8 +243,8 @@ export const actions: Actions = {
 		redirect(303, `/card/build/${nextStep(next, 'size')}`);
 	},
 
-	habits: async ({ locals, request }) => {
-		const { user, db, card, draft } = await builderContext(locals);
+	habits: async ({ locals, cookies, request }) => {
+		const { user, db, card, draft } = await builderContext(locals, cookies);
 		if (!canOpen(draft, 'habits')) redirect(303, `/card/build/${firstOpenStep(draft)}`);
 		const size: CardSize | null = draft.size ?? card?.size ?? null;
 		if (size === null) redirect(303, '/card/build/size');
@@ -265,14 +269,14 @@ export const actions: Actions = {
 		redirect(303, `/card/build/${nextStep(next, 'habits')}`);
 	},
 
-	targets: async ({ locals, request }) => {
-		const { user, db, card, draft } = await builderContext(locals);
+	targets: async ({ locals, cookies, request }) => {
+		const { user, db, card, draft, now } = await builderContext(locals, cookies);
 		if (!canOpen(draft, 'targets')) redirect(303, `/card/build/${firstOpenStep(draft)}`);
 		const size: CardSize | null = draft.size ?? card?.size ?? null;
 		if (size === null) redirect(303, '/card/build/size');
 		const kept = keptSquares(card);
 		const picked = await pickedHabits(db, user.id, draft, size, kept);
-		const startDate = startDateOf(user, card, draft);
+		const startDate = startDateOf(user, card, draft, now);
 
 		const form = await request.formData();
 		const values: Record<string, string> = {};
@@ -300,8 +304,8 @@ export const actions: Actions = {
 		redirect(303, `/card/build/${nextStep(next, 'targets')}`);
 	},
 
-	rewards: async ({ locals, request }) => {
-		const { user, db, card, draft } = await builderContext(locals);
+	rewards: async ({ locals, cookies, request }) => {
+		const { user, db, card, draft } = await builderContext(locals, cookies);
 		if (!canOpen(draft, 'rewards')) redirect(303, `/card/build/${firstOpenStep(draft)}`);
 		const size: CardSize | null = draft.size ?? card?.size ?? null;
 		if (size === null) redirect(303, '/card/build/size');
@@ -323,8 +327,8 @@ export const actions: Actions = {
 		redirect(303, `/card/build/${nextStep(next, 'rewards')}`);
 	},
 
-	shuffle: async ({ locals }) => {
-		const { user, db, card, draft } = await builderContext(locals);
+	shuffle: async ({ locals, cookies }) => {
+		const { user, db, card, draft } = await builderContext(locals, cookies);
 		if (!canOpen(draft, 'board')) redirect(303, `/card/build/${firstOpenStep(draft)}`);
 		const size: CardSize | null = draft.size ?? card?.size ?? null;
 		if (size === null) redirect(303, '/card/build/size');
@@ -335,8 +339,8 @@ export const actions: Actions = {
 		});
 	},
 
-	start: async ({ locals }) => {
-		const { user, db, draft } = await builderContext(locals);
+	start: async ({ locals, cookies }) => {
+		const { user, db, draft, now } = await builderContext(locals, cookies);
 		if (!canOpen(draft, 'board')) redirect(303, `/card/build/${firstOpenStep(draft)}`);
 		if (draft.size === null) redirect(303, '/card/build/size');
 		// Opening the Board step makes the layout; without one the person has not seen a board yet.
@@ -356,8 +360,8 @@ export const actions: Actions = {
 		const editing = draft.cardId !== null;
 		const result =
 			draft.cardId !== null
-				? await updateCard(db, person, draft.cardId, plan, new Date())
-				: await startCard(db, person, { size: draft.size, ...plan }, new Date());
+				? await updateCard(db, person, draft.cardId, plan, now)
+				: await startCard(db, person, { size: draft.size, ...plan }, now);
 		if (result.ok) {
 			await discardDraft(db, user.id);
 			redirect(303, editing ? '/card?saved=1' : '/card?started=1');
@@ -371,8 +375,8 @@ export const actions: Actions = {
 		return fail(400, { message: result.message });
 	},
 
-	createHabit: async ({ locals, request }) => {
-		const { user, db, draft } = await builderContext(locals);
+	createHabit: async ({ locals, cookies, request }) => {
+		const { user, db, draft } = await builderContext(locals, cookies);
 		const values = await readHabitForm(request);
 		const result = await createHabit(db, user.id, values);
 		if (!result.ok) {
@@ -385,8 +389,8 @@ export const actions: Actions = {
 		return { createdHabitId: result.habit.id };
 	},
 
-	discard: async ({ locals }) => {
-		const { user, db, draft } = await builderContext(locals);
+	discard: async ({ locals, cookies }) => {
+		const { user, db, draft } = await builderContext(locals, cookies);
 		await discardDraft(db, user.id);
 		redirect(303, draft.cardId ? '/card' : '/card/build');
 	}

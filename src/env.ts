@@ -50,5 +50,10 @@ export const variables = defineEnvVars({
 			}
 			return multiplier;
 		}
+	},
+	TEST_CLOCK: {
+		description:
+			'Set to 1 only by the E2E server: lets an hb_test_now cookie (an ISO instant) stand in for the current time so tests can move through the month. Leave it unset everywhere else.',
+		schema: (value) => value === '1'
 	}
 });

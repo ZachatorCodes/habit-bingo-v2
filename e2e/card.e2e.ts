@@ -1,5 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
-import { newMemberWithHabits, newMemberWithoutJs, waitForHydration } from './fixtures.ts';
+import {
+	newMember,
+	newMemberWithHabits,
+	newMemberWithoutJs,
+	setClock,
+	waitForHydration
+} from './fixtures.ts';
 
 /** Builds a 3×3 card up to the Board step with the first eight habits. */
 async function buildToBoard(page: Page): Promise<void> {
@@ -310,4 +316,14 @@ test('editing skips the Size step', async ({ page }) => {
 	).toHaveCount(0);
 	await page.goto('/card/build/size');
 	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+});
+
+test('the test clock moves the app to another month', async ({ page }) => {
+	await newMember(page);
+	await setClock(page, '2026-11-02T12:00:00Z');
+	await page.goto('/card');
+	await expect(page.getByText('No card for November yet.')).toBeVisible();
+	await setClock(page, '2026-12-02T12:00:00Z');
+	await page.goto('/card');
+	await expect(page.getByText('No card for December yet.')).toBeVisible();
 });

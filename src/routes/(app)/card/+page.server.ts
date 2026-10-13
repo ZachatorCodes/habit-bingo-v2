@@ -4,16 +4,17 @@ import { initialSquareState } from '#lib/game/card-layout.ts';
 import { requireUser } from '#lib/server/auth/guards.ts';
 import { draftFromCard, getDraft, saveDraft } from '#lib/server/card-drafts.ts';
 import { currentMonth, getCard, isEditable } from '#lib/server/cards.ts';
-import { formatEditDeadline } from '#lib/server/clock.ts';
+import { TEST_CLOCK } from '$app/env/private';
+import { formatEditDeadline, requestNow } from '#lib/server/clock.ts';
 import { getDb } from '#lib/server/db/client.ts';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, cookies }) => {
 	const user = requireUser(locals);
 	const db = getDb();
 	if (!db) error(503, 'Your card is not available right now.');
 	const timezone = user.timezone ?? 'UTC';
-	const now = new Date();
+	const now = requestNow(cookies, TEST_CLOCK);
 	const month = currentMonth({ timezone }, now);
 	const [card, draft] = await Promise.all([
 		getCard(db, user.id, month),
@@ -49,11 +50,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
 	/** Reopens the builder on the started card, while the 48 hours last. */
-	edit: async ({ locals }) => {
+	edit: async ({ locals, cookies }) => {
 		const user = requireUser(locals);
 		const db = getDb();
 		if (!db) error(503, 'Your card is not available right now.');
-		const now = new Date();
+		const now = requestNow(cookies, TEST_CLOCK);
 		const card = await getCard(
 			db,
 			user.id,
