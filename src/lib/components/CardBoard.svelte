@@ -7,7 +7,14 @@
 	type Props = {
 		size: CardSize;
 		/** `link`: the center square, which leads to next month's card (spec §3.5). */
-		squares: { emoji: string; name: string; state: SquareState; link?: boolean }[];
+		squares: {
+			emoji: string;
+			name: string;
+			state: SquareState;
+			/** 0–1, shown on earn squares in progress. */
+			progress?: number;
+			link?: boolean;
+		}[];
 	};
 
 	let { size, squares }: Props = $props();
@@ -28,6 +35,7 @@
 					emoji={square.emoji}
 					label={square.name}
 					state={square.state}
+					progress={square.progress}
 					showLabel={size === 3}
 				/>
 			</a>
@@ -36,6 +44,7 @@
 				emoji={square.emoji}
 				label={square.name}
 				state={square.state}
+				progress={square.progress}
 				showLabel={size === 3}
 			/>
 		{/if}

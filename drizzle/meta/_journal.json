@@ -57,6 +57,13 @@
       "when": 1791854818534,
       "tag": "0007_draft_per_month",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791858648241,
+      "tag": "0008_check_ins",
+      "breakpoints": true
     }
   ]
 }
