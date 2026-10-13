@@ -12,7 +12,8 @@
 	};
 	type Props = {
 		rows: Row[];
-		daysLeft: number;
+		/** Null for next month's card, which starts on the 1st with nothing shortened. */
+		daysLeft: number | null;
 		monthName: string;
 		/** The card's first day (YYYY-MM-DD), named in the explanation of daily habits. */
 		startDate: string;
@@ -34,13 +35,18 @@
 </script>
 
 <div class="flex flex-col gap-4">
-	<h2 class="text-2xl font-black">
-		{daysLeft}
-		{daysLeft === 1 ? 'day' : 'days'} left in {monthName}
-	</h2>
-	<p class="text-ink/75">
-		Targets are shortened for the days left. Change any of them to what feels right.
-	</p>
+	{#if daysLeft === null}
+		<h2 class="text-2xl font-black">Targets for {monthName}</h2>
+		<p class="text-ink/75">Change any of them to what feels right.</p>
+	{:else}
+		<h2 class="text-2xl font-black">
+			{daysLeft}
+			{daysLeft === 1 ? 'day' : 'days'} left in {monthName}
+		</h2>
+		<p class="text-ink/75">
+			Targets are shortened for the days left. Change any of them to what feels right.
+		</p>
+	{/if}
 	{#each rows as row (row.habit.id)}
 		<TextField
 			label="{row.habit.emoji} {row.habit.name}"

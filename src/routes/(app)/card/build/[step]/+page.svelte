@@ -66,12 +66,27 @@
 <section class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
 	<div>
 		<h1 class="text-3xl leading-tight font-black">
-			{data.draft.cardId ? 'Edit' : 'Build'} your {data.monthName} card
+			{#if data.forNext}
+				Your {data.monthName} card · starts {data.monthName} 1
+			{:else}
+				{data.draft.cardId ? 'Edit' : 'Build'} your {data.monthName} card
+			{/if}
 		</h1>
-		<p class="mt-2 text-lg text-ink/75">Your progress is saved as you go.</p>
+		<p class="mt-2 text-lg text-ink/75">
+			{#if data.forNext}
+				It starts on {data.monthName} 1, and you can change it until the end of {data.monthName} 2.
+			{:else}
+				Your progress is saved as you go.
+			{/if}
+		</p>
 	</div>
 
-	<BuilderSteps steps={data.steps} current={data.step} completed={data.draft.completed} />
+	<BuilderSteps
+		steps={data.steps}
+		current={data.step}
+		completed={data.draft.completed}
+		forNext={data.forNext}
+	/>
 
 	{#if message}
 		<p id="step-error" role="alert" class="rounded-xl bg-risk px-4 py-3 font-bold text-ink">
@@ -81,7 +96,7 @@
 	{/if}
 
 	{#if data.step === 'size'}
-		<form method="POST" action="?/size" use:enhance class="flex flex-col gap-6">
+		<form method="POST" action={`?/size${data.keep}`} use:enhance class="flex flex-col gap-6">
 			<SizePicker
 				selected={data.draft.size}
 				habitCount={data.habits.length}
@@ -108,7 +123,7 @@
 			<!-- novalidate: the server validates every field, as on the habit library's own form. -->
 			<form
 				method="POST"
-				action="?/createHabit"
+				action={`?/createHabit${data.keep}`}
 				novalidate
 				class="mt-4"
 				use:enhance={({ formElement }) => trackCreated(formElement)}
@@ -125,7 +140,7 @@
 
 		<form
 			method="POST"
-			action="?/habits"
+			action={`?/habits${data.keep}`}
 			use:enhance={() =>
 				async ({ update }) =>
 					update({ reset: false })}
@@ -149,14 +164,14 @@
 		<!-- novalidate: the server explains every out-of-range number on its own row. -->
 		<form
 			method="POST"
-			action="?/targets"
+			action={`?/targets${data.keep}`}
 			novalidate
 			use:enhance={({ formElement }) => focusFirstError(formElement)}
 			class="flex flex-col gap-6"
 		>
 			<TargetList
 				rows={targetRows}
-				daysLeft={data.targets.daysLeft}
+				daysLeft={data.forNext ? null : data.targets.daysLeft}
 				monthName={data.monthName}
 				startDate={data.targets.startDate}
 				errors={targetForm?.targetErrors ?? {}}
@@ -170,7 +185,7 @@
 		</div>
 		<form
 			method="POST"
-			action="?/rewards"
+			action={`?/rewards${data.keep}`}
 			novalidate
 			use:enhance={({ formElement }) => focusFirstError(formElement)}
 			class="flex flex-col gap-6"
@@ -207,21 +222,21 @@
 		</div>
 		<CardBoard size={data.board.size} squares={data.board.squares} />
 		<div class="flex flex-wrap gap-3">
-			<form method="POST" action="?/shuffle" use:enhance>
+			<form method="POST" action={`?/shuffle${data.keep}`} use:enhance>
 				<Button type="submit" variant="secondary">Shuffle again</Button>
 			</form>
-			<form method="POST" action="?/start" use:enhance>
+			<form method="POST" action={`?/start${data.keep}`} use:enhance>
 				<Button type="submit">{data.draft.cardId ? 'Save changes' : 'Start card'}</Button>
 			</form>
 		</div>
 	{/if}
 
 	{#if data.draft.cardId}
-		<form method="POST" action="?/discard" use:enhance>
+		<form method="POST" action={`?/discard${data.keep}`} use:enhance>
 			<Button type="submit" variant="secondary">Cancel editing</Button>
 		</form>
 	{:else if data.draft.completed.length > 0}
-		<form method="POST" action="?/discard" use:enhance>
+		<form method="POST" action={`?/discard${data.keep}`} use:enhance>
 			<Button type="submit" variant="secondary">Start over</Button>
 		</form>
 	{/if}

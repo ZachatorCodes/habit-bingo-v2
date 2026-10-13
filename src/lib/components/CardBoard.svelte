@@ -1,11 +1,13 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import type { CardSize } from '#lib/game/card-layout.ts';
 	import type { SquareState } from '#lib/game/square-state.ts';
 	import BingoSquare from './BingoSquare.svelte';
 
 	type Props = {
 		size: CardSize;
-		squares: { emoji: string; name: string; state: SquareState }[];
+		/** `link`: the center square, which leads to next month's card (spec §3.5). */
+		squares: { emoji: string; name: string; state: SquareState; link?: boolean }[];
 	};
 
 	let { size, squares }: Props = $props();
@@ -17,11 +19,25 @@
 	style:grid-template-columns="repeat({size}, minmax(0, 1fr))"
 >
 	{#each squares as square, index (index)}
-		<BingoSquare
-			emoji={square.emoji}
-			label={square.name}
-			state={square.state}
-			showLabel={size === 3}
-		/>
+		{#if square.link}
+			<a
+				href={resolve('/(app)/card/next')}
+				class="block rounded-square focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+			>
+				<BingoSquare
+					emoji={square.emoji}
+					label={square.name}
+					state={square.state}
+					showLabel={size === 3}
+				/>
+			</a>
+		{:else}
+			<BingoSquare
+				emoji={square.emoji}
+				label={square.name}
+				state={square.state}
+				showLabel={size === 3}
+			/>
+		{/if}
 	{/each}
 </div>

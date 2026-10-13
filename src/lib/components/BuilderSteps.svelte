@@ -2,8 +2,14 @@
 	import { resolve } from '$app/paths';
 	import type { Step } from '#lib/server/card-drafts.ts';
 
-	type Props = { steps: Step[]; current: Step; completed: Step[] };
-	let { steps, current, completed }: Props = $props();
+	type Props = {
+		steps: Step[];
+		current: Step;
+		completed: Step[];
+		/** Building next month's card: step links keep `?for=next`. */
+		forNext?: boolean;
+	};
+	let { steps, current, completed, forNext = false }: Props = $props();
 
 	const LABELS: Record<Step, string> = {
 		size: 'Size',
@@ -27,11 +33,13 @@
 		>
 			<span aria-hidden="true">{done && step !== current ? '✓' : index + 1}</span>
 			{#if done && step !== current}
+				<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve() can't carry the ?for=next query -->
 				<a
-					href={resolve('/(app)/card/build/[step]', { step })}
+					href={resolve('/(app)/card/build/[step]', { step }) + (forNext ? '?for=next' : '')}
 					class="underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 					>{LABELS[step]}</a
 				>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			{:else}
 				<span>{LABELS[step]}</span>
 			{/if}

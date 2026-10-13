@@ -1,11 +1,12 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { monthName } from '#lib/game/calendar.ts';
+import { monthName, nextMonth } from '#lib/game/calendar.ts';
+import { centerState, nextMonthOpens } from '#lib/game/next-month.ts';
 import { initialSquareState } from '#lib/game/card-layout.ts';
 import { requireUser } from '#lib/server/auth/guards.ts';
 import { draftFromCard, getDraft, saveDraft } from '#lib/server/card-drafts.ts';
 import { currentMonth, getCard, isEditable } from '#lib/server/cards.ts';
 import { TEST_CLOCK } from '$app/env/private';
-import { formatEditDeadline, requestNow } from '#lib/server/clock.ts';
+import { formatEditDeadline, localDate, requestNow } from '#lib/server/clock.ts';
 import { getDb } from '#lib/server/db/client.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -31,14 +32,26 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 		};
 	}
 	const editable = isEditable(card, now);
+	// The center square (spec §3.5): free until the last 7 days, then it leads to next month's card.
+	const today = localDate(now, timezone);
+	const next = monthName(nextMonth(month));
+	const nextBuilt = (await getCard(db, user.id, nextMonth(month))) !== null;
+	const state = centerState(month, today, nextBuilt);
+	const center =
+		today < nextMonthOpens(month)
+			? { emoji: '⭐', name: 'Free', state }
+			: state === 'buildNext'
+				? { emoji: '🗓️', name: `Build ${next}'s card`, state, link: true }
+				: { emoji: '🗓️', name: `${next} ready`, state, link: true };
 	return {
 		monthName: monthName(month),
+		nextMonthName: next,
 		card: {
 			size: card.size,
 			rewards: card.rewards,
 			squares: card.squares.map((square) =>
 				square.isCenter
-					? { emoji: '⭐', name: 'Free', state: 'complete' as const }
+					? center
 					: { emoji: square.emoji, name: square.name, state: initialSquareState(square) }
 			)
 		},
