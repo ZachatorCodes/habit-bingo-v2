@@ -328,3 +328,57 @@ test('the test clock moves the app to another month', async ({ page }) => {
 	await page.goto('/card');
 	await expect(page.getByText('No card for December yet.')).toBeVisible();
 });
+
+test('a 5×5 card with long names fits a phone', async ({ page, baseURL }) => {
+	await newMember(page);
+	// 24 habits with 40-character names, created straight through the form action.
+	for (let i = 0; i < 24; i++) {
+		const name = `Habit ${String(i).padStart(2, '0')} with a rather long name ok`.slice(0, 40);
+		const response = await page.request.post('/me/habits/new', {
+			headers: { origin: baseURL!, accept: 'text/html' },
+			form: {
+				emoji: '🧘',
+				name,
+				category: 'mind',
+				direction: 'atLeast',
+				period: 'week',
+				countMode: 'days',
+				target: '2'
+			},
+			maxRedirects: 0
+		});
+		expect(response.status()).toBe(303);
+	}
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/card/build');
+	await waitForHydration(page);
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: /5×5/ }) })
+		.click();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+	await waitForHydration(page);
+	const labels = page.locator('label').filter({ has: page.getByRole('checkbox') });
+	for (let i = 0; i < 24; i++) await labels.nth(i).click();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/targets$/);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/rewards$/);
+	await waitForHydration(page);
+	await page.getByLabel('First bingo').fill('Ice cream');
+	await page.getByLabel('15 squares').fill('Movie night');
+	await page.getByLabel('Blackout').fill('A weekend away');
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/board$/);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Start card' }).click();
+	await expect(page).toHaveURL(/\/card\?started=1$/);
+
+	// Review Focus 5: no sideways scrolling, and names stop after two lines.
+	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+	const name = page.locator('main [data-label]').first();
+	await expect(name).toBeVisible();
+	expect(await name.evaluate((el) => getComputedStyle(el).webkitLineClamp)).toBe('2');
+});
