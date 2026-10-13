@@ -111,7 +111,7 @@ test('next month’s card shows up on the 1st', async ({ page }) => {
 	await page.goto('/card');
 	await expect(page.getByRole('heading', { level: 1, name: 'November card' })).toBeVisible();
 	await page.goto('/today');
-	await expect(page.getByText('Your November card is ready.')).toBeVisible();
+	await expect(page.getByRole('link', { name: 'See your November card' })).toBeVisible();
 });
 
 test('next month is closed before the window', async ({ page }) => {
