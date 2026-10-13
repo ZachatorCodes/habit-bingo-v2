@@ -2,12 +2,17 @@
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
 	import DaySwitcher from '#lib/components/DaySwitcher.svelte';
+	import Toast from '#lib/components/Toast.svelte';
 	import TodayRow from '#lib/components/TodayRow.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 
 	const message = $derived(form && 'message' in form ? form.message : null);
+
+	// A refused or failed check-in rolls back in its row and is announced here (spec §6).
+	let toast = $state<{ id: number; text: string } | null>(null);
+	const showError = (text: string) => (toast = { id: (toast?.id ?? 0) + 1, text });
 	const groups = [
 		{ key: 'anytime', heading: 'Anytime this month' },
 		{ key: 'slip', heading: 'Log a slip' }
@@ -49,7 +54,7 @@
 			{:else}
 				<ul class="flex flex-col gap-2">
 					{#each sections.doToday as row (row.squareId)}
-						<TodayRow {row} {day} keep={data.keep} />
+						<TodayRow {row} {day} keep={data.keep} onerror={showError} />
 					{/each}
 				</ul>
 			{/if}
@@ -58,7 +63,7 @@
 					<summary class="cursor-pointer font-extrabold">Done ({sections.done.length})</summary>
 					<ul class="mt-3 flex flex-col gap-2">
 						{#each sections.done as row (row.squareId)}
-							<TodayRow {row} {day} keep={data.keep} />
+							<TodayRow {row} {day} keep={data.keep} onerror={showError} />
 						{/each}
 					</ul>
 				</details>
@@ -71,7 +76,7 @@
 					<h2 id={group.key} class="text-xl font-black">{group.heading}</h2>
 					<ul class="flex flex-col gap-2">
 						{#each sections[group.key] as row (row.squareId)}
-							<TodayRow {row} {day} keep={data.keep} />
+							<TodayRow {row} {day} keep={data.keep} onerror={showError} />
 						{/each}
 					</ul>
 				</section>
@@ -79,3 +84,7 @@
 		{/each}
 	{/if}
 </section>
+
+{#key toast?.id}
+	<Toast message={toast?.text ?? null} />
+{/key}

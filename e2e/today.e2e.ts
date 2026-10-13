@@ -157,3 +157,55 @@ test('Today works without JavaScript', async ({ page, browser }) => {
 	await expect(noJs.getByText('0/8 today')).toBeVisible();
 	await noJs.context().close();
 });
+
+test('logging updates instantly and survives a reload', async ({ page }) => {
+	await onToday(page);
+	// Hold the server's answer: the row must change before it arrives.
+	let release = () => {};
+	const held = new Promise<void>((resolve) => (release = resolve));
+	const isLog = (url: URL) => url.pathname === '/today' && url.search.startsWith('?/log');
+	await page.route(isLog, async (route) => {
+		await held;
+		await route.continue();
+	});
+	const water = section(page, 'Do today').filter({ hasText: 'Drink water' });
+	await page.getByRole('button', { name: 'Log Drink water' }).click();
+	await expect(water).toContainText('1/8 today');
+	const answered = page.waitForResponse((response) => isLog(new URL(response.url())));
+	release();
+	await answered;
+	await page.unroute(isLog);
+	await page.reload();
+	await expect(section(page, 'Do today').filter({ hasText: 'Drink water' })).toContainText(
+		'1/8 today'
+	);
+});
+
+test('a refused log rolls back with a message', async ({ page }) => {
+	await onToday(page);
+	await page.goto('/today?day=2026-10-17');
+	await waitForHydration(page);
+	// Two days later Oct 17 is outside the window, but this page still offers it.
+	await setClock(page, '2026-10-22T12:00:00Z');
+	const water = section(page, 'Do today').filter({ hasText: 'Drink water' });
+	await page.getByRole('button', { name: 'Log Drink water' }).click();
+	await expect(page.getByRole('status')).toContainText(
+		'You can only log today and the 3 days before.'
+	);
+	await expect(water).toContainText('0/8 on Saturday');
+});
+
+test('reduced motion: no confetti canvas', async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await onToday(page);
+	await page.getByRole('button', { name: 'Log Drink water' }).click();
+	await expect(page.getByText('1/8 today')).toBeVisible();
+	await expect(page.locator('body > canvas')).toHaveCount(0);
+});
+
+test('a log bursts confetti', async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: 'no-preference' });
+	await onToday(page);
+	await page.getByRole('button', { name: 'Log Drink water' }).click();
+	await expect(page.locator('body > canvas')).toHaveCount(1);
+});

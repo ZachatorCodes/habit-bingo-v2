@@ -7,7 +7,7 @@ import { progressText, todaySection, type TodaySection } from '#lib/game/today.t
 import type { TodayRowData } from '#lib/components/TodayRow.svelte';
 import { requireUser } from '#lib/server/auth/guards.ts';
 import { currentMonth, getCard } from '#lib/server/cards.ts';
-import { getCheckIns, logCheckIn } from '#lib/server/check-ins.ts';
+import { getCheckIns, logCheckIn, MAX_COUNT } from '#lib/server/check-ins.ts';
 import { localDate, requestNow } from '#lib/server/clock.ts';
 import { getDb } from '#lib/server/db/client.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -43,13 +43,26 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 	for (const square of card.squares) {
 		if (square.isCenter) continue;
 		const counts = checkIns.get(square.id) ?? new Map<string, number>();
+		const count = counts.get(day) ?? 0;
+		// The row as it is, and as it will be after one more check-in or one fewer, so the page can
+		// show the result before the server answers (spec §6).
+		const view = (dayCount: number) => {
+			const next = new Map(counts);
+			if (dayCount > 0) next.set(day, dayCount);
+			else next.delete(day);
+			return {
+				...evaluateSquare(square, card, next, today),
+				text: progressText(square, card, next, day, today),
+				count: dayCount
+			};
+		};
 		sections[todaySection(square, card, counts, day)].push({
 			squareId: square.id,
 			emoji: square.emoji,
 			name: square.name,
-			...evaluateSquare(square, card, counts, today),
-			text: progressText(square, card, counts, day, today),
-			count: counts.get(day) ?? 0
+			...view(count),
+			ifLogged: view(Math.min(count + 1, MAX_COUNT)),
+			ifUndone: count > 0 ? view(count - 1) : null
 		});
 	}
 	return {

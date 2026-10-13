@@ -10,7 +10,9 @@ const row = {
 	state: 'held' as const,
 	progress: 0,
 	text: '5/8 today',
-	count: 5
+	count: 5,
+	ifLogged: { state: 'held' as const, progress: 0, text: '6/8 today', count: 6 },
+	ifUndone: { state: 'held' as const, progress: 0, text: '4/8 today', count: 4 }
 };
 
 describe('TodayRow', () => {
