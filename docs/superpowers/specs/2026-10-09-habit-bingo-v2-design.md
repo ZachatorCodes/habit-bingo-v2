@@ -28,19 +28,20 @@ Each milestone is a GitHub milestone made of small user-story issues and is ship
 This spec is the source of truth; each milestone gets its own implementation plan, written just
 before it is built.
 
-| #   | Milestone           | Delivers                                                                                                                                                                            |
-| --- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M0  | Foundation          | Repo, SvelteKit app, CI, Vercel previews + production, Neon DB, design tokens, landing, privacy/terms                                                                               |
-| M1  | Accounts            | Google sign-in and username + password sign-up/sign-in, account linking, invite-only gate, admin password-reset links, profile (username, name, emoji avatar, timezone, week start) |
-| M2  | Habit library       | Create, edit, archive habits                                                                                                                                                        |
-| M3  | Card builder        | Size, habit picking, prorated targets, rewards, shuffle, 48-hour edit window                                                                                                        |
-| M4  | Today & check-ins   | Today list, logging with Pop & burst, 3-day backfill, earn/protect states                                                                                                           |
-| M5  | Card view & scoring | Emoji grid + bottom sheet, lines, reward tiers, points, bingo celebration                                                                                                           |
-| M6  | Updates             | Nudges & insights screen                                                                                                                                                            |
-| M7  | Month lifecycle     | Closing window, finalization, recap, history                                                                                                                                        |
-| M8  | Groups              | Groups, invite links (also the signup path), leaderboards, viewing members' cards                                                                                                   |
-| M9  | Feed                | Highlights feed with emoji reactions                                                                                                                                                |
-| M10 | Calendar            | Optional Google Calendar connection; month-milestone events on a dedicated calendar (§4.13)                                                                                         |
+| #    | Milestone           | Delivers                                                                                                                                                                            |
+| ---- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M0   | Foundation          | Repo, SvelteKit app, CI, Vercel previews + production, Neon DB, design tokens, landing, privacy/terms                                                                               |
+| M1   | Accounts            | Google sign-in and username + password sign-up/sign-in, account linking, invite-only gate, admin password-reset links, profile (username, name, emoji avatar, timezone, week start) |
+| M2   | Habit library       | Create, edit, archive habits                                                                                                                                                        |
+| M3   | Card builder        | Size, habit picking, prorated targets, rewards, shuffle, 48-hour edit window                                                                                                        |
+| M3.1 | Next-month square   | Center square on both sizes; build next month's card in the last 7 days of the month                                                                                                |
+| M4   | Today & check-ins   | Today list, logging with Pop & burst, 3-day backfill, earn/protect states                                                                                                           |
+| M5   | Card view & scoring | Emoji grid + bottom sheet, lines, reward tiers, points, bingo celebration                                                                                                           |
+| M6   | Updates             | Nudges & insights screen                                                                                                                                                            |
+| M7   | Month lifecycle     | Closing window, finalization, recap, history                                                                                                                                        |
+| M8   | Groups              | Groups, invite links (also the signup path), leaderboards, viewing members' cards                                                                                                   |
+| M9   | Feed                | Highlights feed with emoji reactions                                                                                                                                                |
+| M10  | Calendar            | Optional Google Calendar connection; month-milestone events on a dedicated calendar (§4.13)                                                                                         |
 
 M0–M5 is a complete single-player game. M6–M7 make it sticky. Social (M8–M9) comes after the core
 loop feels great. Calendar (M10) builds on the month lifecycle.
@@ -99,15 +100,23 @@ per-category breakdown. They are not shown on card squares.
 
 ### 3.3 Cards
 
-- One card per user per calendar month (`YYYY-MM`). A card can be created on any day of the month.
-- Sizes: **3×3** (9 habits) and **5×5** (24 habits + FREE center at index 12).
+- One card per user per calendar month (`YYYY-MM`). A card can be created on any day of the month,
+  or in advance during the last 7 days of the month before (see **Next month's card** below).
+- Sizes: **3×3** (8 habits + the **center square** at index 4) and **5×5** (24 habits + the center
+  square at index 12).
 - When a card is created, each square **snapshots** its habit (emoji, name, category, direction,
   period, countMode, target after proration and user overrides, isPrivate). Later library edits never affect it.
 - Habits are placed in random positions; the builder offers re-shuffle before the card starts.
 - Three rewards (free text): **first bingo**, **~60% of squares**, **blackout**.
-  Middle-tier thresholds: 3×3 → 5, 5×5 → 15 squares. FREE counts as a square.
+  Middle-tier thresholds: 3×3 → 5, 5×5 → 15 squares. The center square counts as a square whenever
+  it counts (§3.5).
 - **Edit window:** for 48 hours after creation (but not beyond the month's last day), habits,
-  targets, rewards and layout can be edited. Afterward the card is locked.
+  targets, rewards and layout can be edited. Afterward the card is locked. A card built in advance
+  is editable until the end of the 2nd day of its month, however early it was built.
+- **Next month's card:** during the last 7 days of a month (user-local; e.g. from the 25th of a
+  31-day month), the next month's card can be built. It starts on the 1st (no proration), snapshots
+  habits when it is built, and is shown on Today and Card only once its month begins; until then it
+  is reached through the current card's center square.
 
 ### 3.4 Proration
 
@@ -156,7 +165,17 @@ Below, "progress" over a span of dates is measured by the square's count mode (�
 backfill window can be removed, a mistaken slip can restore the square. Once the offending days
 leave the window, `lost` is permanent.
 
-**FREE** square: always `complete`.
+**Center** square (no habit; 0 points of its own):
+
+| When (user-local)                                                  | State                                        | Counts |
+| ------------------------------------------------------------------ | -------------------------------------------- | ------ |
+| Before the last 7 days of the card's month                         | `complete` (✓)                               | yes    |
+| Last 7 days, or the 1st–3rd after, and next month's card not built | `buildNext` (✏️ "Build {Next month}'s card") | no     |
+| Last 7 days, or the 1st–3rd after, and next month's card built     | `complete` (✓ "{Next month} ready")          | yes    |
+
+Building next month's card on the 1st–3rd still completes the old card's center before it is
+finalized. A card started inside its last 7 days has its center in `buildNext` from the start.
+Tapping the center opens the builder for next month's card, or that card in the editor once built.
 
 ### 3.6 Lines and reward tiers
 
@@ -177,7 +196,7 @@ Each square has a base value of **10**:
 | `atLeast` / `day`     | `10 × Σ min(count_d, N) / (N × span days)` over span dates `d`                                                  |
 | `atLeast` / `week`    | `10 × Σ min(kᵥ, Nᵥ) / Σ Nᵥ` over weeks `w`, with `kᵥ` the week's progress (if `Σ Nᵥ = 0`, the square scores 10) |
 | `atMost` (any period) | `10` while `held`/`atRisk`, `0` when `lost`                                                                     |
-| FREE                  | `0`                                                                                                             |
+| Center                | `0`                                                                                                             |
 
 Bonuses: **+25** per complete line, **+100** for blackout.
 Size multiplier on the total: **3×3 ×1, 5×5 ×2**. Displayed points are rounded to the
@@ -185,7 +204,7 @@ nearest integer at the end of the calculation.
 
 `atLeast` day/week squares keep their earned points even after being `lost`.
 
-Example: a 3×3 blackout = 9 squares × 10 + 8 lines × 25 + 100 = 390. A 5×5 blackout
+Example: a 3×3 blackout (8 habit squares) = 8 × 10 + 8 lines × 25 + 100 = 380. A 5×5 blackout
 (24 habit squares) = (240 + 300 + 100) × 2 = 1,280.
 
 Live scores are **always derived** from card + check-ins + today; never stored.
@@ -244,6 +263,9 @@ to start.
 5. Preview shuffled board; re-shuffle.
 6. Start card (notes the 48-hour edit window).
 
+Building next month's card uses the same steps, titled "Your {Month} card · starts {Month} 1",
+with no proration on the targets step and a note that it can be edited until the 2nd.
+
 ### 4.4 Navigation
 
 Phone: five bottom tabs, **Today · Card · Updates · Groups · Me**. Desktop: left sidebar with the
@@ -283,7 +305,7 @@ Prioritized nudges, computed from game state (no stored notifications):
 2. Backfill reminders ("You didn't log Litter box yesterday — still time").
 3. Near bingo ("1 square from a bingo").
 4. Near a reward tier ("2 squares from your 60% reward").
-5. Month-end countdowns ("New month in 3 days — plan your next card").
+5. Next month's card ("Build November's card to keep your center square: 3 days left").
 
 The Updates tab shows a badge when any priority 1–2 nudge exists.
 
@@ -380,23 +402,23 @@ Dependencies point downward only.
 
 ### 5.3 Data model
 
-| Table                                                                                                       | Key columns                                                                                                                                                                               |
-| ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `user` (+ Better Auth `session`, `account`, `verification`; `account` holds Google OAuth tokens, encrypted) | `id`, `username` (unique, case-insensitive), `email` (from Google, or placeholder per §5.1), `displayName`, `avatarEmoji`, `timezone`, `weekStartsOn`, `isAdmin`, `onboardedAt`           |
-| `invite`                                                                                                    | `code` (unique), `createdBy`, `groupId?`, `expiresAt`, `maxUses`, `uses`                                                                                                                  |
-| `password_reset`                                                                                            | `tokenHash` (unique), `userId`, `createdBy` (admin), `expiresAt`, `usedAt?`                                                                                                               |
-| `habit`                                                                                                     | `id`, `userId`, `emoji`, `name`, `category`, `direction`, `target`, `period`, `countMode`, `isPrivate`, `archivedAt?`                                                                     |
-| `card`                                                                                                      | `id`, `userId`, `month` (`YYYY-MM`), `size`, `startDate`, `editableUntil`, `weekStartsOn` (snapshot), `rewardBingo`, `rewardSixty`, `rewardBlackout`; unique (`userId`, `month`)          |
-| `card_square`                                                                                               | `id`, `cardId`, `position`, `isFree`, `habitId?`, snapshot fields (`emoji`, `name`, `category`, `direction`, `period`, `countMode`, `target`, `isPrivate`); unique (`cardId`, `position`) |
-| `card_draft`                                                                                                | `userId` (unique), `month`, `data` (JSON: builder progress), `updatedAt`                                                                                                                  |
-| `check_in`                                                                                                  | `id`, `squareId`, `date` (`YYYY-MM-DD`), `count` (1–20), `updatedAt`; unique (`squareId`, `date`)                                                                                         |
-| `group`                                                                                                     | `id`, `name`, `emoji`, `createdBy`                                                                                                                                                        |
-| `group_member`                                                                                              | `groupId`, `userId`, `role` (`owner` \| `member`), `joinedAt`; unique (`groupId`, `userId`)                                                                                               |
-| `feed_event`                                                                                                | `id`, `userId`, `cardId`, `type`, `payload` (JSON), `createdAt`                                                                                                                           |
-| `reaction`                                                                                                  | `feedEventId`, `userId`, `emoji`; unique (`feedEventId`, `userId`)                                                                                                                        |
-| `month_result`                                                                                              | `userId`, `month`, `points`, `lines`, `tiers`, `squaresCounting`, `size`; unique (`userId`, `month`)                                                                                      |
-| `calendar_connection`                                                                                       | `userId` (unique), `googleCalendarId`, `status` (`connected` \| `needsReconnect`), `connectedAt`                                                                                          |
-| `calendar_event`                                                                                            | `cardId`, `kind` (`editLock` \| `lastDay` \| `buildNext` \| `backfillDeadline` \| `recap`), `googleEventId`; unique (`cardId`, `kind`)                                                    |
+| Table                                                                                                       | Key columns                                                                                                                                                                                 |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `user` (+ Better Auth `session`, `account`, `verification`; `account` holds Google OAuth tokens, encrypted) | `id`, `username` (unique, case-insensitive), `email` (from Google, or placeholder per §5.1), `displayName`, `avatarEmoji`, `timezone`, `weekStartsOn`, `isAdmin`, `onboardedAt`             |
+| `invite`                                                                                                    | `code` (unique), `createdBy`, `groupId?`, `expiresAt`, `maxUses`, `uses`                                                                                                                    |
+| `password_reset`                                                                                            | `tokenHash` (unique), `userId`, `createdBy` (admin), `expiresAt`, `usedAt?`                                                                                                                 |
+| `habit`                                                                                                     | `id`, `userId`, `emoji`, `name`, `category`, `direction`, `target`, `period`, `countMode`, `isPrivate`, `archivedAt?`                                                                       |
+| `card`                                                                                                      | `id`, `userId`, `month` (`YYYY-MM`), `size`, `startDate`, `editableUntil`, `weekStartsOn` (snapshot), `rewardBingo`, `rewardSixty`, `rewardBlackout`; unique (`userId`, `month`)            |
+| `card_square`                                                                                               | `id`, `cardId`, `position`, `isCenter`, `habitId?`, snapshot fields (`emoji`, `name`, `category`, `direction`, `period`, `countMode`, `target`, `isPrivate`); unique (`cardId`, `position`) |
+| `card_draft`                                                                                                | `userId`, `month`, `data` (JSON: builder progress), `updatedAt`; unique (`userId`, `month`)                                                                                                 |
+| `check_in`                                                                                                  | `id`, `squareId`, `date` (`YYYY-MM-DD`), `count` (1–20), `updatedAt`; unique (`squareId`, `date`)                                                                                           |
+| `group`                                                                                                     | `id`, `name`, `emoji`, `createdBy`                                                                                                                                                          |
+| `group_member`                                                                                              | `groupId`, `userId`, `role` (`owner` \| `member`), `joinedAt`; unique (`groupId`, `userId`)                                                                                                 |
+| `feed_event`                                                                                                | `id`, `userId`, `cardId`, `type`, `payload` (JSON), `createdAt`                                                                                                                             |
+| `reaction`                                                                                                  | `feedEventId`, `userId`, `emoji`; unique (`feedEventId`, `userId`)                                                                                                                          |
+| `month_result`                                                                                              | `userId`, `month`, `points`, `lines`, `tiers`, `squaresCounting`, `size`; unique (`userId`, `month`)                                                                                        |
+| `calendar_connection`                                                                                       | `userId` (unique), `googleCalendarId`, `status` (`connected` \| `needsReconnect`), `connectedAt`                                                                                            |
+| `calendar_event`                                                                                            | `cardId`, `kind` (`editLock` \| `lastDay` \| `buildNext` \| `backfillDeadline` \| `recap`), `googleEventId`; unique (`cardId`, `kind`)                                                      |
 
 For week-period habits, the `target` snapshot is the full-week N; per-week requirements for
 clipped weeks are computed by the game module from `startDate`, the month and the card's
