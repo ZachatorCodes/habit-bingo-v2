@@ -177,6 +177,22 @@ export async function restoreHabit(
 	return true;
 }
 
+/**
+ * Deletes an archived habit forever. Cards keep their own copy of it (their squares' `habit_id` is
+ * cleared, the snapshot stays). False when it isn't the person's; 'active' when it isn't archived.
+ */
+export async function deleteHabit(
+	db: Db,
+	userId: string,
+	habitId: string
+): Promise<boolean | 'active'> {
+	const found = await getHabit(db, userId, habitId);
+	if (!found) return false;
+	if (found.archivedAt === null) return 'active';
+	await db.delete(habit).where(and(eq(habit.id, habitId), eq(habit.userId, userId)));
+	return true;
+}
+
 const sameName = (a: string, b: string) =>
 	a.localeCompare(b, undefined, { sensitivity: 'base' }) === 0;
 
