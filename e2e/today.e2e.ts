@@ -209,3 +209,41 @@ test('a log bursts confetti', async ({ page }) => {
 	await page.getByRole('button', { name: 'Log Drink water' }).click();
 	await expect(page.locator('body > canvas')).toHaveCount(1);
 });
+
+test('the optimistic view follows the row after several taps', async ({ page }) => {
+	await onToday(page);
+	const biking = section(page, 'Anytime this month').filter({ hasText: 'Go biking' });
+	// Each log is answered (and the page reloaded) before the next tap.
+	for (const text of ['1 of 2 this month', '2 of 2 this month']) {
+		const logged = page.waitForResponse((r) => r.url().includes('/today/__data.json'));
+		await page.getByRole('button', { name: 'Log Go biking' }).click();
+		await logged;
+		await expect(biking).toContainText(text);
+	}
+	// Go biking is 3 a month, prorated to 2 for a card started Oct 15. Hold the undo: the row must show one less than now, not what it was when − first appeared.
+	let release = () => {};
+	const held = new Promise<void>((resolve) => (release = resolve));
+	const isUnlog = (url: URL) => url.pathname === '/today' && url.search.startsWith('?/unlog');
+	await page.route(isUnlog, async (route) => {
+		await held;
+		await route.continue();
+	});
+	const undo = page.getByRole('button', { name: 'Undo one Go biking' });
+	await undo.click();
+	await expect(biking).toContainText('1 of 2 this month');
+	const answered = page.waitForResponse((response) => isUnlog(new URL(response.url())));
+	release();
+	await answered;
+	await page.unroute(isUnlog);
+	await expect(biking).toContainText('1 of 2 this month');
+});
+
+test('undoing to zero keeps keyboard focus in the row', async ({ page }) => {
+	await onToday(page);
+	await page.getByRole('button', { name: 'Log Drink water' }).click();
+	await expect(page.getByText('1/8 today')).toBeVisible();
+	await page.getByRole('button', { name: 'Undo one Drink water' }).focus();
+	await page.keyboard.press('Enter');
+	await expect(page.getByText('0/8 today')).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Log Drink water' })).toBeFocused();
+});

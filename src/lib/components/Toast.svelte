@@ -1,13 +1,13 @@
 <script lang="ts">
 	type Props = {
-		/** Set a new message to show it; each one hides after `duration` ms. */
-		message: string | null;
+		/** A new `id` shows the message (again, even with the same text); it hides after `duration` ms. */
+		message: { id: number; text: string } | null;
 		duration?: number;
 	};
 
 	let { message, duration = 4000 }: Props = $props();
 
-	let shown = $state<string | null>(null);
+	let shown = $state<{ id: number; text: string } | null>(null);
 
 	$effect(() => {
 		shown = message;
@@ -17,15 +17,17 @@
 	});
 </script>
 
-<!-- The live region always exists, so screen readers announce messages as they arrive. -->
+<!-- One live region for the page's life, so screen readers announce each message as it arrives. -->
 <div
 	role="status"
 	class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4"
 >
 	{#if shown}
-		<p class="pointer-events-auto rounded-xl bg-ink px-4 py-3 font-bold text-cream shadow-lg">
-			<span aria-hidden="true">⚠</span>
-			{shown}
-		</p>
+		{#key shown.id}
+			<p class="pointer-events-auto rounded-xl bg-ink px-4 py-3 font-bold text-cream shadow-lg">
+				<span aria-hidden="true">⚠</span>
+				{shown.text}
+			</p>
+		{/key}
 	{/if}
 </div>

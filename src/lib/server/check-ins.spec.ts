@@ -106,6 +106,20 @@ describe('logCheckIn', () => {
 		expect((await getCheckIns(db, card.id)).get(id)?.get('2026-10-20')).toBe(5);
 	});
 
+	it('counts every simultaneous undo', async () => {
+		const me = await makeUser();
+		const card = await cardFor(me, await makeHabits(me.id, 8), OCT_1);
+		const { id } = habitSquare(card);
+		await logCheckIn(db, me, id, '2026-10-20', 1, OCT_20);
+		await logCheckIn(db, me, id, '2026-10-20', 1, OCT_20);
+		const results = await Promise.all([
+			logCheckIn(db, me, id, '2026-10-20', -1, OCT_20),
+			logCheckIn(db, me, id, '2026-10-20', -1, OCT_20)
+		]);
+		expect(results.every((r) => r?.ok)).toBe(true);
+		expect(await db.select().from(checkIn)).toHaveLength(0);
+	});
+
 	it('refuses dates outside the window or the span', async () => {
 		const me = await makeUser();
 		const card = await cardFor(me, await makeHabits(me.id, 8), new Date('2026-10-19T09:00:00Z'));

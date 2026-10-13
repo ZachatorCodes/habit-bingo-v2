@@ -41,11 +41,17 @@
 	let pending = $state<TodayRowView | null>(null);
 	const view = $derived(pending ?? row);
 	const scale = new Spring(1, { stiffness: 0.3, damping: 0.4 });
+	let logButton = $state<HTMLButtonElement>();
 
 	/** Pop & burst (spec §4.7), then an optimistic update that rolls back if the server refuses. */
-	function optimistic(next: TodayRowView | null, celebrate: boolean): SubmitFunction {
+	// `next` is read when the form is submitted: enhance keeps the callback it was mounted with, so
+	// reading the row then (not at mount) keeps the view in step with the latest data.
+	function optimistic(next: () => TodayRowView | null, celebrate: boolean): SubmitFunction {
 		return ({ submitter }) => {
-			if (next) pending = next;
+			// The − button goes away at zero; if it had focus, focus moves to this row's +.
+			const hadFocus = submitter === document.activeElement;
+			const view = next();
+			if (view) pending = view;
 			if (celebrate) {
 				tap();
 				if (!prefersReducedMotion.current) {
@@ -75,6 +81,7 @@
 				}
 				await update();
 				pending = null;
+				if (hadFocus && !submitter?.isConnected) logButton?.focus();
 			};
 		};
 	}
@@ -96,7 +103,11 @@
 		<p class="text-sm text-ink/75">{view.text}</p>
 	</div>
 	{#if view.count > 0}
-		<form method="POST" action={`?/unlog${keep}`} use:enhance={optimistic(row.ifUndone, false)}>
+		<form
+			method="POST"
+			action={`?/unlog${keep}`}
+			use:enhance={optimistic(() => row.ifUndone, false)}
+		>
 			<input type="hidden" name="squareId" value={row.squareId} />
 			<input type="hidden" name="date" value={day} />
 			<button
@@ -106,11 +117,12 @@
 			>
 		</form>
 	{/if}
-	<form method="POST" action={`?/log${keep}`} use:enhance={optimistic(row.ifLogged, true)}>
+	<form method="POST" action={`?/log${keep}`} use:enhance={optimistic(() => row.ifLogged, true)}>
 		<input type="hidden" name="squareId" value={row.squareId} />
 		<input type="hidden" name="date" value={day} />
 		<button
 			type="submit"
+			bind:this={logButton}
 			aria-label="Log {row.name}"
 			class={[button, 'border-ink bg-accent text-ink shadow-[0_3px_0_var(--color-ink)]']}>+</button
 		>

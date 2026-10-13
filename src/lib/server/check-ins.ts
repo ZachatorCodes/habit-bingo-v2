@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, gt, sql } from 'drizzle-orm';
 import { canLog } from '#lib/game/backfill.ts';
 import { monthOf } from '#lib/game/calendar.ts';
 import { localDate } from '#lib/server/clock.ts';
@@ -71,15 +71,14 @@ export async function logCheckIn(
 			.returning({ count: checkIn.count });
 		return { ok: true, count: row.count };
 	}
-	const [removed] = await db
-		.delete(checkIn)
-		.where(and(where, eq(checkIn.count, 1)))
-		.returning({ id: checkIn.id });
-	if (removed) return { ok: true, count: 0 };
+	// Decrement only above 1, then delete at 1: each statement re-checks its condition under the
+	// row lock, so simultaneous undos each count once and never break the 1–20 CHECK.
 	const [row] = await db
 		.update(checkIn)
 		.set({ count: sql`${checkIn.count} - 1`, updatedAt: now })
-		.where(where)
+		.where(and(where, gt(checkIn.count, 1)))
 		.returning({ count: checkIn.count });
-	return { ok: true, count: row?.count ?? 0 };
+	if (row) return { ok: true, count: row.count };
+	await db.delete(checkIn).where(and(where, eq(checkIn.count, 1)));
+	return { ok: true, count: 0 };
 }

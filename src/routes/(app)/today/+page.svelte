@@ -85,6 +85,4 @@
 	{/if}
 </section>
 
-{#key toast?.id}
-	<Toast message={toast?.text ?? null} />
-{/key}
+<Toast message={toast} />
