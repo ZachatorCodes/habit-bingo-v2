@@ -49,7 +49,7 @@ export const cardSquare = pgTable(
 			.notNull()
 			.references(() => card.id, { onDelete: 'cascade' }),
 		position: integer('position').notNull(),
-		isFree: boolean('is_free').notNull().default(false),
+		isCenter: boolean('is_center').notNull().default(false),
 		habitId: text('habit_id').references(() => habit.id, { onDelete: 'set null' }),
 		// Snapshot of the habit; all null on the FREE square.
 		emoji: text('emoji'),
@@ -65,7 +65,7 @@ export const cardSquare = pgTable(
 		unique('card_square_card_id_position_unique').on(table.cardId, table.position),
 		check(
 			'card_square_snapshot_check',
-			sql`${table.isFree} or (${table.emoji} is not null and ${table.name} is not null and ${table.category} is not null and ${table.direction} is not null and ${table.period} is not null and ${table.countMode} is not null and ${table.target} is not null and ${table.isPrivate} is not null)`
+			sql`${table.isCenter} or (${table.emoji} is not null and ${table.name} is not null and ${table.category} is not null and ${table.direction} is not null and ${table.period} is not null and ${table.countMode} is not null and ${table.target} is not null and ${table.isPrivate} is not null)`
 		)
 	]
 );

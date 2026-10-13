@@ -22,7 +22,8 @@
 			held: 'protected',
 			atRisk: 'at risk',
 			lost: 'lost',
-			free: 'free'
+			free: 'free',
+			buildNext: "build next month's card"
 		}[state]
 	);
 
@@ -30,7 +31,8 @@
 		complete: '✓',
 		held: '🛡',
 		atRisk: '⚠',
-		lost: '✗'
+		lost: '✗',
+		buildNext: '✏️'
 	};
 
 	const styles: Record<SquareState, string> = {
@@ -40,7 +42,8 @@
 		held: 'bg-protect border-protect-edge shadow-[0_3px_0_var(--color-protect-shadow)]',
 		atRisk: 'bg-risk border-risk-edge shadow-[0_3px_0_var(--color-risk-shadow)]',
 		lost: 'bg-lost border-line opacity-70',
-		free: 'bg-ink border-ink text-risk shadow-[0_3px_0_#000]'
+		free: 'bg-ink border-ink text-risk shadow-[0_3px_0_#000]',
+		buildNext: 'bg-white border-dashed border-ink shadow-[0_3px_0_var(--color-line)]'
 	};
 </script>
 

@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CARD_SIZES, type CardSize } from '#lib/game/card-layout.ts';
 import type { Db } from '#lib/server/db/client.ts';
@@ -65,8 +65,7 @@ const rewards: Rewards = { bingo: 'Pizza', sixty: 'Movie night', blackout: 'Week
 function plan(habits: Habit[], size: CardSize = 3, extra: Partial<CardPlan> = {}): CardPlan {
 	const ids = habits.map((h) => h.id);
 	const layout: (string | null)[] = [...ids];
-	const free = CARD_SIZES[size].freePosition;
-	if (free !== null) layout.splice(free, 0, null);
+	layout.splice(CARD_SIZES[size].centerPosition, 0, null);
 	return { size, habitIds: ids, targets: {}, rewards, layout, ...extra };
 }
 
@@ -104,11 +103,20 @@ describe('currentMonth', () => {
 	});
 });
 
+describe('card_square columns', () => {
+	it('the center flag is is_center (renamed from is_free)', async () => {
+		const result = (await db.execute(
+			sql`select column_name from information_schema.columns where table_name = 'card_square' and column_name in ('is_center', 'is_free')`
+		)) as unknown as { rows: { column_name: string }[] };
+		expect(result.rows.map((row) => row.column_name)).toEqual(['is_center']);
+	});
+});
+
 describe('startCard', () => {
 	it('starts a 3×3 card: snapshots habits, prorates month targets, keeps overrides', async () => {
 		const me = await makeUser();
 		const read = await makeHabit(me.id, 'Read', { period: 'month', countMode: 'days', target: 10 });
-		const others = await makeHabits(me.id, 8);
+		const others = await makeHabits(me.id, 7);
 		const walk = others[0];
 		const result = await startCard(
 			db,
@@ -123,7 +131,9 @@ describe('startCard', () => {
 		expect(built.rewards).toEqual(rewards);
 		expect(built.squares).toHaveLength(9);
 		expect(built.squares.map((s) => s.position)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
-		const readSquare = built.squares.find((s) => !s.isFree && s.habitId === read.id);
+		expect(built.squares[4]).toMatchObject({ position: 4, isCenter: true });
+		expect(built.squares.filter((s) => !s.isCenter)).toHaveLength(8);
+		const readSquare = built.squares.find((s) => !s.isCenter && s.habitId === read.id);
 		expect(readSquare).toMatchObject({
 			emoji: '🚴',
 			name: 'Read',
@@ -134,7 +144,7 @@ describe('startCard', () => {
 			target: 4,
 			isPrivate: false
 		});
-		const walkSquare = built.squares.find((s) => !s.isFree && s.habitId === walk.id);
+		const walkSquare = built.squares.find((s) => !s.isCenter && s.habitId === walk.id);
 		expect(walkSquare).toMatchObject({ target: 5 });
 		expect(await getCard(db, me.id, '2026-10')).toEqual(built);
 	});
@@ -146,13 +156,13 @@ describe('startCard', () => {
 		if (!result.ok) throw new Error(result.message);
 		const { squares } = result.card;
 		expect(squares).toHaveLength(25);
-		expect(squares[12]).toMatchObject({ position: 12, isFree: true });
-		expect(squares.filter((s) => !s.isFree)).toHaveLength(24);
+		expect(squares[12]).toMatchObject({ position: 12, isCenter: true });
+		expect(squares.filter((s) => !s.isCenter)).toHaveLength(24);
 	});
 
 	it("uses the person's month, start date and week start", async () => {
 		const me = await makeUser('Pacific/Kiritimati', 'sunday');
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		const result = await startCard(db, me, plan(habits), new Date('2026-10-31T11:30:00Z'));
 		if (!result.ok) throw new Error(result.message);
 		expect(result.card).toMatchObject({
@@ -164,19 +174,19 @@ describe('startCard', () => {
 
 	it('editable for 48 hours, cut at the end of the month', async () => {
 		const me = await makeUser();
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		const mid = await started(me, habits, new Date('2026-10-10T12:00:00Z'));
 		expect(mid.editableUntil.toISOString()).toBe('2026-10-12T12:00:00.000Z');
 
 		const late = await makeUser('UTC');
-		const lateHabits = await makeHabits(late.id, 9);
+		const lateHabits = await makeHabits(late.id, 8);
 		const end = await started(late, lateHabits, new Date('2026-10-31T20:00:00Z'));
 		expect(end.editableUntil.toISOString()).toBe('2026-11-01T00:00:00.000Z');
 	});
 
 	it('refuses a second card for the month', async () => {
 		const me = await makeUser();
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		await started(me, habits);
 		const again = await startCard(db, me, plan(habits), OCT_19);
 		expect(again).toMatchObject({
@@ -189,7 +199,7 @@ describe('startCard', () => {
 
 	it('lets only one of two simultaneous starts win', async () => {
 		const me = await makeUser();
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		const results = await Promise.all([
 			startCard(db, me, plan(habits), OCT_19),
 			startCard(db, me, plan(habits), OCT_19)
@@ -205,7 +215,7 @@ describe('startCard', () => {
 		const other = await makeUser();
 		const habits = await makeHabits(me.id, 10);
 		const theirs = await makeHabit(other.id, 'Theirs');
-		const nine = habits.slice(0, 9);
+		const eight = habits.slice(0, 8);
 		const expectHabits = async (p: CardPlan) =>
 			expect(await startCard(db, me, p, OCT_19)).toMatchObject({
 				ok: false,
@@ -213,18 +223,18 @@ describe('startCard', () => {
 				message: 'Pick from your habits.'
 			});
 
-		await expectHabits(plan([...nine.slice(0, 8), theirs]));
-		await expectHabits(plan(habits.slice(0, 8)));
-		await expectHabits(plan(habits.slice(0, 10)));
-		await expectHabits(plan([...nine.slice(0, 8), nine[0]]));
-		await archiveHabit(db, me.id, nine[8].id, OCT_19);
-		await expectHabits(plan(nine));
+		await expectHabits(plan([...eight.slice(0, 7), theirs]));
+		await expectHabits(plan(habits.slice(0, 7)));
+		await expectHabits(plan(habits.slice(0, 9)));
+		await expectHabits(plan([...eight.slice(0, 7), eight[0]]));
+		await archiveHabit(db, me.id, eight[7].id, OCT_19);
+		await expectHabits(plan(eight));
 		expect(await db.select().from(card)).toHaveLength(0);
 	});
 
 	it('refuses an out-of-range override and a bad layout', async () => {
 		const me = await makeUser();
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		expect(
 			await startCard(db, me, plan(habits, 3, { targets: { [habits[2].id]: 8 } }), OCT_19)
 		).toEqual({
@@ -243,7 +253,7 @@ describe('startCard', () => {
 
 	it('refuses empty or 81-character rewards', async () => {
 		const me = await makeUser();
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		expect(
 			await startCard(db, me, plan(habits, 3, { rewards: { ...rewards, sixty: '   ' } }), OCT_19)
 		).toEqual({ ok: false, field: 'sixty', message: 'Write a reward (up to 80 characters).' });
@@ -259,7 +269,7 @@ describe('startCard', () => {
 
 	it('later library edits never change the card', async () => {
 		const me = await makeUser();
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		const before = await started(me, habits);
 		await updateHabit(db, me.id, habits[0].id, {
 			emoji: '🍎',
@@ -307,10 +317,10 @@ describe('editBlocked', () => {
 describe('updateCard', () => {
 	it('updates within the window, keeping square ids for habits that stay', async () => {
 		const me = await makeUser();
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		const extra = await makeHabit(me.id, 'Extra', { emoji: '📚', category: 'mind' });
 		const before = await started(me, habits);
-		const swapped = [...habits.slice(0, 8), extra];
+		const swapped = [...habits.slice(0, 7), extra];
 		const layout = plan(swapped).layout.slice().reverse();
 		const result = await updateCard(
 			db,
@@ -329,14 +339,14 @@ describe('updateCard', () => {
 		expect(after.id).toBe(before.id);
 		expect(after.rewards.bingo).toBe('Sushi');
 		expect(after.editableUntil).toEqual(before.editableUntil);
-		expect(after.squares.map((s) => (s.isFree ? null : s.habitId))).toEqual(layout);
-		const keptBefore = before.squares.find((s) => !s.isFree && s.habitId === habits[0].id)!;
-		const keptAfter = after.squares.find((s) => !s.isFree && s.habitId === habits[0].id)!;
+		expect(after.squares.map((s) => (s.isCenter ? null : s.habitId))).toEqual(layout);
+		const keptBefore = before.squares.find((s) => !s.isCenter && s.habitId === habits[0].id)!;
+		const keptAfter = after.squares.find((s) => !s.isCenter && s.habitId === habits[0].id)!;
 		expect(keptAfter.id).toBe(keptBefore.id);
 		expect(keptAfter).toMatchObject({ target: 6, name: 'Habit 0' });
-		const droppedId = before.squares.find((s) => !s.isFree && s.habitId === habits[8].id)!.id;
+		const droppedId = before.squares.find((s) => !s.isCenter && s.habitId === habits[7].id)!.id;
 		expect(after.squares.some((s) => s.id === droppedId)).toBe(false);
-		expect(after.squares.find((s) => !s.isFree && s.habitId === extra.id)).toMatchObject({
+		expect(after.squares.find((s) => !s.isCenter && s.habitId === extra.id)).toMatchObject({
 			name: 'Extra',
 			emoji: '📚'
 		});
@@ -345,7 +355,7 @@ describe('updateCard', () => {
 
 	it('keeps the snapshot rule of a kept habit after the library changes it', async () => {
 		const me = await makeUser();
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		const before = await started(me, habits);
 		await updateHabit(db, me.id, habits[0].id, {
 			emoji: '🍎',
@@ -393,9 +403,9 @@ describe('updateCard', () => {
 	it('lets an archived habit stay on the card but not be newly added', async () => {
 		const me = await makeUser();
 		const habits = await makeHabits(me.id, 10);
-		const before = await started(me, habits.slice(0, 9));
+		const before = await started(me, habits.slice(0, 8));
 		await archiveHabit(db, me.id, habits[0].id, OCT_19);
-		const keep = withoutSize(plan(habits.slice(0, 9)));
+		const keep = withoutSize(plan(habits.slice(0, 8)));
 		const kept = await updateCard(
 			db,
 			me,
@@ -417,7 +427,7 @@ describe('updateCard', () => {
 
 	it('serialises simultaneous updates', async () => {
 		const me = await makeUser();
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		const existing = await started(me, habits);
 		const a = withoutSize(plan(habits));
 		const b = { ...a, layout: [...a.layout].reverse() };
@@ -431,7 +441,7 @@ describe('updateCard', () => {
 
 	it('refuses updates after the window', async () => {
 		const me = await makeUser();
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		const before = await started(me, habits);
 		expect(
 			await updateCard(db, me, before.id, withoutSize(plan(habits)), before.editableUntil)
@@ -444,7 +454,7 @@ describe('updateCard', () => {
 		['Pacific/Pago_Pago', '2026-11-01T08:00:00Z', '2026-11-01T11:00:05Z']
 	])('says locked, not missing, once the month has ended (%s)', async (timezone, start, save) => {
 		const me = await makeUser(timezone);
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		const before = await started(me, habits, new Date(start));
 		// The window was cut at the end of the local month, so it closes before 48 hours pass.
 		expect(before.editableUntil.getTime() - new Date(start).getTime()).toBeLessThan(48 * 3_600_000);
@@ -460,8 +470,8 @@ describe('updateCard', () => {
 	it("treats another user's card id as not found", async () => {
 		const me = await makeUser();
 		const other = await makeUser();
-		const habits = await makeHabits(me.id, 9);
-		const theirs = await started(other, await makeHabits(other.id, 9));
+		const habits = await makeHabits(me.id, 8);
+		const theirs = await started(other, await makeHabits(other.id, 8));
 		expect(await updateCard(db, me, theirs.id, withoutSize(plan(habits)), OCT_19)).toMatchObject({
 			ok: false,
 			field: 'exists'
@@ -476,7 +486,7 @@ describe('updateCard', () => {
 
 	it('says so when there is no card yet', async () => {
 		const me = await makeUser();
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		expect(
 			await updateCard(db, me, crypto.randomUUID(), withoutSize(plan(habits)), OCT_19)
 		).toEqual({ ok: false, field: 'exists', message: "There's no card to change." });
@@ -484,9 +494,9 @@ describe('updateCard', () => {
 
 	it('validates like startCard', async () => {
 		const me = await makeUser();
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		const existing = await started(me, habits);
-		const short = withoutSize(plan(habits.slice(0, 8)));
+		const short = withoutSize(plan(habits.slice(0, 7)));
 		expect(await updateCard(db, me, existing.id, short, OCT_19)).toMatchObject({
 			ok: false,
 			field: 'habits'
@@ -498,7 +508,7 @@ describe('ownership', () => {
 	it("never returns another user's card; deleting a user deletes their cards", async () => {
 		const me = await makeUser();
 		const other = await makeUser();
-		const habits = await makeHabits(me.id, 9);
+		const habits = await makeHabits(me.id, 8);
 		await started(me, habits);
 		expect(await getCard(db, other.id, '2026-10')).toBeNull();
 		expect(await getCard(db, me.id, '2026-09')).toBeNull();

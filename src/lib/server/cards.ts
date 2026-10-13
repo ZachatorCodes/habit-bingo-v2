@@ -18,11 +18,11 @@ export type Rewards = { bingo: string; sixty: string; blackout: string };
 type WeekStart = 'monday' | 'sunday';
 
 export type CardSquare =
-	| { id: string; position: number; isFree: true }
+	| { id: string; position: number; isCenter: true }
 	| ({
 			id: string;
 			position: number;
-			isFree: false;
+			isCenter: false;
 			habitId: string | null;
 			emoji: string;
 			name: string;
@@ -104,11 +104,11 @@ function toCard(row: typeof card.$inferSelect, squares: (typeof cardSquare.$infe
 			.slice()
 			.sort((a, b) => a.position - b.position)
 			.map((s): CardSquare => {
-				if (s.isFree) return { id: s.id, position: s.position, isFree: true };
+				if (s.isCenter) return { id: s.id, position: s.position, isCenter: true };
 				return {
 					id: s.id,
 					position: s.position,
-					isFree: false,
+					isCenter: false,
 					habitId: s.habitId,
 					emoji: s.emoji!,
 					name: s.name!,
@@ -152,7 +152,7 @@ type Resolved = {
 	board: ({ habitId: string; target: number; habit: Habit | null } | null)[];
 };
 
-type KeptSquare = Extract<CardSquare, { isFree: false }>;
+type KeptSquare = Extract<CardSquare, { isCenter: false }>;
 
 /**
  * Checks a plan and works out each square's target. Habits must be the person's active habits,
@@ -276,7 +276,7 @@ export async function startCard(
 					id: crypto.randomUUID(),
 					cardId,
 					position,
-					isFree: entry === null,
+					isCenter: entry === null,
 					...(entry ? snapshot(entry.habit!, entry.target) : {})
 				}))
 			);
@@ -314,14 +314,14 @@ export async function updateCard(
 		}
 		const kept = new Map<string, KeptSquare>();
 		for (const square of existing.squares) {
-			if (!square.isFree && square.habitId) kept.set(square.habitId, square);
+			if (!square.isCenter && square.habitId) kept.set(square.habitId, square);
 		}
 		const resolved = await resolvePlan(tx, user.id, existing.size, plan, existing.startDate, kept);
 		if (!resolved.ok) return resolved;
 
 		const planned = new Set(plan.habitIds);
 		const dropped = existing.squares.filter(
-			(s) => !s.isFree && (s.habitId === null || !planned.has(s.habitId))
+			(s) => !s.isCenter && (s.habitId === null || !planned.has(s.habitId))
 		);
 		await tx
 			.update(card)
@@ -342,7 +342,7 @@ export async function updateCard(
 		}
 		// Park the surviving squares off the board so moving them can't hit the unique position.
 		for (const square of existing.squares) {
-			if (dropped.includes(square) || square.isFree) continue;
+			if (dropped.includes(square) || square.isCenter) continue;
 			await tx
 				.update(cardSquare)
 				.set({ position: -1 - square.position })
@@ -361,7 +361,7 @@ export async function updateCard(
 					id: crypto.randomUUID(),
 					cardId: existing.id,
 					position,
-					isFree: false,
+					isCenter: false,
 					...snapshot(entry.habit!, entry.target)
 				});
 			}

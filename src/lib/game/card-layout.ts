@@ -14,20 +14,21 @@ export const CARD_SIZES: Record<
 		squares: number;
 		multiplier: number;
 		sixtyThreshold: number;
-		freePosition: number | null;
+		/** The habit-less center square (spec §3.5). */
+		centerPosition: number;
 	}
 > = {
-	3: { habits: 9, squares: 9, multiplier: 1, sixtyThreshold: 5, freePosition: null },
-	5: { habits: 24, squares: 25, multiplier: 2, sixtyThreshold: 15, freePosition: 12 }
+	3: { habits: 8, squares: 9, multiplier: 1, sixtyThreshold: 5, centerPosition: 4 },
+	5: { habits: 24, squares: 25, multiplier: 2, sixtyThreshold: 15, centerPosition: 12 }
 };
 
-/** Fisher-Yates shuffle of `items`, with a null (the FREE square) inserted at the free position. */
+/** Fisher-Yates shuffle of `items`, with a null (the center square) inserted at the center. */
 export function shuffleLayout<T>(
 	items: readonly T[],
 	size: CardSize,
 	random: () => number
 ): (T | null)[] {
-	const { habits, freePosition } = CARD_SIZES[size];
+	const { habits, centerPosition } = CARD_SIZES[size];
 	if (items.length !== habits) {
 		throw new RangeError(`A ${size}x${size} card needs ${habits} habits, got ${items.length}.`);
 	}
@@ -36,19 +37,19 @@ export function shuffleLayout<T>(
 		const j = Math.floor(random() * (i + 1));
 		[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
 	}
-	if (freePosition !== null) shuffled.splice(freePosition, 0, null);
+	shuffled.splice(centerPosition, 0, null);
 	return shuffled;
 }
 
-/** Right length, null exactly at the free position, and a permutation of `items`. */
+/** Right length, null exactly at the center, and a permutation of `items`. */
 export function isValidLayout<T>(
 	layout: readonly (T | null)[],
 	items: readonly T[],
 	size: CardSize
 ): boolean {
-	const { squares, freePosition } = CARD_SIZES[size];
+	const { squares, centerPosition } = CARD_SIZES[size];
 	if (layout.length !== squares || items.length !== CARD_SIZES[size].habits) return false;
-	if (layout.some((entry, index) => (entry === null) !== (index === freePosition))) return false;
+	if (layout.some((entry, index) => (entry === null) !== (index === centerPosition))) return false;
 	const remaining = [...items];
 	for (const entry of layout) {
 		if (entry === null) continue;
@@ -60,9 +61,6 @@ export function isValidLayout<T>(
 }
 
 /** Placeholder until M4's live evaluation: earn squares start empty, protect squares start held. */
-export function initialSquareState(
-	square: { isFree: true } | { isFree: false; direction: Direction; period: Period }
-): SquareState {
-	if (square.isFree) return 'free';
+export function initialSquareState(square: { direction: Direction; period: Period }): SquareState {
 	return square.direction === 'atLeast' && square.period === 'month' ? 'empty' : 'held';
 }
