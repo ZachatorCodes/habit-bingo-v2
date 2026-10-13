@@ -1,0 +1,172 @@
+import { describe, expect, it } from 'vitest';
+import type { CardSpan } from './evaluate.ts';
+import type { HabitRule } from './habit-rules.ts';
+import {
+	completeLines,
+	counts,
+	lineIndexes,
+	reachedTiers,
+	scoreCard,
+	squarePoints
+} from './score.ts';
+import type { SquareState } from './square-state.ts';
+
+const span: CardSpan = { startDate: '2026-10-01', weekStartsOn: 'monday' };
+const days = (entries: Record<string, number>) => new Map(Object.entries(entries));
+const rule = (
+	direction: HabitRule['direction'],
+	period: HabitRule['period'],
+	countMode: HabitRule['countMode'],
+	target: number
+): HabitRule => ({ direction, period, countMode, target });
+const all = (n: number, value = true) => Array.from({ length: n }, () => value);
+
+describe('counts', () => {
+	it('complete, held and atRisk count; the rest do not', () => {
+		const states: SquareState[] = [
+			'empty',
+			'inProgress',
+			'complete',
+			'held',
+			'atRisk',
+			'lost',
+			'buildNext'
+		];
+		expect(states.filter(counts)).toEqual(['complete', 'held', 'atRisk']);
+	});
+});
+
+describe('lines', () => {
+	it('3×3 has 8 lines and 5×5 has 12', () => {
+		expect(lineIndexes(3)).toHaveLength(8);
+		expect(lineIndexes(5)).toHaveLength(12);
+		expect(lineIndexes(3)).toContainEqual([0, 4, 8]);
+		expect(lineIndexes(3)).toContainEqual([2, 4, 6]);
+		expect(lineIndexes(5)).toContainEqual([0, 6, 12, 18, 24]);
+	});
+
+	it('a line is complete only when all its squares count', () => {
+		const counting = all(9, false);
+		for (const i of [0, 1, 2]) counting[i] = true;
+		expect(completeLines(counting, 3)).toEqual([[0, 1, 2]]);
+		counting[2] = false;
+		expect(completeLines(counting, 3)).toEqual([]);
+	});
+
+	it('a buildNext center breaks its lines; a complete center completes them', () => {
+		// Review Focus 1: the middle row, middle column and both diagonals go through the center.
+		const counting = all(9);
+		counting[4] = counts('buildNext');
+		expect(completeLines(counting, 3)).toHaveLength(4);
+		counting[4] = counts('complete');
+		expect(completeLines(counting, 3)).toHaveLength(8);
+	});
+});
+
+describe('reachedTiers', () => {
+	it('bingo, the 5 / 15 squares tier and blackout', () => {
+		expect(reachedTiers(all(9, false), 3)).toEqual([]);
+		const five = [true, true, true, true, true, false, false, false, false];
+		expect(reachedTiers(five, 3)).toEqual(['bingo', 'sixtyPercent']);
+		const four = [false, true, false, true, true, true, false, false, false];
+		expect(reachedTiers(four, 3)).toEqual(['bingo']);
+		expect(reachedTiers(all(9), 3)).toEqual(['bingo', 'sixtyPercent', 'blackout']);
+		const fifteen = [...all(15), ...all(10, false)];
+		expect(reachedTiers(fifteen, 5)).toEqual(['bingo', 'sixtyPercent']);
+	});
+
+	it('tiers drop when a square is lost', () => {
+		// Review Focus 2: tiers are live.
+		const counting = all(9);
+		counting[8] = counts('lost');
+		expect(reachedTiers(counting, 3)).toEqual(['bingo', 'sixtyPercent']);
+	});
+});
+
+describe('squarePoints', () => {
+	const TODAY = '2026-10-20';
+
+	it('earn points are proportional and capped', () => {
+		const read = rule('atLeast', 'month', 'days', 4);
+		const two = days({ '2026-10-02': 1, '2026-10-03': 1 });
+		expect(squarePoints(read, span, two, TODAY, 'inProgress')).toBe(5);
+		const six = days(
+			Object.fromEntries(['01', '02', '03', '04', '05', '06'].map((d) => [`2026-10-${d}`, 1]))
+		);
+		expect(squarePoints(read, span, six, TODAY, 'complete')).toBe(10);
+	});
+
+	it('atLeast / day points over the whole span', () => {
+		const walk = rule('atLeast', 'day', 'times', 2);
+		// 10 days fully met (2 each) and one day half met, of 31 days × N = 2.
+		const met: Record<string, number> = {};
+		for (let d = 1; d <= 10; d++) met[`2026-10-${String(d).padStart(2, '0')}`] = 2;
+		met['2026-10-11'] = 1;
+		met['2026-10-12'] = 5; // capped at N
+		expect(squarePoints(walk, span, days(met), TODAY, 'lost')).toBeCloseTo((10 * 23) / 62);
+	});
+
+	it('atLeast / week points over clipped weeks, and 10 when nothing is required', () => {
+		const gym = rule('atLeast', 'week', 'days', 3);
+		// Weeks of October require 2, 3, 3, 3, 3 = 14; 2 + 3 met.
+		const counted = days({
+			'2026-10-01': 1,
+			'2026-10-02': 1,
+			'2026-10-05': 1,
+			'2026-10-06': 1,
+			'2026-10-07': 1,
+			'2026-10-08': 1
+		});
+		expect(squarePoints(gym, span, counted, TODAY, 'atRisk')).toBeCloseTo((10 * 5) / 14);
+		const stub: CardSpan = { startDate: '2026-10-31', weekStartsOn: 'monday' };
+		expect(
+			squarePoints(rule('atLeast', 'week', 'times', 1), stub, days({}), '2026-10-31', 'held')
+		).toBe(10);
+	});
+
+	it('atMost squares are worth 10 until lost', () => {
+		const naps = rule('atMost', 'month', 'days', 3);
+		expect(squarePoints(naps, span, days({}), TODAY, 'held')).toBe(10);
+		expect(squarePoints(naps, span, days({}), TODAY, 'atRisk')).toBe(10);
+		expect(squarePoints(naps, span, days({}), TODAY, 'lost')).toBe(0);
+	});
+});
+
+describe('scoreCard', () => {
+	const square = (state: SquareState, points = 10) => ({ state, points });
+
+	it('blackout totals match the spec examples', () => {
+		const three = [...Array(4)].map(() => square('complete'));
+		const card3 = [...three, square('complete', 0), ...three];
+		expect(scoreCard(3, card3)).toMatchObject({ counting: 9, percent: 100, points: 380 });
+		const twelve = [...Array(12)].map(() => square('held'));
+		const card5 = [...twelve, square('complete', 0), ...twelve];
+		expect(scoreCard(5, card5)).toMatchObject({
+			points: 1280,
+			tiers: ['bingo', 'sixtyPercent', 'blackout']
+		});
+	});
+
+	it('rounds once at the end', () => {
+		const card = [
+			square('inProgress', 3.4),
+			square('inProgress', 3.4),
+			...[...Array(7)].map(() => square('empty', 0))
+		];
+		expect(scoreCard(3, card)).toMatchObject({
+			counting: 0,
+			percent: 0,
+			lines: [],
+			tiers: [],
+			points: 7
+		});
+	});
+
+	it('percent counting rounds to a whole number', () => {
+		const card = [
+			...[...Array(4)].map(() => square('held')),
+			...[...Array(5)].map(() => square('empty', 0))
+		];
+		expect(scoreCard(3, card).percent).toBe(44);
+	});
+});
