@@ -50,6 +50,13 @@
       "when": 1791852104506,
       "tag": "0006_center_square",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791854818534,
+      "tag": "0007_draft_per_month",
+      "breakpoints": true
     }
   ]
 }

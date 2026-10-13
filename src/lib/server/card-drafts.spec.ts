@@ -42,7 +42,7 @@ describe('card drafts', () => {
 		const next = { ...draft, habitIds: ['a', 'b'] };
 		await saveDraft(db, userId, next);
 		expect(await getDraft(db, userId, '2026-10')).toEqual(next);
-		await discardDraft(db, userId);
+		await discardDraft(db, userId, '2026-10');
 		expect(await getDraft(db, userId, '2026-10')).toEqual(emptyDraft('2026-10'));
 	});
 
@@ -50,6 +50,26 @@ describe('card drafts', () => {
 		await saveDraft(db, userId, { ...emptyDraft('2026-09'), size: 5 });
 		expect(await getDraft(db, userId, '2026-10')).toEqual(emptyDraft('2026-10'));
 		expect(await db.select().from(cardDraft).where(eq(cardDraft.userId, userId))).toHaveLength(0);
+	});
+
+	it('keeps one draft per month', async () => {
+		const october = { ...emptyDraft('2026-10'), cardId: 'card-oct', habitIds: ['a'] };
+		const november = { ...emptyDraft('2026-11'), size: 5 as const };
+		await saveDraft(db, userId, october);
+		await saveDraft(db, userId, november);
+		expect(await getDraft(db, userId, '2026-10')).toEqual(october);
+		expect(await getDraft(db, userId, '2026-11', '2026-10')).toEqual(november);
+		await discardDraft(db, userId, '2026-11');
+		expect(await getDraft(db, userId, '2026-10')).toEqual(october);
+		expect(await getDraft(db, userId, '2026-11', '2026-10')).toEqual(emptyDraft('2026-11'));
+	});
+
+	it('forgets drafts for months before the current one', async () => {
+		await saveDraft(db, userId, { ...emptyDraft('2026-09'), size: 3 });
+		await saveDraft(db, userId, { ...emptyDraft('2026-10'), size: 5 });
+		expect(await getDraft(db, userId, '2026-11', '2026-10')).toEqual(emptyDraft('2026-11'));
+		const months = await db.select({ month: cardDraft.month }).from(cardDraft);
+		expect(months).toEqual([{ month: '2026-10' }]);
 	});
 
 	it('forgets a draft that no longer parses', async () => {

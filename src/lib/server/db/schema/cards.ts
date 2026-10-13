@@ -7,6 +7,7 @@ import {
 	integer,
 	jsonb,
 	pgTable,
+	primaryKey,
 	text,
 	timestamp,
 	unique
@@ -70,12 +71,19 @@ export const cardSquare = pgTable(
 	]
 );
 
-/** Card-builder progress, so closing the tab mid-build loses nothing. One per person. */
-export const cardDraft = pgTable('card_draft', {
-	userId: text('user_id')
-		.primaryKey()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	month: text('month').notNull(),
-	data: jsonb('data').notNull(),
-	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
-});
+/**
+ * Card-builder progress, so closing the tab mid-build loses nothing. One per person per month, so
+ * changing this month's card and building next month's don't collide.
+ */
+export const cardDraft = pgTable(
+	'card_draft',
+	{
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		month: text('month').notNull(),
+		data: jsonb('data').notNull(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [primaryKey({ columns: [table.userId, table.month] })]
+);

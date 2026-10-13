@@ -1,6 +1,6 @@
 // Card-builder progress, saved after every step so closing the tab loses nothing. One draft per
 // person; a draft from another month is forgotten, since the month decides which card it builds.
-import { eq } from 'drizzle-orm';
+import { and, eq, lt } from 'drizzle-orm';
 import * as z from 'zod';
 import type { CardSize } from '#lib/game/card-layout.ts';
 import type { Card, Rewards } from '#lib/server/cards.ts';
@@ -48,14 +48,27 @@ export function emptyDraft(month: string): CardDraft {
 	};
 }
 
-export async function getDraft(db: Db, userId: string, month: string): Promise<CardDraft> {
-	const [row] = await db.select().from(cardDraft).where(eq(cardDraft.userId, userId));
+/**
+ * The draft for `month`. Drafts for months before `currentMonth` (the person's own month; the
+ * target month unless building next month's card) are forgotten.
+ */
+export async function getDraft(
+	db: Db,
+	userId: string,
+	month: string,
+	currentMonth = month
+): Promise<CardDraft> {
+	await db
+		.delete(cardDraft)
+		.where(and(eq(cardDraft.userId, userId), lt(cardDraft.month, currentMonth)));
+	const [row] = await db
+		.select()
+		.from(cardDraft)
+		.where(and(eq(cardDraft.userId, userId), eq(cardDraft.month, month)));
 	if (!row) return emptyDraft(month);
-	if (row.month === month) {
-		const parsed = draftSchema.safeParse(row.data);
-		if (parsed.success && parsed.data.month === month) return parsed.data;
-	}
-	await discardDraft(db, userId);
+	const parsed = draftSchema.safeParse(row.data);
+	if (parsed.success && parsed.data.month === month) return parsed.data;
+	await discardDraft(db, userId, month);
 	return emptyDraft(month);
 }
 
@@ -64,11 +77,11 @@ export async function saveDraft(db: Db, userId: string, draft: CardDraft): Promi
 	await db
 		.insert(cardDraft)
 		.values({ userId, ...values })
-		.onConflictDoUpdate({ target: cardDraft.userId, set: values });
+		.onConflictDoUpdate({ target: [cardDraft.userId, cardDraft.month], set: values });
 }
 
-export async function discardDraft(db: Db, userId: string): Promise<void> {
-	await db.delete(cardDraft).where(eq(cardDraft.userId, userId));
+export async function discardDraft(db: Db, userId: string, month: string): Promise<void> {
+	await db.delete(cardDraft).where(and(eq(cardDraft.userId, userId), eq(cardDraft.month, month)));
 }
 
 /** The builder's steps in order; changing an existing card keeps its size, so there is no size step. */

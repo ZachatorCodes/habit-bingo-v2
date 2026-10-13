@@ -58,7 +58,7 @@ async function builderContext(locals: App.Locals, cookies: Cookies) {
 	]);
 	// An edit draft outlives its window: drop it rather than let people redo steps that cannot save.
 	if (editBlocked(draft.cardId, card, now)) {
-		await discardDraft(db, user.id);
+		await discardDraft(db, user.id, draft.month);
 		redirect(303, '/card?locked=1');
 	}
 	// A card for this month can only be changed through a draft that is editing it.
@@ -363,11 +363,11 @@ export const actions: Actions = {
 				? await updateCard(db, person, draft.cardId, plan, now)
 				: await startCard(db, person, { size: draft.size, ...plan }, now);
 		if (result.ok) {
-			await discardDraft(db, user.id);
+			await discardDraft(db, user.id, draft.month);
 			redirect(303, editing ? '/card?saved=1' : '/card?started=1');
 		}
 		if (result.field === 'locked') {
-			await discardDraft(db, user.id);
+			await discardDraft(db, user.id, draft.month);
 			redirect(303, '/card?locked=1');
 		}
 		if (result.field === 'exists') redirect(303, '/card');
@@ -391,7 +391,7 @@ export const actions: Actions = {
 
 	discard: async ({ locals, cookies }) => {
 		const { user, db, draft } = await builderContext(locals, cookies);
-		await discardDraft(db, user.id);
+		await discardDraft(db, user.id, draft.month);
 		redirect(303, draft.cardId ? '/card' : '/card/build');
 	}
 };
