@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.0](https://github.com/ZachatorCodes/habit-bingo-v2/compare/habit-bingo-v0.4.0...habit-bingo-v0.5.0) (2026-10-13)
+
+
+### Features
+
+* **check-ins:** check-in table, service and live card squares ([#69](https://github.com/ZachatorCodes/habit-bingo-v2/issues/69)) ([c7941e8](https://github.com/ZachatorCodes/habit-bingo-v2/commit/c7941e81c1fff60ff7a5af0f6383505f68667eb7))
+* **game:** clipped weeks and the backfill window ([#66](https://github.com/ZachatorCodes/habit-bingo-v2/issues/66)) ([6e5e2f0](https://github.com/ZachatorCodes/habit-bingo-v2/commit/6e5e2f0828e0db9e8db5b833d822ce1b8ebfff08))
+* **game:** live square states and the Today grouping ([#67](https://github.com/ZachatorCodes/habit-bingo-v2/issues/67)) ([06b79ff](https://github.com/ZachatorCodes/habit-bingo-v2/commit/06b79ff17319d02bd83d6c7687bc38e39ecf3ca2))
+* **today:** pop & burst and optimistic logging ([#71](https://github.com/ZachatorCodes/habit-bingo-v2/issues/71)) ([e05ee1c](https://github.com/ZachatorCodes/habit-bingo-v2/commit/e05ee1cfac37d60cc555c272afd871d6688a1b1a))
+* **today:** the Today screen ([#70](https://github.com/ZachatorCodes/habit-bingo-v2/issues/70)) ([042d1f0](https://github.com/ZachatorCodes/habit-bingo-v2/commit/042d1f05a2ab2fcdddf125d0a8e10a447f481ecc))
+
+
+### Bug Fixes
+
+* **today:** logging keeps your place on the page ([#72](https://github.com/ZachatorCodes/habit-bingo-v2/issues/72)) ([022c5c4](https://github.com/ZachatorCodes/habit-bingo-v2/commit/022c5c4378e3754de4083c09dc1e6b4c3871120e))
+
 ## [0.4.0](https://github.com/ZachatorCodes/habit-bingo-v2/compare/habit-bingo-v0.3.0...habit-bingo-v0.4.0) (2026-10-13)
 
 
