@@ -101,7 +101,13 @@
 		style:transform="scale({scale.current})"
 		style:opacity={prefersReducedMotion.current && pending ? 0.6 : 1}
 	>
-		<BingoSquare emoji={row.emoji} label={row.name} state={view.state} progress={view.progress} />
+		<BingoSquare
+			emoji={row.emoji}
+			label={row.name}
+			state={view.state}
+			progress={view.progress}
+			showLabel={false}
+		/>
 	</div>
 	<div class="min-w-0 flex-1">
 		<p class="truncate font-extrabold">{row.name}</p>

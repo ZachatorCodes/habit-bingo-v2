@@ -12,14 +12,17 @@ describe('BingoSquare', () => {
 	});
 
 	it.each([
-		['complete', '✓'],
-		['held', '🛡'],
-		['atRisk', '⚠'],
-		['lost', '✗'],
-		['free', 'FREE']
-	] as const)('shows a %s marker that does not rely on color', async (state, marker) => {
+		['complete', 'border-[3px]'],
+		['held', 'border-solid'],
+		['atRisk', 'border-dashed'],
+		['lost', 'opacity-70'],
+		['buildNext', 'border-dotted']
+	] as const)('shows %s by its border style, with no corner icon', async (state, style) => {
 		render(BingoSquare, { emoji: '🚴', label: 'Bike', state });
-		await expect.element(page.getByText(marker, { exact: true })).toBeInTheDocument();
+		const square = page.getByRole('img').element();
+		expect(square.getAttribute('data-state')).toBe(state);
+		expect(square.className).toContain(style);
+		expect(square.textContent).not.toMatch(/[✓🛡⚠✗✏]/u);
 	});
 
 	it('renders a progress bar at the given percent when in progress', async () => {
@@ -32,17 +35,19 @@ describe('BingoSquare', () => {
 			.toBeInTheDocument();
 	});
 
-	it('shows the habit name only when showLabel is set', async () => {
-		render(BingoSquare, { emoji: '🚴', label: 'Go biking', state: 'empty', showLabel: true });
-		await expect.element(page.getByText('Go biking')).toBeInTheDocument();
+	it('always shows the name, struck through when lost', async () => {
+		render(BingoSquare, { emoji: '🚴', label: 'Go biking', state: 'lost' });
+		const name = page.getByText('Go biking').element();
+		expect(name.className).toContain('line-through');
 	});
 
-	it('marks the build-next center with a pencil and text, not colour alone', async () => {
-		render(BingoSquare, { emoji: '🗓️', label: "Build November's card", state: 'buildNext' });
-		const square = page.getByRole('img', {
-			name: "Build November's card: build next month's card"
+	it('compact squares clamp the name to two lines', async () => {
+		render(BingoSquare, {
+			emoji: '🚴',
+			label: 'A very long habit name that keeps going',
+			state: 'held',
+			compact: true
 		});
-		await expect.element(square).toBeInTheDocument();
-		await expect.element(square).toHaveTextContent('✏️');
+		expect(page.getByText(/A very long habit name/).element().className).toContain('line-clamp-2');
 	});
 });

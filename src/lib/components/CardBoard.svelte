@@ -20,11 +20,8 @@
 	let { size, squares }: Props = $props();
 </script>
 
-<!-- Names show on a 3×3 card once there is room (sm and up); 5×5 squares stay emoji-only. -->
-<div
-	class="grid gap-2 max-sm:[&_[data-label]]:hidden"
-	style:grid-template-columns="repeat({size}, minmax(0, 1fr))"
->
+<!-- Every square shows its name; 5×5 squares are compact on phones (smaller emoji and text). -->
+<div class="grid gap-1.5 sm:gap-2" style:grid-template-columns="repeat({size}, minmax(0, 1fr))">
 	{#each squares as square, index (index)}
 		{#if square.link}
 			<a
@@ -36,7 +33,7 @@
 					label={square.name}
 					state={square.state}
 					progress={square.progress}
-					showLabel={size === 3}
+					compact={size === 5}
 				/>
 			</a>
 		{:else}
@@ -45,7 +42,7 @@
 				label={square.name}
 				state={square.state}
 				progress={square.progress}
-				showLabel={size === 3}
+				compact={size === 5}
 			/>
 		{/if}
 	{/each}
