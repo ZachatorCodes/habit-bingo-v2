@@ -28,7 +28,7 @@ export async function getCheckIns(
 }
 
 type CheckInResult =
-	{ ok: true; count: number } | { ok: false; field: 'date'; message: string } | null;
+	{ ok: true; count: number } | { ok: false; field: 'date' | 'count'; message: string } | null;
 
 /**
  * Whether the person may change check-ins on this square and date: null when it isn't a habit
@@ -113,6 +113,8 @@ export async function setCheckIn(
 ): Promise<CheckInResult> {
 	const allowed = await checkLoggable(db, user, squareId, date, now);
 	if (!allowed?.ok) return allowed;
+	if (!Number.isFinite(count))
+		return { ok: false, field: 'count', message: `Pick a number from 0 to ${MAX_COUNT}.` };
 	const value = Math.min(Math.max(Math.trunc(count), 0), MAX_COUNT);
 	const where = and(eq(checkIn.squareId, squareId), eq(checkIn.date, date));
 	if (value === 0) {

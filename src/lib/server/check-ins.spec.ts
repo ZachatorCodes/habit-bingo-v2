@@ -171,6 +171,18 @@ describe('setCheckIn', () => {
 		expect(await db.select().from(checkIn)).toHaveLength(0);
 	});
 
+	it('refuses a count that is not a number', async () => {
+		const me = await makeUser();
+		const card = await cardFor(me, await makeHabits(me.id, 8), OCT_1);
+		const { id } = habitSquare(card);
+		expect(await setCheckIn(db, me, id, '2026-10-20', NaN, OCT_20)).toEqual({
+			ok: false,
+			field: 'count',
+			message: 'Pick a number from 0 to 20.'
+		});
+		expect(await db.select().from(checkIn)).toHaveLength(0);
+	});
+
 	it('turning a day off that was logged twice sets it to zero', async () => {
 		// Review Focus 3: a days habit logged twice from Today.
 		const me = await makeUser();
