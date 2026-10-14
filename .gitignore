@@ -33,3 +33,8 @@ playwright-report
 
 # Agent git worktrees
 .claude/worktrees/
+
+# Local graphify setup
+CLAUDE.md
+.claude/settings.json
+graphify-out/
