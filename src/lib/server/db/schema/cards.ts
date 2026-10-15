@@ -1,6 +1,7 @@
 // A person's monthly card (spec §5.3). Squares snapshot their habit, so library edits never change
 // a card; `habit_id` only remembers where a square came from.
 import { sql } from 'drizzle-orm';
+import type { Tier } from '#lib/game/score.ts';
 import {
 	boolean,
 	check,
@@ -101,7 +102,7 @@ export const monthResult = pgTable(
 		month: text('month').notNull(),
 		points: integer('points').notNull(),
 		lines: integer('lines').notNull(),
-		tiers: text('tiers').array().notNull(),
+		tiers: text('tiers').array().$type<Tier[]>().notNull(),
 		squaresCounting: integer('squares_counting').notNull(),
 		size: integer('size').notNull(),
 		seenAt: timestamp('seen_at', { withTimezone: true }),
