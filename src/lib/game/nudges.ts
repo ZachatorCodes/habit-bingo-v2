@@ -31,8 +31,8 @@ const MAX_NUDGES = 3;
 
 /**
  * Today's "Heads up" (spec §4.8), most urgent first and at most 3: at-risk squares, missed days
- * still in the backfill window, one square from a first bingo, within 2 of a reward tier, and next
- * month's card while the center waits for it.
+ * still in the backfill window, one square from a first bingo, and in the last 7 days, within 2 of a
+ * reward tier and next month's card while the center waits for it.
  */
 export function nudges(input: {
 	size: CardSize;
@@ -83,14 +83,16 @@ export function nudges(input: {
 		found.push({ text: '1 square from a bingo', to: { kind: 'card' } });
 	}
 
-	// 4. Within 2 squares of a reward tier.
+	// 4. Within 2 squares of a reward tier, in the last 7 days only: earlier, the held squares that
+	// make it "close" are untested.
+	const lastWeek = canBuildNextMonth(today);
 	const tiers = [
 		{ tier: 'sixtyPercent', need: CARD_SIZES[size].sixtyThreshold, reward: rewards.sixty },
 		{ tier: 'blackout', need: size * size, reward: rewards.blackout }
 	] as const;
 	for (const { tier, need, reward } of tiers) {
 		const left = need - total;
-		if (reached.includes(tier) || left > 2) continue;
+		if (!lastWeek || reached.includes(tier) || left > 2) continue;
 		found.push({
 			text: `${left} square${left === 1 ? '' : 's'} from ${reward}`,
 			to: { kind: 'card' }
@@ -98,7 +100,7 @@ export function nudges(input: {
 	}
 
 	// 5. Next month's card, while the center waits for it.
-	if (canBuildNextMonth(today) && squares.some((square) => square.state === 'buildNext')) {
+	if (lastWeek && squares.some((square) => square.state === 'buildNext')) {
 		const left = daysLeftInMonth(today);
 		found.push({
 			text: `Build ${input.nextMonthName}'s card to keep your center square: ${left} day${left === 1 ? '' : 's'} left`,
