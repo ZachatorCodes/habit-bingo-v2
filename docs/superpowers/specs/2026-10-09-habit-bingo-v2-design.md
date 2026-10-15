@@ -39,7 +39,7 @@ before it is built.
 | M5   | Card view & scoring | Emoji grid + bottom sheet, lines, reward tiers, points, bingo celebration                                                                                                           |
 | M6   | Updates             | Nudges & insights screen                                                                                                                                                            |
 | M7   | Month lifecycle     | Closing window, finalization, recap, history                                                                                                                                        |
-| M8   | Groups              | Groups, invite links (also the signup path), leaderboards, viewing members' cards                                                                                                   |
+| M8   | Groups              | Groups, invite links (also the signup path), leaderboards, viewing members' cards, daily finalization job                                                                           |
 | M9   | Feed                | Highlights feed with emoji reactions                                                                                                                                                |
 | M10  | Calendar            | Optional Google Calendar connection; month-milestone events on a dedicated calendar (§4.13)                                                                                         |
 
@@ -218,8 +218,18 @@ Live scores are **always derived** from card + check-ins + today; never stored.
 | `closing` | 1st through 3rd of the next month        | Backfill only for the old month; the new month's card can be built; leaderboard marks the month provisional |
 | `final`   | From the 4th of the next month           | Points, lines and tiers are snapshotted to `month_result`; card is read-only; recap shown on next app open  |
 
-Finalization runs lazily (on first read after the closing window ends) and via a daily scheduled
-job, whichever comes first; it is idempotent.
+The phase is never stored: it follows from today's user-local date. `closing` is exactly "one of
+the old month's days is still inside today's 3-day backfill window", so on the 1st–3rd Today's day
+switcher lists the old month's last days (with that month's habits) beside the new month's, and
+the old card's rows read "N more · last month" (§4.5).
+
+Finalization runs lazily: Today and History save a `month_result` for each of the person's past
+cards that is final and has none (insert … on conflict do nothing, so it is idempotent). The score
+is the card's live score as of that day: unmet squares are lost, and the center counts only if
+next month's card was built by the 3rd (§3.5); building it later never changes the saved result.
+The board, highlight and category breakdown are not saved; the recap derives them from the card
+and its check-ins, which no longer change. A daily scheduled job, for people who never open the
+app, arrives with leaderboards in M8.
 
 ### 3.9 Leaderboards (M8)
 
@@ -352,9 +362,26 @@ screen, never automatically by matching email addresses.
 
 ### 4.11 Month recap
 
-Full-screen sequence: final board → points and group rank → rewards earned → a highlight (best
-streak or most-logged habit) → per-category breakdown (percent of each category's squares
-counting) → "Build next month's card".
+One page per finished month, `/me/history/{YYYY-MM}` ("October recap"):
+
+- the final board (read-only, no links);
+- points, lines and percent counting from `month_result`, then **Rewards earned**: each reached
+  tier with the reward set for it ("First bingo: Ice cream");
+- a **highlight**: the most-logged habit by total check-ins ("🚴 Go biking: 14 check-ins"), ties
+  going to the earlier board square; none when nothing was logged;
+- a **category breakdown**: per category, how many of its squares counted ("💪 Fitness 3 of 4");
+  the center is not a category square;
+- **Build {Month}'s card**, only while the current month has no card.
+
+Opening the recap marks it seen. Until then Today shows a banner, "🎉 Your {Month} recap is
+ready", linking to it with a **Dismiss** button (a form post, so it works without JavaScript). Only
+the newest unseen result gets a banner.
+
+**History** (`/me/history`, linked from Me): finished months newest first, "October 2026 · 380
+points · Bingo, 5 squares", each opening its recap. Empty: "No finished months yet. Your first
+recap arrives on the 4th of next month."
+
+Group rank joins the recap with groups in M8.
 
 ### 4.12 Admin (admins only)
 
@@ -434,7 +461,7 @@ Dependencies point downward only.
 | `group_member`                                                                                              | `groupId`, `userId`, `role` (`owner` \| `member`), `joinedAt`; unique (`groupId`, `userId`)                                                                                                 |
 | `feed_event`                                                                                                | `id`, `userId`, `cardId`, `type`, `payload` (JSON), `createdAt`                                                                                                                             |
 | `reaction`                                                                                                  | `feedEventId`, `userId`, `emoji`; unique (`feedEventId`, `userId`)                                                                                                                          |
-| `month_result`                                                                                              | `userId`, `month`, `points`, `lines`, `tiers`, `squaresCounting`, `size`; unique (`userId`, `month`)                                                                                        |
+| `month_result`                                                                                              | `userId`, `month`, `points`, `lines`, `tiers`, `squaresCounting`, `size`, `seenAt` (null until the recap is opened); unique (`userId`, `month`)                                             |
 | `calendar_connection`                                                                                       | `userId` (unique), `googleCalendarId`, `status` (`connected` \| `needsReconnect`), `connectedAt`                                                                                            |
 | `calendar_event`                                                                                            | `cardId`, `kind` (`editLock` \| `lastDay` \| `buildNext` \| `backfillDeadline` \| `recap`), `googleEventId`; unique (`cardId`, `kind`)                                                      |
 
