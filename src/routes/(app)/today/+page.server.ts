@@ -75,7 +75,7 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 			days,
 			sections,
 			// The card's score, so a log that completes a line can celebrate here too (spec §4.7).
-			score: (await cardView(db, user.id, card, today)).score,
+			score: (await cardView(db, user.id, card, today, checkIns)).score,
 			rewards: card.rewards,
 			sixtyThreshold: CARD_SIZES[card.size].sixtyThreshold
 		},

@@ -4,7 +4,7 @@ import { signInFailure, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import type { Auth } from './create-auth.ts';
 import { createInvite } from './invites.ts';
-import { isLockedOut, recordFailure } from './sign-in-throttle.ts';
+import { reserveAttempt } from './sign-in-throttle.ts';
 import {
 	LOCKED_OUT_MESSAGE,
 	safeNextPath,
@@ -100,11 +100,11 @@ describe('signInWithPassword', () => {
 	});
 
 	it('a successful sign-in clears the failure count', async () => {
-		for (let i = 0; i < 4; i++) await recordFailure(db, 'zach_s', now);
+		for (let i = 0; i < 4; i++) await reserveAttempt(db, 'zach_s', now);
 		expect(await signIn('Zach_S', PASSWORD)).toEqual({ ok: true });
 		expect(await failures()).toBe(0);
 		await signIn('zach_s', 'not the right password');
-		expect(await isLockedOut(db, 'zach_s', now)).toBe(false);
+		expect(await failures()).toBe(1);
 	});
 
 	it('a user with no password fails like a wrong password, after a hash', async () => {
@@ -139,7 +139,7 @@ describe('signInWithPassword', () => {
 		const locked = results.filter((r) => !r.ok && r.message === LOCKED_OUT_MESSAGE);
 		expect(locked.length).toBe(10 - signInUsername.mock.calls.length);
 		expect(await failures()).toBeLessThanOrEqual(5);
-		expect(await isLockedOut(db, 'zach_s', now)).toBe(true);
+		expect(await signIn('zach_s', PASSWORD)).toEqual({ ok: false, message: LOCKED_OUT_MESSAGE });
 	});
 });
 
