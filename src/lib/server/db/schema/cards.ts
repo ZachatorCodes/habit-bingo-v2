@@ -87,3 +87,25 @@ export const cardDraft = pgTable(
 	},
 	(table) => [primaryKey({ columns: [table.userId, table.month] })]
 );
+
+/**
+ * A finished month's score, saved once when the month turns final (spec §3.8), so later rule
+ * changes or a late next-month card never rewrite it. `seenAt` drives Today's recap banner.
+ */
+export const monthResult = pgTable(
+	'month_result',
+	{
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		month: text('month').notNull(),
+		points: integer('points').notNull(),
+		lines: integer('lines').notNull(),
+		tiers: text('tiers').array().notNull(),
+		squaresCounting: integer('squares_counting').notNull(),
+		size: integer('size').notNull(),
+		seenAt: timestamp('seen_at', { withTimezone: true }),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [primaryKey({ columns: [table.userId, table.month] })]
+);

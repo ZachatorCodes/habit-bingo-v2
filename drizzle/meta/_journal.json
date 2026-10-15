@@ -64,6 +64,13 @@
       "when": 1791858648241,
       "tag": "0008_check_ins",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792087901499,
+      "tag": "0009_month_result",
+      "breakpoints": true
     }
   ]
 }
