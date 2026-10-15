@@ -36,7 +36,9 @@ export async function cardView(
 		known ?? getCheckIns(db, card.id)
 	]);
 	// The center square: free until the last 7 days, then it leads to next month's card.
-	const state = centerState(card.month, today, nextCard !== null);
+	// Only a next card built by the 3rd completes the center (spec §3.5): one built later starts later.
+	const builtInTime = nextCard !== null && nextCard.startDate <= `${nextMonth(card.month)}-03`;
+	const state = centerState(card.month, today, builtInTime);
 	const center: ViewSquare =
 		today < nextMonthOpens(card.month)
 			? { emoji: '⭐', name: 'Free', state, points: 0 }

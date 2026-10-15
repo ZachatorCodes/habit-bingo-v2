@@ -12,7 +12,8 @@
 			No finished months yet. Your first recap arrives on the 4th of next month.
 		</p>
 	{:else}
-		<ul class="flex flex-col gap-2">
+		<!-- Opening a recap marks it seen, so a hover must not load it. -->
+		<ul class="flex flex-col gap-2" data-sveltekit-preload-data="off">
 			{#each data.months as { month, name, points, tiers } (month)}
 				<li>
 					<a

@@ -121,6 +121,18 @@ describe('finalizeMonths', () => {
 		expect((await getResult(db, late.id, '2026-10'))?.squaresCounting).toBe(0);
 	});
 
+	it("a next card built after the 3rd doesn't count the center, even before finalizing", async () => {
+		// Away Nov 1–5: the card is built on Nov 5, and October is finalized only after that.
+		const away = await makeUser();
+		const october = await cardFor(away, OCT_1);
+		await cardFor(away, '2026-11-05T09:00:00Z');
+		await finalizeMonths(db, away.id, '2026-11-05');
+		expect((await getResult(db, away.id, '2026-10'))?.squaresCounting).toBe(0);
+		// The recap's board agrees with the saved result.
+		const { squares } = await cardView(db, away.id, october, '2026-11-05');
+		expect(squares[CARD_SIZES[3].centerPosition].state).toBe('buildNext');
+	});
+
 	it('two at once save one result', async () => {
 		const me = await makeUser();
 		await cardFor(me, OCT_1);

@@ -59,6 +59,7 @@
 		<div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-earn px-4 py-3">
 			<a
 				href={resolve('/(app)/me/history/[month]', { month: data.recap.month })}
+				data-sveltekit-preload-data="off"
 				class="font-extrabold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 				>🎉 Your {data.recap.monthName} recap is ready</a
 			>

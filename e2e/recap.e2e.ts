@@ -61,6 +61,17 @@ test('a recap that does not exist is not found', async ({ page }) => {
 	}
 });
 
+test('hovering the banner does not mark the recap seen', async ({ page }) => {
+	await octoberCard(page);
+	await setClock(page, '2026-11-04T12:00:00Z');
+	await page.goto('/today');
+	await waitForHydration(page);
+	await banner(page).hover();
+	await page.waitForTimeout(500);
+	await page.reload();
+	await expect(banner(page)).toBeVisible();
+});
+
 test('Dismiss hides the banner without opening the recap', async ({ page }) => {
 	await octoberCard(page);
 	await setClock(page, '2026-11-04T12:00:00Z');
