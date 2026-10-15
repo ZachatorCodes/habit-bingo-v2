@@ -83,6 +83,18 @@
 		<span aria-hidden="true" class="text-xl">→</span>
 	</a>
 
+	<a
+		href={resolve('/(app)/me/history')}
+		class="flex items-center gap-4 rounded-2xl border-2 border-line bg-white p-5 shadow-[0_3px_0_var(--color-line)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+	>
+		<span aria-hidden="true" class="text-3xl">🗓️</span>
+		<span class="flex-1">
+			<span class="block text-lg font-black">History</span>
+			<span class="block text-ink/75">Your finished months and their recaps.</span>
+		</span>
+		<span aria-hidden="true" class="text-xl">→</span>
+	</a>
+
 	<section aria-labelledby="profile-heading" class="flex flex-col gap-3">
 		<h2 id="profile-heading" class="text-xl font-black">Profile</h2>
 		<form method="POST" action="?/profile" class={card} use:enhance={focusResult(false)}>
