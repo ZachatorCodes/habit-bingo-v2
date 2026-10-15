@@ -81,6 +81,17 @@ describe('progressText', () => {
 		);
 	});
 
+	it("last month's rows, backfilled on the 1st–3rd, say the month is over", () => {
+		const NOV_1 = '2026-11-01';
+		const read = rule('atLeast', 'month', 'times', 10);
+		expect(progressText(read, span, counts({ '2026-10-02': 4 }), '2026-10-31', NOV_1)).toBe(
+			'6 more · last month'
+		);
+		// Oct 26–31 is the card's last (clipped) week.
+		const gym = rule('atLeast', 'week', 'days', 3);
+		expect(progressText(gym, span, counts({}), '2026-10-31', NOV_1)).toBe('3 more · last month');
+	});
+
 	it('limits read as slips against the limit', () => {
 		expect(progressText(rule('atMost', 'day', 'times', 1), span, counts({}), TODAY, TODAY)).toBe(
 			'0 of 1 today'

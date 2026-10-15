@@ -1,6 +1,5 @@
-import { and, eq, gt, sql } from 'drizzle-orm';
-import { canLog } from '#lib/game/backfill.ts';
-import { monthOf } from '#lib/game/calendar.ts';
+import { and, eq, gt, inArray, sql } from 'drizzle-orm';
+import { backfillMonths, canLog } from '#lib/game/backfill.ts';
 import { localDate } from '#lib/server/clock.ts';
 import type { Db } from '#lib/server/db/client.ts';
 import { card, cardSquare, checkIn } from '#lib/server/db/schema.ts';
@@ -32,7 +31,7 @@ type CheckInResult =
 
 /**
  * Whether the person may change check-ins on this square and date: null when it isn't a habit
- * square of their current-month card (the route answers 404); a refusal outside today and the 3
+ * square of their card for this month, or last month's on the 1st–3rd (the route answers 404); a refusal outside today and the 3
  * days before, inside the card's span (spec §3.1); otherwise ok.
  */
 async function checkLoggable(
@@ -52,7 +51,7 @@ async function checkLoggable(
 				eq(cardSquare.id, squareId),
 				eq(cardSquare.isCenter, false),
 				eq(card.userId, user.id),
-				eq(card.month, monthOf(today))
+				inArray(card.month, backfillMonths(today))
 			)
 		);
 	if (!square) return null;

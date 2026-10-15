@@ -1,13 +1,13 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { TEST_CLOCK } from '$app/env/private';
-import { backfillDates } from '#lib/game/backfill.ts';
-import { monthName } from '#lib/game/calendar.ts';
+import { backfillDates, backfillMonths } from '#lib/game/backfill.ts';
+import { monthName, monthOf } from '#lib/game/calendar.ts';
 import { CARD_SIZES } from '#lib/game/card-layout.ts';
 import { evaluateSquare } from '#lib/game/evaluate.ts';
 import { progressText, todaySection, type TodaySection } from '#lib/game/today.ts';
 import type { TodayRowData } from '#lib/components/TodayRow.svelte';
 import { requireUser } from '#lib/server/auth/guards.ts';
-import { currentMonth, getCard } from '#lib/server/cards.ts';
+import { getCard, type Card } from '#lib/server/cards.ts';
 import { cardView } from '#lib/server/card-view.ts';
 import { getCheckIns, logCheckIn, MAX_COUNT } from '#lib/server/check-ins.ts';
 import { localDate, requestNow } from '#lib/server/clock.ts';
@@ -25,15 +25,20 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 	const db = requireDb();
 	const timezone = user.timezone ?? 'UTC';
 	const now = requestNow(cookies, TEST_CLOCK);
-	const month = currentMonth({ timezone }, now);
-	const card = await getCard(db, user.id, month);
-	if (!card) return { monthName: monthName(month), card: null };
-
 	const today = localDate(now, timezone);
-	const days = backfillDates(today, card.startDate);
+	const month = monthOf(today);
+	// This month's card, and on the 1st–3rd last month's too, for its last days (spec §3.8).
+	const cards = (
+		await Promise.all(backfillMonths(today).map((m) => getCard(db, user.id, m)))
+	).filter((c): c is Card => c !== null);
+	const buildCard = !cards.some((c) => c.month === month);
+	const days = cards.flatMap((c) => backfillDates(today, c.startDate));
+	if (days.length === 0) return { monthName: monthName(month), buildCard, card: null };
+
 	const asked = url.searchParams.get('day');
-	// Only the backfill window can be logged; anything else shows today.
-	const day = asked && days.includes(asked) ? asked : today;
+	// Only the backfill window can be logged; anything else shows the newest day.
+	const day = asked && days.includes(asked) ? asked : days[0];
+	const card = cards.find((c) => c.month === monthOf(day))!;
 	const checkIns = await getCheckIns(db, card.id);
 
 	const sections: Record<TodaySection, TodayRowData[]> = {
@@ -70,7 +75,9 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 	}
 	return {
 		monthName: monthName(month),
+		buildCard,
 		card: {
+			id: card.id,
 			today,
 			day,
 			days,
@@ -81,7 +88,7 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 			sixtyThreshold: CARD_SIZES[card.size].sixtyThreshold
 		},
 		/** The page's own query, carried through the log/unlog actions. */
-		keep: day === today ? '' : `&day=${day}`
+		keep: day === days[0] ? '' : `&day=${day}`
 	};
 };
 

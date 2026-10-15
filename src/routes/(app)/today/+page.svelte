@@ -21,14 +21,17 @@
 	// celebrate; a page load or a drop never does.
 	let celebration = $state<{ lines: number[][]; tiers: Tier[] } | null>(null);
 	let lastScore: CardScore | null = null;
+	let lastCardId: string | null = null;
 	$effect(() => {
 		const score = data.card?.score;
 		if (!score) return;
-		if (lastScore) {
+		// Switching to last month's days shows another card's score: not a gain.
+		if (lastScore && lastCardId === data.card?.id) {
 			const gained = newlyCompleted(lastScore, score);
 			if (gained.lines.length > 0 || gained.tiers.length > 0) celebration = gained;
 		}
 		lastScore = score;
+		lastCardId = data.card?.id ?? null;
 	});
 
 	const groups = [
@@ -41,7 +44,7 @@
 <section class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
 	<div class="flex flex-wrap items-baseline justify-between gap-2">
 		<h1 class="text-3xl leading-tight font-black">Today</h1>
-		{#if data.card}
+		{#if !data.buildCard}
 			<a
 				href={resolve('/(app)/card')}
 				class="font-bold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
@@ -50,13 +53,14 @@
 		{/if}
 	</div>
 
-	{#if !data.card}
+	{#if data.buildCard}
 		<div class="flex flex-col items-center gap-4 py-8 text-center">
 			<div class="text-5xl" aria-hidden="true">🎯</div>
 			<p class="text-lg text-ink/75">No card yet.</p>
 			<Button href={resolve('/(app)/card/build')}>Build one</Button>
 		</div>
-	{:else}
+	{/if}
+	{#if data.card}
 		{@const { day, days, today, sections } = data.card}
 		<DaySwitcher {days} selected={day} {today} />
 		{#if message}

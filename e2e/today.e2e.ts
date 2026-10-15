@@ -139,6 +139,28 @@ test('all done today', async ({ page }) => {
 	await expect(page.getByText('All done today 🎉')).toBeVisible();
 });
 
+test("on the 1st–3rd, last month's last days can still be logged", async ({ page }) => {
+	await newMemberWithHabits(page, 8);
+	await setClock(page, OCT_15);
+	await startCard(page);
+	await setClock(page, '2026-11-01T12:00:00Z');
+	await page.goto('/today');
+	await waitForHydration(page);
+	// No November card yet: build one, or finish October.
+	await expect(page.getByRole('link', { name: 'Build one' })).toBeVisible();
+	const days = page.getByRole('navigation', { name: 'Day' }).getByRole('link');
+	await expect(days).toHaveText(['Yesterday', 'Friday', 'Thursday']);
+	await page.getByRole('button', { name: 'Log Drink water' }).click();
+	await expect(section(page, 'Do today').filter({ hasText: 'Drink water' })).toContainText(
+		'1/8 on Saturday'
+	);
+
+	await setClock(page, '2026-11-04T12:00:00Z');
+	await page.goto('/today');
+	await expect(page.getByRole('link', { name: 'Build one' })).toBeVisible();
+	await expect(page.getByRole('navigation', { name: 'Day' })).toHaveCount(0);
+});
+
 test('no card yet', async ({ page }) => {
 	await newMember(page);
 	await page.goto('/today');

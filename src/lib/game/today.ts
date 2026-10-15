@@ -44,19 +44,23 @@ export function progressText(
 		const { required, progress, end } = weekProgress(rule, span, counts, day);
 		if (rule.direction === 'atMost' || progress >= required)
 			return `${progress} of ${required} this week`;
-		return `${required - progress} more · ${end < today ? 'last week' : daysLeft(today, end)}`;
+		return `${required - progress} more · ${left(today, end, 'last week')}`;
 	}
 	// Check-ins only exist inside the card's month, up to today.
 	const progress = progressBetween(rule, counts, span.startDate, today);
 	if (rule.direction === 'atMost' || progress >= rule.target)
 		return `${progress} of ${rule.target} this month`;
-	return `${rule.target - progress} more · ${daysLeft(today, lastDayOf(monthOf(today)))}`;
+	return `${rule.target - progress} more · ${left(today, lastDayOf(monthOf(span.startDate)), 'last month')}`;
 }
 
-/** "6 days left", counting `from` itself. */
-function daysLeft(from: string, to: string): string {
+/**
+ * "6 days left" until `end`, counting today; once it has passed, `past` ("last week"), or "last
+ * month" for last month's card on the 1st–3rd.
+ */
+function left(today: string, end: string, past: string): string {
+	if (end < today) return monthOf(end) < monthOf(today) ? 'last month' : past;
 	let days = 0;
-	for (let d = from; d <= to; d = addDays(d, 1)) days++;
+	for (let d = today; d <= end; d = addDays(d, 1)) days++;
 	return days === 1 ? '1 day left' : `${days} days left`;
 }
 

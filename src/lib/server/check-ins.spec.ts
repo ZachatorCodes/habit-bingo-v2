@@ -151,11 +151,24 @@ describe('logCheckIn', () => {
 		}
 	});
 
+	it("logs last month's last days on the 1st–3rd, then locks them (spec §3.8)", async () => {
+		const me = await makeUser();
+		const { id } = habitSquare(await cardFor(me, await makeHabits(me.id, 8), OCT_1));
+		const NOV_1 = new Date('2026-11-01T09:00:00Z');
+		expect(await logCheckIn(db, me, id, '2026-10-29', 1, NOV_1)).toEqual({ ok: true, count: 1 });
+		expect(await logCheckIn(db, me, id, '2026-11-01', 1, NOV_1)).toMatchObject({ ok: false });
+		const NOV_3 = new Date('2026-11-03T09:00:00Z');
+		expect(await logCheckIn(db, me, id, '2026-10-31', 1, NOV_3)).toEqual({ ok: true, count: 1 });
+		expect(await logCheckIn(db, me, id, '2026-10-30', 1, NOV_3)).toMatchObject({ ok: false });
+		const NOV_4 = new Date('2026-11-04T09:00:00Z');
+		expect(await logCheckIn(db, me, id, '2026-10-31', 1, NOV_4)).toBeNull();
+	});
+
 	it("uses the person's own today", async () => {
 		const me = await makeUser('Pacific/Kiritimati');
 		const card = await cardFor(me, await makeHabits(me.id, 8), OCT_1);
-		// 2026-10-31T11:30Z is already November 1 in Kiritimati: no current card to log on.
-		const at = new Date('2026-10-31T11:30:00Z');
+		// 2026-11-03T11:30Z is already November 4 in Kiritimati: October is closed.
+		const at = new Date('2026-11-03T11:30:00Z');
 		expect(await logCheckIn(db, me, habitSquare(card).id, '2026-10-31', 1, at)).toBeNull();
 	});
 });
