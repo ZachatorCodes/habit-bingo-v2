@@ -30,10 +30,10 @@ describe('todaySection', () => {
 		expect(todaySection(water, span, counts({ [TODAY]: 8 }), '2026-10-19')).toBe('doToday');
 	});
 
-	it('week habits are to do until the week is met', () => {
+	it('week habits are this week until the week is met', () => {
 		const gym = rule('atLeast', 'week', 'days', 3);
 		const two = counts({ '2026-10-19': 1, '2026-10-20': 1 });
-		expect(todaySection(gym, span, two, TODAY)).toBe('doToday');
+		expect(todaySection(gym, span, two, TODAY)).toBe('thisWeek');
 		expect(
 			todaySection(gym, span, counts({ ...Object.fromEntries(two), '2026-10-21': 1 }), '2026-10-21')
 		).toBe('done');
@@ -49,22 +49,36 @@ describe('progressText', () => {
 		);
 	});
 
-	it('week habits count the week, clipped to the card', () => {
+	it('week habits say how many more and how many days are left, clipped to the card', () => {
 		const gym = rule('atLeast', 'week', 'days', 3);
+		// Tuesday through Sunday is 6 days, counting today.
 		expect(progressText(gym, span, counts({ '2026-10-19': 1, [TODAY]: 1 }), TODAY, TODAY)).toBe(
-			'2 of 3 this week'
+			'1 more · 6 days left'
 		);
 		// Oct 1–4 is a 4-day stub week needing 2.
 		expect(progressText(gym, span, counts({}), '2026-10-02', '2026-10-02')).toBe(
-			'0 of 2 this week'
+			'2 more · 3 days left'
 		);
+		expect(progressText(gym, span, counts({}), '2026-10-25', '2026-10-25')).toBe(
+			'3 more · 1 day left'
+		);
+		// Backfilling last Sunday: its week is over.
+		expect(progressText(gym, span, counts({ '2026-10-12': 1 }), '2026-10-18', TODAY)).toBe(
+			'2 more · last week'
+		);
+		const met = counts({ '2026-10-19': 1, [TODAY]: 1, '2026-10-21': 1 });
+		expect(progressText(gym, span, met, TODAY, TODAY)).toBe('3 of 3 this week');
 	});
 
-	it('month habits count the month', () => {
+	it('month habits say how many more and how many days are left', () => {
 		const read = rule('atLeast', 'month', 'times', 10);
+		// Oct 20–31 is 12 days, counting today.
 		expect(
 			progressText(read, span, counts({ '2026-10-02': 3, '2026-10-12': 1 }), TODAY, TODAY)
-		).toBe('4 of 10 this month');
+		).toBe('6 more · 12 days left');
+		expect(progressText(read, span, counts({ '2026-10-02': 12 }), TODAY, TODAY)).toBe(
+			'12 of 10 this month'
+		);
 	});
 
 	it('limits read as slips against the limit', () => {

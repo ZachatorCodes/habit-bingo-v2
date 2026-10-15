@@ -32,6 +32,7 @@
 	});
 
 	const groups = [
+		{ key: 'thisWeek', heading: 'This week' },
 		{ key: 'anytime', heading: 'Anytime this month' },
 		{ key: 'slip', heading: 'Log a slip' }
 	] as const;

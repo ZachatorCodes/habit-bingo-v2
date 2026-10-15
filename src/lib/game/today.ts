@@ -1,16 +1,16 @@
-import { weekday } from './calendar.ts';
+import { addDays, lastDayOf, monthOf, weekday } from './calendar.ts';
 import { progressBetween, type CardSpan, type Counts } from './evaluate.ts';
 import type { HabitRule } from './habit-rules.ts';
 import { clippedWeeks, weekOf } from './weeks.ts';
 
 /** Where a habit appears on Today (spec §4.5). */
-export type TodaySection = 'doToday' | 'done' | 'anytime' | 'slip';
+export type TodaySection = 'doToday' | 'thisWeek' | 'done' | 'anytime' | 'slip';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /**
- * Limits are slips, earn squares are "anytime this month", and day and week habits are "do today"
- * until `day` (or its week) is met, then "done".
+ * Limits are slips, earn squares are "anytime this month", day habits are "do today" and week
+ * habits "this week" until `day` (or its week) is met, then "done".
  */
 export function todaySection(
 	rule: HabitRule,
@@ -22,10 +22,10 @@ export function todaySection(
 	if (rule.period === 'month') return 'anytime';
 	if (rule.period === 'day') return (counts.get(day) ?? 0) >= rule.target ? 'done' : 'doToday';
 	const { required, progress } = weekProgress(rule, span, counts, day);
-	return progress >= required ? 'done' : 'doToday';
+	return progress >= required ? 'done' : 'thisWeek';
 }
 
-/** The row's progress, e.g. "5/8 today", "2 of 3 this week", "1 of 3 this month". */
+/** The row's progress, e.g. "5/8 today", "1 more · 6 days left", "1 of 3 this month" (a limit). */
 export function progressText(
 	rule: HabitRule,
 	span: CardSpan,
@@ -41,11 +41,23 @@ export function progressText(
 			: `${count} of ${rule.target} ${when}`;
 	}
 	if (rule.period === 'week') {
-		const { required, progress } = weekProgress(rule, span, counts, day);
-		return `${progress} of ${required} this week`;
+		const { required, progress, end } = weekProgress(rule, span, counts, day);
+		if (rule.direction === 'atMost' || progress >= required)
+			return `${progress} of ${required} this week`;
+		return `${required - progress} more · ${end < today ? 'last week' : daysLeft(today, end)}`;
 	}
 	// Check-ins only exist inside the card's month, up to today.
-	return `${progressBetween(rule, counts, span.startDate, today)} of ${rule.target} this month`;
+	const progress = progressBetween(rule, counts, span.startDate, today);
+	if (rule.direction === 'atMost' || progress >= rule.target)
+		return `${progress} of ${rule.target} this month`;
+	return `${rule.target - progress} more · ${daysLeft(today, lastDayOf(monthOf(today)))}`;
+}
+
+/** "6 days left", counting `from` itself. */
+function daysLeft(from: string, to: string): string {
+	let days = 0;
+	for (let d = from; d <= to; d = addDays(d, 1)) days++;
+	return days === 1 ? '1 day left' : `${days} days left`;
 }
 
 /** The clipped week holding `day`, with progress over it (dates up to `day`'s week end). */
@@ -53,5 +65,5 @@ function weekProgress(rule: HabitRule, span: CardSpan, counts: Counts, day: stri
 	const week = weekOf(clippedWeeks(rule, span.startDate, span.weekStartsOn), day);
 	// `day` is always inside the card's span, so it has a week.
 	const { start, end, required } = week!;
-	return { required, progress: progressBetween(rule, counts, start, end) };
+	return { required, end, progress: progressBetween(rule, counts, start, end) };
 }

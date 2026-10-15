@@ -38,6 +38,7 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 
 	const sections: Record<TodaySection, TodayRowData[]> = {
 		doToday: [],
+		thisWeek: [],
 		done: [],
 		anytime: [],
 		slip: []

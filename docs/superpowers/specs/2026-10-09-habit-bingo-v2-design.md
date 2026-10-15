@@ -277,9 +277,12 @@ same sections; Today and Card side-by-side where width allows.
 
 ### 4.5 Today
 
-Sections: **Do today** (day habits not yet met today; week habits still short this week),
-**Anytime this month** (earn squares), **Log a slip** (`atMost` habits). Each row: emoji, name,
-progress text (e.g. "5/8 today", "2 of 3 this week"), and an add button that logs one more check-in
+Sections: **Do today** (day habits not yet met today), **This week** (week habits still short
+this week), **Anytime this month** (earn squares), **Log a slip** (`atMost` habits); met day and
+week habits collapse into **Done (n)**. Each row: emoji, name, progress text ("5/8 today"; earn
+habits still short say how many more and the days left, counting today: "2 more · 4 days left",
+"1 more · last week" when backfilling a finished week; met or limit habits: "3 of 3 this week",
+"1 of 3 this month"), and an add button that logs one more check-in
 (long-press or the bottom sheet's stepper to correct). Earlier backfill-window days reachable via a day switcher. Empty states: "No card yet
 → Build one", "All done today 🎉".
 

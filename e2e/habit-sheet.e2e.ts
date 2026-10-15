@@ -63,10 +63,10 @@ test('the days toggle marks and clears a day', async ({ page }) => {
 	await expect(toggle).toHaveAttribute('aria-pressed', 'false');
 	await toggle.click();
 	await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-	await expect(sheet).toContainText('1 of 2 this week');
+	await expect(sheet).toContainText('1 more · 5 days left');
 	await toggle.click();
 	await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-	await expect(sheet).toContainText('0 of 2 this week');
+	await expect(sheet).toContainText('2 more · 5 days left');
 });
 
 test('the sheet works without JavaScript', async ({ page, browser }) => {
