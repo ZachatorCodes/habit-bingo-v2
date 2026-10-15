@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 /** Waits for the page to hydrate, so enhanced forms do not fall back to a native POST. */
 export async function waitForHydration(page: Page): Promise<void> {
@@ -113,4 +113,34 @@ export async function buildAndStartCard(page: Page): Promise<void> {
 	await waitForHydration(page);
 	await page.getByRole('button', { name: 'Start card' }).click();
 	await page.waitForURL(/\/card\?started=1$/);
+}
+
+/** Builds a 3×3 card from the first 8 habits with default targets (needs `newMemberWithHabits`). */
+export async function startCard(page: Page): Promise<void> {
+	await page.goto('/card/build');
+	await expect(page).toHaveURL(/\/card\/build\/size$/);
+	await waitForHydration(page);
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: /3×3/ }) })
+		.click();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+	await waitForHydration(page);
+	const labels = page.locator('label').filter({ has: page.getByRole('checkbox') });
+	for (let i = 0; i < 8; i++) await labels.nth(i).click();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/targets$/);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/rewards$/);
+	await waitForHydration(page);
+	await page.getByLabel('First bingo').fill('Ice cream');
+	await page.getByLabel('5 squares').fill('Movie night');
+	await page.getByLabel('Blackout').fill('A weekend away');
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/board$/);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Start card' }).click();
+	await expect(page).toHaveURL(/\/card\?started=1$/);
 }

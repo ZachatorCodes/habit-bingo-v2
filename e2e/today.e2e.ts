@@ -1,40 +1,17 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { newMember, newMemberWithHabits, setClock, waitForHydration } from './fixtures.ts';
+import {
+	newMember,
+	newMemberWithHabits,
+	setClock,
+	startCard,
+	waitForHydration
+} from './fixtures.ts';
 
 // The first 8 Quick start habits: Finish a book, Go biking, Call an old friend (anytime this
 // month); Meditate, Power clean (2 days a week, this week); Scoop the litter box (every day); Drink water
 // (8 a day); Eat out (a slip). The card starts on Thursday Oct 15; "today" is Tuesday Oct 20.
 const OCT_15 = '2026-10-15T12:00:00Z';
 const OCT_20 = '2026-10-20T12:00:00Z';
-
-async function startCard(page: Page): Promise<void> {
-	await page.goto('/card/build');
-	await expect(page).toHaveURL(/\/card\/build\/size$/);
-	await waitForHydration(page);
-	await page
-		.locator('label')
-		.filter({ has: page.getByRole('radio', { name: /3×3/ }) })
-		.click();
-	await page.getByRole('button', { name: 'Continue' }).click();
-	await expect(page).toHaveURL(/\/card\/build\/habits$/);
-	await waitForHydration(page);
-	const labels = page.locator('label').filter({ has: page.getByRole('checkbox') });
-	for (let i = 0; i < 8; i++) await labels.nth(i).click();
-	await page.getByRole('button', { name: 'Continue' }).click();
-	await expect(page).toHaveURL(/\/card\/build\/targets$/);
-	await waitForHydration(page);
-	await page.getByRole('button', { name: 'Continue' }).click();
-	await expect(page).toHaveURL(/\/card\/build\/rewards$/);
-	await waitForHydration(page);
-	await page.getByLabel('First bingo').fill('Ice cream');
-	await page.getByLabel('5 squares').fill('Movie night');
-	await page.getByLabel('Blackout').fill('A weekend away');
-	await page.getByRole('button', { name: 'Continue' }).click();
-	await expect(page).toHaveURL(/\/card\/build\/board$/);
-	await waitForHydration(page);
-	await page.getByRole('button', { name: 'Start card' }).click();
-	await expect(page).toHaveURL(/\/card\?started=1$/);
-}
 
 /** A member whose card started Oct 15, looking at Today on Oct 20. */
 async function onToday(page: Page): Promise<void> {
