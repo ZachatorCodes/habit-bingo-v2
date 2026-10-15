@@ -2,7 +2,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { newMember, newMemberWithHabits, setClock, waitForHydration } from './fixtures.ts';
 
 // The first 8 Quick start habits: Finish a book, Go biking, Call an old friend (anytime this
-// month); Meditate, Power clean (2 days a week); Scoop the litter box (every day); Drink water
+// month); Meditate, Power clean (2 days a week, this week); Scoop the litter box (every day); Drink water
 // (8 a day); Eat out (a slip). The card starts on Thursday Oct 15; "today" is Tuesday Oct 20.
 const OCT_15 = '2026-10-15T12:00:00Z';
 const OCT_20 = '2026-10-20T12:00:00Z';
@@ -52,11 +52,16 @@ const section = (page: Page, name: string) =>
 test('a new card fills the Today sections', async ({ page }) => {
 	await onToday(page);
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
-	await expect(section(page, 'Do today')).toHaveCount(4);
+	await expect(section(page, 'Do today')).toHaveCount(2);
+	await expect(section(page, 'This week')).toHaveCount(2);
 	await expect(section(page, 'Anytime this month')).toHaveCount(3);
 	await expect(section(page, 'Log a slip')).toHaveCount(1);
 	await expect(section(page, 'Do today').filter({ hasText: 'Drink water' })).toContainText(
 		'0/8 today'
+	);
+	// Tuesday through Saturday (the week starts Sunday) is 5 days.
+	await expect(section(page, 'This week').filter({ hasText: 'Meditate' })).toContainText(
+		'2 more · 5 days left'
 	);
 	await expect(page.getByRole('link', { name: 'See your October card' })).toBeVisible();
 });
@@ -122,7 +127,7 @@ test('all done today', async ({ page }) => {
 	// Week habits need 2 days: today and yesterday.
 	for (const name of ['Meditate', 'Power clean']) {
 		await page.getByRole('button', { name: `Log ${name}` }).click();
-		await expect(page.getByText('1 of 2 this week').first()).toBeVisible();
+		await expect(page.getByText('1 more · 5 days left').first()).toBeVisible();
 	}
 	await page.goto('/today?day=2026-10-19');
 	await waitForHydration(page);
@@ -284,7 +289,7 @@ test('the card header reflects check-ins', async ({ page }) => {
 	await waitForHydration(page);
 	await page.getByRole('button', { name: 'Log Go biking' }).click();
 	await expect(section(page, 'Anytime this month').filter({ hasText: 'Go biking' })).toContainText(
-		'1 of 2 this month'
+		'1 more · 12 days left'
 	);
 	expect(await pointsOf()).toBeGreaterThan(before);
 });
