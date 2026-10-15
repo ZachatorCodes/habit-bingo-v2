@@ -39,7 +39,7 @@ before it is built.
 | M5   | Card view & scoring | Emoji grid + bottom sheet, lines, reward tiers, points, bingo celebration                                                                                                           |
 | M6   | Heads up            | Nudges on Today (§4.8)                                                                                                                                                              |
 | M7   | Month lifecycle     | Closing window, finalization, recap, history                                                                                                                                        |
-| M8   | Groups              | Groups, invite links (also the signup path), leaderboards, viewing members' cards, daily finalization job                                                                           |
+| M8   | Groups              | Groups, invite links (also the signup path), leaderboards, viewing members' cards                                                                                                   |
 | M9   | Feed                | Highlights feed with emoji reactions                                                                                                                                                |
 | M10  | Calendar            | Optional Google Calendar connection; month-milestone events on a dedicated calendar (§4.13)                                                                                         |
 
@@ -228,14 +228,22 @@ cards that is final and has none (insert … on conflict do nothing, so it is id
 is the card's live score as of that day: unmet squares are lost, and the center counts only if
 next month's card was built by the 3rd (§3.5); building it later never changes the saved result.
 The board, highlight and category breakdown are not saved; the recap derives them from the card
-and its check-ins, which no longer change. A daily scheduled job, for people who never open the
-app, arrives with leaderboards in M8.
+and its check-ins, which no longer change. There is no scheduled job: the group leaderboard
+finalizes each member's finished months (in their own timezone) when it is opened (§3.9), which
+covers people who never open the app.
 
 ### 3.9 Leaderboards (M8)
 
-Per group, two tabs: **This month** (default; live derived points, provisional during `closing`)
-and **All-time** (sum of `month_result` points plus the current month's live points). Ties share a
-rank. Members without a card this month appear below those with one.
+Per group, two tabs:
+
+- **This month** (default): each member's live points and lines for their current card, scored on
+  their own local date. Ranked by points; ties share a rank (1, 1, 3). Members without a card this
+  month appear below, unranked, as "No card yet".
+- **All-time:** the sum of each member's `month_result` points plus this month's live points.
+  Opening it first finalizes every member's finished months that have no result (§3.8). On the
+  1st–3rd a note says the previous month is included but final only on the 4th.
+
+The viewer's own row is highlighted. Ranking is a pure function in `src/lib/game/leaderboard.ts`.
 
 ## 4. Screens & flows
 
@@ -341,10 +349,25 @@ linking to where you act:
 
 ### 4.9 Groups (M8) & Feed (M9)
 
-- Groups list → group page with **Leaderboard** (This month / All-time), **Feed**, **Members**.
-- Tap a member → their card, read-only, private habits hidden.
-- Create group; copy invite link; leave group; owner can remove members.
-- A user can belong to many groups. A "friend" is a two-person group.
+- **Groups** (`/groups`, in the main nav between Card and Me): your groups with emoji, name and
+  member count, and **Create a group**. Empty: "No groups yet. Create one, or ask a friend for their
+  invite link." Creating takes a name (1–40 characters) and an emoji; the creator is the owner.
+- **Group page** (`/groups/{id}`): **Leaderboard** (This month / All-time, §3.9) and **Members**
+  (the Feed tab arrives in M9). The invite link sits in a copy field; the owner can **Reset link**
+  (confirm), which retires the old link. Members show an "Owner" tag; the owner can **Remove** others
+  (confirm). **Leave group** (confirm) says what happens: ownership passes to the earliest-joined
+  member, or the group is deleted when its last member leaves.
+- **A member's card** (`/groups/{id}/members/{userId}`): their current card, read-only (no habit
+  sheet, no next-month link), with points, lines and percent counting. Private habits show 🔒 in
+  place of their name and emoji; rewards are not shown. No card: "No {Month} card yet."
+- **Invite links:** one standing link per group, any member can copy it, it does not expire; the
+  owner can reset it. A group holds at most 50 members. For a new person the link is the sign-up
+  path: after onboarding they are in the group. A signed-in person opening it sees "Join {group}"
+  (emoji, name, member count) and a **Join** button; nothing happens until they press it. A reset
+  or deleted link says "This invite link no longer works."
+- A user can belong to many groups. A "friend" is a two-person group. Anyone outside a group gets a
+  404 for its pages and its members' cards. Renaming a group and handing over ownership by hand are
+  not in M8.
 - **Feed (highlights only):** square completed, bingo, reward tier first reached, blackout, new card
   started. Private habits are never named. Individual check-ins are not posted.
 - **Reactions:** one emoji reaction per user per feed item, from a small fixed set.
@@ -383,7 +406,7 @@ the newest unseen result gets a banner.
 points · Bingo, 5 squares", each opening its recap. Empty: "No finished months yet. Your first
 recap arrives on the 4th of next month."
 
-Group rank joins the recap with groups in M8.
+Group rank is not part of the recap: with several groups it is ambiguous, and the leaderboard shows it.
 
 ### 4.12 Admin (admins only)
 
@@ -459,7 +482,7 @@ Dependencies point downward only.
 | `card_square`                                                                                               | `id`, `cardId`, `position`, `isCenter`, `habitId?`, snapshot fields (`emoji`, `name`, `category`, `direction`, `period`, `countMode`, `target`, `isPrivate`); unique (`cardId`, `position`) |
 | `card_draft`                                                                                                | `userId`, `month`, `data` (JSON: builder progress), `updatedAt`; unique (`userId`, `month`)                                                                                                 |
 | `check_in`                                                                                                  | `id`, `squareId`, `date` (`YYYY-MM-DD`), `count` (1–20), `updatedAt`; unique (`squareId`, `date`)                                                                                           |
-| `group`                                                                                                     | `id`, `name`, `emoji`, `createdBy`                                                                                                                                                          |
+| `group`                                                                                                     | `id`, `name`, `emoji`, `createdBy`, `createdAt`; a group's invite link is an `invite` row with its `groupId`                                                                                |
 | `group_member`                                                                                              | `groupId`, `userId`, `role` (`owner` \| `member`), `joinedAt`; unique (`groupId`, `userId`)                                                                                                 |
 | `feed_event`                                                                                                | `id`, `userId`, `cardId`, `type`, `payload` (JSON), `createdAt`                                                                                                                             |
 | `reaction`                                                                                                  | `feedEventId`, `userId`, `emoji`; unique (`feedEventId`, `userId`)                                                                                                                          |
