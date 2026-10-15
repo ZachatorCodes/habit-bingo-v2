@@ -21,18 +21,19 @@ export type ViewSquare = {
 
 /**
  * A card as of `today`: every square's live state and points (the center by spec §3.5) and the
- * card's score (§3.6–§3.7). Shared by the card and Today.
+ * card's score (§3.6–§3.7). Shared by the card and Today, which passes the check-ins it already has.
  */
 export async function cardView(
 	db: Db,
 	userId: string,
 	card: Card,
-	today: string
+	today: string,
+	known?: Awaited<ReturnType<typeof getCheckIns>>
 ): Promise<{ squares: ViewSquare[]; score: CardScore; nextMonthName: string }> {
 	const next = monthName(nextMonth(card.month));
 	const [nextCard, checkIns] = await Promise.all([
 		getCard(db, userId, nextMonth(card.month)),
-		getCheckIns(db, card.id)
+		known ?? getCheckIns(db, card.id)
 	]);
 	// The center square: free until the last 7 days, then it leads to next month's card.
 	const state = centerState(card.month, today, nextCard !== null);
