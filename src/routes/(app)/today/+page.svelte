@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
 	import DaySwitcher from '#lib/components/DaySwitcher.svelte';
@@ -53,6 +55,31 @@
 		{/if}
 	</div>
 
+	{#if data.recap}
+		<div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-earn px-4 py-3">
+			<a
+				href={resolve('/(app)/me/history/[month]', { month: data.recap.month })}
+				class="font-extrabold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+				>🎉 Your {data.recap.monthName} recap is ready</a
+			>
+			<form
+				method="POST"
+				action="?/dismissRecap{data.keep ?? ''}"
+				use:enhance={() =>
+					async ({ result, update }) => {
+						if (result.type === 'redirect') await invalidateAll();
+						else await update();
+					}}
+			>
+				<input type="hidden" name="month" value={data.recap.month} />
+				<button
+					type="submit"
+					class="rounded-xl px-2 py-1 font-bold underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+					>Dismiss</button
+				>
+			</form>
+		</div>
+	{/if}
 	{#if data.buildCard}
 		<div class="flex flex-col items-center gap-4 py-8 text-center">
 			<div class="text-5xl" aria-hidden="true">🎯</div>

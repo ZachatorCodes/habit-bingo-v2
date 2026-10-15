@@ -12,6 +12,7 @@ import { cardView } from '#lib/server/card-view.ts';
 import { getCheckIns, logCheckIn, MAX_COUNT } from '#lib/server/check-ins.ts';
 import { localDate, requestNow } from '#lib/server/clock.ts';
 import { getDb } from '#lib/server/db/client.ts';
+import { finalizeMonths, markSeen, newestUnseen } from '#lib/server/month-results.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 function requireDb() {
@@ -32,8 +33,12 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 		await Promise.all(backfillMonths(today).map((m) => getCard(db, user.id, m)))
 	).filter((c): c is Card => c !== null);
 	const buildCard = !cards.some((c) => c.month === month);
+	// A finished month's recap waits behind a banner until it is opened or dismissed (spec §4.11).
+	await finalizeMonths(db, user.id, today);
+	const unseen = await newestUnseen(db, user.id);
+	const recap = unseen && { month: unseen.month, monthName: monthName(unseen.month) };
 	const days = cards.flatMap((c) => backfillDates(today, c.startDate));
-	if (days.length === 0) return { monthName: monthName(month), buildCard, card: null };
+	if (days.length === 0) return { monthName: monthName(month), buildCard, recap, card: null };
 
 	const asked = url.searchParams.get('day');
 	// Only the backfill window can be logged; anything else shows the newest day.
@@ -76,6 +81,7 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 	return {
 		monthName: monthName(month),
 		buildCard,
+		recap,
 		card: {
 			id: card.id,
 			today,
@@ -119,5 +125,14 @@ async function log(
 
 export const actions: Actions = {
 	log: (event) => log(event, 1),
-	unlog: (event) => log(event, -1)
+	unlog: (event) => log(event, -1),
+	dismissRecap: async ({ locals, cookies, request, url }) => {
+		const user = requireUser(locals);
+		const month = (await request.formData()).get('month');
+		if (typeof month === 'string') {
+			await markSeen(requireDb(), user.id, month, requestNow(cookies, TEST_CLOCK));
+		}
+		const day = url.searchParams.get('day');
+		redirect(303, day ? `/today?day=${encodeURIComponent(day)}` : '/today');
+	}
 };
