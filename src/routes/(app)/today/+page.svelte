@@ -88,6 +88,31 @@
 			<Button href={resolve('/(app)/card/build')}>Build one</Button>
 		</div>
 	{/if}
+	{#if data.headsUp?.length}
+		<section aria-labelledby="heads-up" class="flex flex-col gap-2">
+			<h2 id="heads-up" class="text-xl font-black">Heads up</h2>
+			<ul class="flex flex-col gap-2">
+				{#each data.headsUp as nudge (nudge.text)}
+					<li>
+						<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve() can't carry the ?day= query -->
+						<a
+							href={nudge.to.kind === 'sheet'
+								? resolve('/(app)/card/squares/[id]', { id: nudge.to.squareId })
+								: nudge.to.kind === 'day'
+									? `${resolve('/(app)/today')}?day=${nudge.to.date}`
+									: nudge.to.kind === 'next'
+										? resolve('/(app)/card/next')
+										: resolve('/(app)/card')}
+							data-sveltekit-preload-data={nudge.to.kind === 'next' ? 'off' : undefined}
+							class="block rounded-2xl border-2 border-line bg-white px-4 py-3 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+							>{nudge.text}</a
+						>
+						<!-- eslint-enable svelte/no-navigation-without-resolve -->
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
 	{#if data.card}
 		{@const { day, days, today, sections } = data.card}
 		<DaySwitcher {days} selected={day} {today} />

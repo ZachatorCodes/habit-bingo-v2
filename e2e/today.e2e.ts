@@ -138,6 +138,28 @@ test("on the 1st–3rd, last month's last days can still be logged", async ({ pa
 	await expect(page.getByRole('navigation', { name: 'Day' })).toHaveCount(0);
 });
 
+test('heads up points at what needs doing today', async ({ page }) => {
+	await newMemberWithHabits(page, 8);
+	await setClock(page, OCT_15);
+	await startCard(page);
+	// Oct 16: the two daily habits weren't logged on Oct 15, which can still be backfilled.
+	await setClock(page, '2026-10-16T12:00:00Z');
+	await page.goto('/today');
+	await waitForHydration(page);
+	const headsUp = page.getByRole('region', { name: 'Heads up' }).getByRole('link');
+	await expect(headsUp).toHaveCount(2);
+	// The board is shuffled, so the two can come in either order.
+	for (const name of ['Scoop the litter box', 'Drink water']) {
+		await expect(
+			headsUp.filter({ hasText: `You didn't log ${name} yesterday: still time` })
+		).toHaveCount(1);
+	}
+	await headsUp.filter({ hasText: 'Scoop the litter box' }).click();
+	await expect(page).toHaveURL(/\/today\?day=2026-10-15$/);
+	// Only today's view has it.
+	await expect(page.getByRole('region', { name: 'Heads up' })).toHaveCount(0);
+});
+
 test('no card yet', async ({ page }) => {
 	await newMember(page);
 	await page.goto('/today');

@@ -4,6 +4,7 @@ import { backfillDates, backfillMonths } from '#lib/game/backfill.ts';
 import { monthName, monthOf } from '#lib/game/calendar.ts';
 import { CARD_SIZES } from '#lib/game/card-layout.ts';
 import { evaluateSquare } from '#lib/game/evaluate.ts';
+import { nudges } from '#lib/game/nudges.ts';
 import { progressText, todaySection, type TodaySection } from '#lib/game/today.ts';
 import type { TodayRowData } from '#lib/components/TodayRow.svelte';
 import { requireUser } from '#lib/server/auth/guards.ts';
@@ -78,10 +79,30 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 			ifUndone: count > 0 ? view(count - 1) : null
 		});
 	}
+	const board = await cardView(db, user.id, card, today, checkIns);
+	// Heads up (spec §4.8): only on today's view of this month's card.
+	const headsUp =
+		day === today
+			? nudges({
+					size: card.size,
+					span: card,
+					today,
+					squares: card.squares.map((square, index) => ({
+						id: square.isCenter ? null : square.id,
+						name: board.squares[index].name,
+						state: board.squares[index].state,
+						rule: square.isCenter ? null : square,
+						counts: checkIns.get(square.id) ?? new Map<string, number>()
+					})),
+					rewards: card.rewards,
+					nextMonthName: board.nextMonthName
+				})
+			: [];
 	return {
 		monthName: monthName(month),
 		buildCard,
 		recap,
+		headsUp,
 		card: {
 			id: card.id,
 			today,
@@ -89,7 +110,7 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 			days,
 			sections,
 			// The card's score, so a log that completes a line can celebrate here too (spec §4.7).
-			score: (await cardView(db, user.id, card, today, checkIns)).score,
+			score: board.score,
 			rewards: card.rewards,
 			sixtyThreshold: CARD_SIZES[card.size].sixtyThreshold
 		},

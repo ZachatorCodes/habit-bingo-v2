@@ -37,7 +37,7 @@ before it is built.
 | M3.1 | Next-month square   | Center square on both sizes; build next month's card in the last 7 days of the month                                                                                                |
 | M4   | Today & check-ins   | Today list, logging with Pop & burst, 3-day backfill, earn/protect states                                                                                                           |
 | M5   | Card view & scoring | Emoji grid + bottom sheet, lines, reward tiers, points, bingo celebration                                                                                                           |
-| M6   | Updates             | Nudges & insights screen                                                                                                                                                            |
+| M6   | Heads up            | Nudges on Today (§4.8)                                                                                                                                                              |
 | M7   | Month lifecycle     | Closing window, finalization, recap, history                                                                                                                                        |
 | M8   | Groups              | Groups, invite links (also the signup path), leaderboards, viewing members' cards, daily finalization job                                                                           |
 | M9   | Feed                | Highlights feed with emoji reactions                                                                                                                                                |
@@ -282,7 +282,7 @@ with no proration on the targets step and a note that it can be edited until the
 
 ### 4.4 Navigation
 
-Phone: five bottom tabs, **Today · Card · Updates · Groups · Me**. Desktop: left sidebar with the
+Phone: four bottom tabs, **Today · Card · Groups · Me**. Desktop: left sidebar with the
 same sections; Today and Card side-by-side where width allows.
 
 ### 4.5 Today
@@ -325,17 +325,19 @@ habits still short say how many more and the days left, counting today: "2 more 
   confetti → reward reveal when a tier unlocks.
 - `prefers-reduced-motion`: replace motion with fades; no confetti.
 
-### 4.8 Updates
+### 4.8 Heads up (Today)
 
-Prioritized nudges, computed from game state (no stored notifications):
+No Updates tab: Today opens with a **Heads up** list of at most 3 nudges, computed from game state
+(no stored notifications), shown only on today's view of this month's card. Most urgent first, each
+linking to where you act:
 
-1. At-risk squares ("Meditate once more by Sunday to keep your 🛡").
-2. Backfill reminders ("You didn't log Litter box yesterday — still time").
-3. Near bingo ("1 square from a bingo").
-4. Near a reward tier ("2 squares from your 60% reward").
-5. Next month's card ("Build November's card to keep your center square: 3 days left").
-
-The Updates tab shows a badge when any priority 1–2 nudge exists.
+1. At-risk squares, in the habit sheet's words ("Meditate: 2 more by Sunday") → the habit sheet.
+2. Missed days still in the backfill window ("You didn't log Litter box yesterday: still time") →
+   that day on Today.
+3. One square from a first bingo ("1 square from a bingo") → the card.
+4. Within 2 squares of a reward tier, naming the reward ("2 squares from Movie night") → the card.
+5. Next month's card while the center waits for it ("Build November's card to keep your center
+   square: 3 days left") → the builder.
 
 ### 4.9 Groups (M8) & Feed (M9)
 
