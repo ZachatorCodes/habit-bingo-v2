@@ -114,4 +114,22 @@ describe('migration 0011 backfill', () => {
 			{ id: 's2', icon: null }
 		]);
 	});
+
+	it('accepts an emoji-only square (pre-0011 code) and rejects one with no icon or emoji', async () => {
+		const pg = await migrated(async (pg) => {
+			await addUser(pg, 'u1', '🙂');
+			await pg.query(
+				`INSERT INTO card (id, user_id, month, size, start_date, editable_until, week_starts_on, reward_bingo, reward_sixty, reward_blackout)
+				 VALUES ('c1', 'u1', '2026-10', 3, '2026-10-01', now(), 'monday', 'a', 'b', 'c')`
+			);
+		});
+		const insert = (id: string, position: number, emoji: string | null) =>
+			pg.query(
+				`INSERT INTO card_square (id, card_id, position, is_center, emoji, name, category, direction, period, count_mode, target, is_private)
+				 VALUES ($1, 'c1', $2, false, $3, 'Water', 'health', 'atLeast', 'day', 'times', 1, false)`,
+				[id, position, emoji]
+			);
+		await insert('s1', 0, '💧');
+		await expect(insert('s2', 1, null)).rejects.toThrow();
+	});
 });

@@ -45,7 +45,7 @@ async function octoberCard(page: Page, iso: string): Promise<void> {
 	await expect(page).toHaveURL(/\/card\?started=1$/);
 }
 
-const center = (page: Page) => page.locator('main [role="img"]').nth(4);
+const center = (page: Page) => page.locator('main [role="img"][data-state]').nth(4);
 
 test('the center square is complete before the last 7 days', async ({ page }) => {
 	await octoberCard(page, OCT_20);

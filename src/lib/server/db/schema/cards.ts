@@ -68,7 +68,7 @@ export const cardSquare = pgTable(
 		unique('card_square_card_id_position_unique').on(table.cardId, table.position),
 		check(
 			'card_square_snapshot_check',
-			sql`${table.isCenter} or (${table.icon} is not null and ${table.name} is not null and ${table.category} is not null and ${table.direction} is not null and ${table.period} is not null and ${table.countMode} is not null and ${table.target} is not null and ${table.isPrivate} is not null)`
+			sql`${table.isCenter} or ((${table.icon} is not null or ${table.emoji} is not null) and ${table.name} is not null and ${table.category} is not null and ${table.direction} is not null and ${table.period} is not null and ${table.countMode} is not null and ${table.target} is not null and ${table.isPrivate} is not null)`
 		)
 	]
 );

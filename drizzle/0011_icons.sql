@@ -32,4 +32,5 @@ ALTER TABLE "habit" ALTER COLUMN "emoji" SET DEFAULT '✨';
 --> statement-breakpoint
 ALTER TABLE "group" ALTER COLUMN "emoji" SET DEFAULT '✨';
 --> statement-breakpoint
-ALTER TABLE "card_square" ADD CONSTRAINT "card_square_snapshot_check" CHECK ("card_square"."is_center" or ("card_square"."icon" is not null and "card_square"."name" is not null and "card_square"."category" is not null and "card_square"."direction" is not null and "card_square"."period" is not null and "card_square"."count_mode" is not null and "card_square"."target" is not null and "card_square"."is_private" is not null));
+-- Accepts emoji or icon so pre-0011 code keeps working on a rollback; 0012 tightens this to icon-only when emoji is dropped.
+ALTER TABLE "card_square" ADD CONSTRAINT "card_square_snapshot_check" CHECK ("card_square"."is_center" or (("card_square"."icon" is not null or "card_square"."emoji" is not null) and "card_square"."name" is not null and "card_square"."category" is not null and "card_square"."direction" is not null and "card_square"."period" is not null and "card_square"."count_mode" is not null and "card_square"."target" is not null and "card_square"."is_private" is not null));

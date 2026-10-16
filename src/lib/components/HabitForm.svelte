@@ -198,7 +198,9 @@
 			bind:checked={isPrivate}
 			class="mt-1 size-5 accent-ink"
 		/>
-		<span>Private: friends see <Icon name="lock" /> instead of the name</span>
+		<span
+			>Private: friends see <Icon name="lock" /><span class="sr-only"> a lock</span> instead of the name</span
+		>
 	</label>
 
 	<section aria-label="Preview" class="flex items-center gap-4 rounded-2xl bg-cream p-4">
