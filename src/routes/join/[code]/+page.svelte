@@ -32,8 +32,9 @@
 			<div class="text-5xl" aria-hidden="true">{data.group.emoji}</div>
 			{#if data.member}
 				<h1 class="mt-2 text-2xl font-black">You're already in {data.group.name}.</h1>
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the /groups/[id] route lands in the next task, so resolve() cannot type it yet -->
-				<Button href={`/groups/${data.group.id}`} class="mt-6">Open {data.group.name}</Button>
+				<Button href={resolve('/(app)/groups/[id]', { id: data.group.id })} class="mt-6"
+					>Open {data.group.name}</Button
+				>
 			{:else}
 				<h1 class="mt-2 text-2xl font-black">Join {data.group.name}</h1>
 				<p class="mt-2 text-ink/75">
