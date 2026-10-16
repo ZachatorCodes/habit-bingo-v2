@@ -5,6 +5,8 @@ import type { Db } from '#lib/server/db/client.ts';
 import { account, passwordReset, session, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import type { Auth } from './create-auth.ts';
+import { createGroup, getMembership, groupForInvite, joinGroup } from '#lib/server/groups.ts';
+import { group, groupMember } from '#lib/server/db/schema.ts';
 import { createInvite } from './invites.ts';
 import { createTestAuth } from './test-auth.ts';
 import {
@@ -302,6 +304,39 @@ describe('deleteAccount', () => {
 		// Nobody else is touched.
 		expect(await row(admin)).toBeDefined();
 		expect(await db.select().from(session).where(eq(session.id, keepSession))).toHaveLength(1);
+	});
+});
+
+describe('deleteAccount and groups', () => {
+	async function groupOf(ownerId: string) {
+		const made = await createGroup(db, ownerId, { name: 'Crew', emoji: '🔥' }, NOW);
+		if (!made.ok) throw new Error(made.message);
+		const code = (await getMembership(db, ownerId, made.groupId))!.inviteCode;
+		return { groupId: made.groupId, code };
+	}
+
+	it('promotes the earliest-joined member when the owner deletes their account', async () => {
+		const owner = await makeUser();
+		const [first, second] = [await makeUser(), await makeUser()];
+		const { groupId, code } = await groupOf(owner);
+		await joinGroup(db, first, code, new Date('2026-10-11T00:00:00Z'));
+		await joinGroup(db, second, code, new Date('2026-10-12T00:00:00Z'));
+
+		await deleteAccount(db, owner);
+
+		const members = await db.select().from(groupMember).where(eq(groupMember.groupId, groupId));
+		expect(members.find((m) => m.userId === first)!.role).toBe('owner');
+		expect(members.find((m) => m.userId === second)!.role).toBe('member');
+	});
+
+	it('deletes the group and kills its link when the last member deletes their account', async () => {
+		const owner = await makeUser();
+		const { groupId, code } = await groupOf(owner);
+
+		await deleteAccount(db, owner);
+
+		expect(await db.select().from(group).where(eq(group.id, groupId))).toEqual([]);
+		expect(await groupForInvite(db, code, new Date())).toBe('dead');
 	});
 });
 
