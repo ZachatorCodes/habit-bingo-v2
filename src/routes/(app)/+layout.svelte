@@ -155,8 +155,10 @@
 		background: #fff;
 		color: var(--color-ink);
 	}
+	/* --tab-bar also lifts the cookie notice above the tabs. */
 	:global(body) {
-		padding-bottom: calc(84px + env(safe-area-inset-bottom));
+		--tab-bar: calc(84px + env(safe-area-inset-bottom));
+		padding-bottom: var(--tab-bar);
 	}
 	.bar {
 		position: fixed;
