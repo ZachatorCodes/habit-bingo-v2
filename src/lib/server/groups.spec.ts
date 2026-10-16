@@ -77,6 +77,7 @@ describe('createGroup', () => {
 		expect(await bad('x'.repeat(41), 'rocket')).toBe('name');
 		expect(await bad('Crew', 'ab')).toBe('icon');
 		expect(await bad('Crew', 'nope')).toBe('icon');
+		expect(await bad('Crew', 'lock')).toBe('icon');
 		expect(await bad('Crew', '🔥')).toBe('icon');
 		expect(await db.select().from(group)).toHaveLength(0);
 	});

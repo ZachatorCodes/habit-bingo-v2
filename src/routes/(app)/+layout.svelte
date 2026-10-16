@@ -90,6 +90,7 @@
 		font-weight: 800;
 	}
 	.signout {
+		min-height: 44px;
 		border-radius: 12px;
 		padding: 6px 12px;
 		font-weight: 800;

@@ -22,7 +22,7 @@
 	let dialog = $state<HTMLDialogElement>();
 	const dialogTitle = $props.id();
 	const buttonClass =
-		'rounded-full border border-line bg-surface px-3 py-1.5 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
+		'min-h-11 rounded-full border border-line bg-surface px-3 py-1.5 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
 </script>
 
 {#snippet hidden()}
@@ -50,12 +50,12 @@
 			<button
 				type="button"
 				onclick={() => dialog?.close()}
-				class="rounded-xl px-3 py-1.5 font-bold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+				class="min-h-11 rounded-xl px-3 py-1.5 font-bold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 				>Cancel</button
 			>
 			<button
 				type="submit"
-				class="rounded-full border border-terracotta bg-risk px-4 py-1.5 font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+				class="min-h-11 rounded-full border border-terracotta bg-risk px-4 py-1.5 font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 				>{confirm}</button
 			>
 		</form>

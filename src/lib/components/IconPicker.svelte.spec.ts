@@ -17,6 +17,7 @@ describe('IconPicker', () => {
 
 	it('does not offer the reserved lock icon by default', () => {
 		render(IconPicker, { name: 'icon', value: '' });
+		expect(page.getByRole('radio', { name: 'Book', exact: true }).elements()).toHaveLength(1);
 		expect(page.getByRole('radio', { name: 'Private' }).elements()).toHaveLength(0);
 	});
 

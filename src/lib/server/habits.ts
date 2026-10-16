@@ -3,7 +3,7 @@
 import { and, count, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { CATEGORIES, isCategoryId, type CategoryId } from '#lib/game/categories.ts';
 import { normalizeRule, type HabitRule } from '#lib/game/habit-rules.ts';
-import { isIconName, type IconName } from '#lib/icons.ts';
+import { isPickableIcon, type IconName } from '#lib/icons.ts';
 import { STARTERS } from '#lib/game/starters.ts';
 import type { Db } from '#lib/server/db/client.ts';
 import { habit } from '#lib/server/db/schema.ts';
@@ -41,7 +41,7 @@ export function validateHabitInput(input: HabitInput): { ok: true; value: HabitV
 		return { ok: false, field: 'name', message: 'Give it a name (up to 40 characters).' };
 	}
 	const icon = input.icon;
-	if (!isIconName(icon)) return { ok: false, field: 'icon', message: 'Pick an icon.' };
+	if (!isPickableIcon(icon)) return { ok: false, field: 'icon', message: 'Pick an icon.' };
 	if (!isCategoryId(input.category)) {
 		return { ok: false, field: 'category', message: 'Pick a category.' };
 	}

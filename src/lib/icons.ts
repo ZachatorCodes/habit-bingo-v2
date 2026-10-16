@@ -78,6 +78,11 @@ export type IconName = (typeof ICONS)[number]['name'];
 
 const NAMES: ReadonlySet<string> = new Set(ICONS.map((icon) => icon.name));
 
+/** Icons a user may choose for a habit or group; `lock` is reserved for private squares. */
+export function isPickableIcon(value: string): value is IconName {
+	return value !== 'lock' && isIconName(value);
+}
+
 export function isIconName(value: string): value is IconName {
 	return NAMES.has(value);
 }

@@ -1,5 +1,5 @@
 import { and, asc, count, desc, eq, gt, sql } from 'drizzle-orm';
-import { isIconName } from '#lib/icons.ts';
+import { isPickableIcon } from '#lib/icons.ts';
 import { createInvite, getInviteStatus } from '#lib/server/auth/invites.ts';
 import type { Db } from '#lib/server/db/client.ts';
 import { group, groupMember, invite, user } from '#lib/server/db/schema.ts';
@@ -27,7 +27,7 @@ export async function createGroup(
 	if (name.length < 1 || name.length > 40) {
 		return { ok: false, field: 'name', message: 'Name must be 1 to 40 characters.' };
 	}
-	if (!isIconName(input.icon)) {
+	if (!isPickableIcon(input.icon)) {
 		return { ok: false, field: 'icon', message: 'Pick an icon.' };
 	}
 	const groupId = crypto.randomUUID();

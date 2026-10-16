@@ -53,7 +53,7 @@
 				type="button"
 				onclick={onclose}
 				aria-label="Close"
-				class="grid size-10 shrink-0 place-items-center rounded-full border border-line bg-surface text-lg font-black focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+				class="grid size-11 shrink-0 place-items-center rounded-full border border-line bg-surface text-lg font-black focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 				><span aria-hidden="true">✕</span></button
 			>
 		</div>
