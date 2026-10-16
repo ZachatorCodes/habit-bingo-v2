@@ -335,7 +335,8 @@ linking to where you act:
 2. Missed days still in the backfill window ("You didn't log Litter box yesterday: still time") →
    that day on Today.
 3. One square from a first bingo ("1 square from a bingo") → the card.
-4. Within 2 squares of a reward tier, naming the reward ("2 squares from Movie night") → the card.
+4. In the card's last 7 days only (earlier, the held squares that make it close are untested), within
+   2 squares of a reward tier, naming the reward ("2 squares from Movie night") → the card.
 5. Next month's card while the center waits for it ("Build November's card to keep your center
    square: 3 days left") → the builder.
 

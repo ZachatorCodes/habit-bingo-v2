@@ -98,7 +98,7 @@ describe('nudges', () => {
 		expect(run(won, '2026-10-20').map((n) => n.text)).not.toContain('1 square from a bingo');
 	});
 
-	it('within 2 squares of a reward tier names the reward', () => {
+	it('within 2 squares of a reward tier names the reward, in the last 7 days', () => {
 		// The center plus 2 counting: 3 of the 5 needed.
 		const three = board([
 			square('a', 'complete'),
@@ -106,7 +106,10 @@ describe('nudges', () => {
 			square('b', 'held'),
 			square('c', 'empty')
 		]);
-		expect(run(three, '2026-10-20')).toContainEqual({
+		// Before the last week every held square is untested, so "close" means nothing yet.
+		expect(run(three, '2026-10-24').map((n) => n.text)).not.toContain('2 squares from Movie night');
+		// Oct 25 opens the last 7 days of October.
+		expect(run(three, '2026-10-25')).toContainEqual({
 			text: '2 squares from Movie night',
 			to: { kind: 'card' }
 		});
@@ -115,7 +118,7 @@ describe('nudges', () => {
 			...['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((id) => square(id, 'complete')),
 			square('h', 'empty')
 		]);
-		expect(run(eight, '2026-10-20')).toContainEqual({
+		expect(run(eight, '2026-10-27')).toContainEqual({
 			text: '1 square from A weekend away',
 			to: { kind: 'card' }
 		});
