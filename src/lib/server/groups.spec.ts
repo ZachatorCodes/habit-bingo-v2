@@ -97,6 +97,17 @@ describe('joinGroup', () => {
 		expect((await listMembers(db, groupId)).map((m) => m.role)).toEqual(['owner', 'member']);
 	});
 
+	it('refuses a link whose group is gone, without throwing', async () => {
+		const owner = await makeUser();
+		const friend = await makeUser();
+		const { groupId, code } = await makeGroup(owner);
+		await db.delete(group).where(eq(group.id, groupId));
+		expect(await joinGroup(db, friend, code, now)).toEqual({
+			ok: false,
+			message: DEAD_LINK_MESSAGE
+		});
+	});
+
 	it('refuses an admin invite and unknown codes', async () => {
 		const owner = await makeUser();
 		const { code } = await createInvite(

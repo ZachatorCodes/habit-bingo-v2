@@ -139,11 +139,13 @@ export async function joinGroup(
 	now: Date
 ): Promise<{ ok: true; groupId: string } | { ok: false; message: string }> {
 	const dead = { ok: false as const, message: DEAD_LINK_MESSAGE };
-	const found = await groupForInvite(db, code, now);
-	if (!found || found === 'dead') return dead;
-	const groupId = found.group.id;
+	const groupId = await inviteGroupId(db, code);
+	if (!groupId) return dead;
 	return db.transaction(async (tx) => {
 		await lockGroup(tx, groupId);
+		// Re-checked under the lock: a racing last-leave may have deleted the group.
+		const found = await groupForInvite(tx, code, now);
+		if (!found || found === 'dead') return dead;
 		const [already] = await tx
 			.select({ userId: groupMember.userId })
 			.from(groupMember)
