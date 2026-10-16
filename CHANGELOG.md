@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.7.0](https://github.com/ZachatorCodes/habit-bingo-v2/compare/habit-bingo-v0.6.0...habit-bingo-v0.7.0) (2026-10-16)
+
+
+### Features
+
+* **db:** month_result table ([8859a98](https://github.com/ZachatorCodes/habit-bingo-v2/commit/8859a98b5a4c8b3940ac5f3f0dc06d29c0895891))
+* **groups:** M8 groups, invite links, leaderboards and member cards ([#89](https://github.com/ZachatorCodes/habit-bingo-v2/issues/89)) ([f8a2a5f](https://github.com/ZachatorCodes/habit-bingo-v2/commit/f8a2a5f52f32a13633355f699402d3cfedc0148c))
+* **recap:** finalize finished months into month_result ([8f51d55](https://github.com/ZachatorCodes/habit-bingo-v2/commit/8f51d5506e078ff01eb429886d003a982d5067b4))
+* **recap:** history of finished months ([9de9f2b](https://github.com/ZachatorCodes/habit-bingo-v2/commit/9de9f2b928ec81435d126f2fb95827ddb9acff13))
+* **recap:** month finality, highlight and category rules ([efaace6](https://github.com/ZachatorCodes/habit-bingo-v2/commit/efaace6bc70e5e5bc8d654ae3794cd501f3527c1))
+* **recap:** the month recap page ([9713d69](https://github.com/ZachatorCodes/habit-bingo-v2/commit/9713d69358c713d19f8903d73c7177617d9aab38))
+* **today:** heads up nudges on Today ([3660277](https://github.com/ZachatorCodes/habit-bingo-v2/commit/3660277bbb2ff38647fb7707bca871a263424171))
+* **today:** heads-up nudge rules ([c69ed71](https://github.com/ZachatorCodes/habit-bingo-v2/commit/c69ed71e065272de83bfefac33093306fa7c6c93))
+* **today:** recap banner ([8b793a0](https://github.com/ZachatorCodes/habit-bingo-v2/commit/8b793a0af2bafe47d9a11479289ddce0e86eb72d))
+* **today:** weekly habits get their own This week section with days left ([91bdcdf](https://github.com/ZachatorCodes/habit-bingo-v2/commit/91bdcdf76595d458315acb6f4ebe83f77fcba4af))
+
+
+### Bug Fixes
+
+* **card:** a non-numeric count on the habit sheet is refused, not a 500 ([#83](https://github.com/ZachatorCodes/habit-bingo-v2/issues/83)) ([1ba1aff](https://github.com/ZachatorCodes/habit-bingo-v2/commit/1ba1aff06ff5b93b8df7ee5165fba7ca486979f9))
+* **recap:** a late next card never counts the center; hovering a recap link doesn't mark it seen ([c2befb3](https://github.com/ZachatorCodes/habit-bingo-v2/commit/c2befb3afdf6cdcac29596f1fadce4235fdf29df))
+* **today:** last month's last days can be logged on the 1st–3rd ([0d9be65](https://github.com/ZachatorCodes/habit-bingo-v2/commit/0d9be65d3fdebe7fc36c6fbee42711736cf0a0ac))
+* **today:** reward nudges only in the card's last 7 days ([#88](https://github.com/ZachatorCodes/habit-bingo-v2/issues/88)) ([1bf265e](https://github.com/ZachatorCodes/habit-bingo-v2/commit/1bf265e731ed4c2391ac5e48a86a2888c017b21f))
+
 ## [0.6.0](https://github.com/ZachatorCodes/habit-bingo-v2/compare/habit-bingo-v0.5.0...habit-bingo-v0.6.0) (2026-10-13)
 
 
