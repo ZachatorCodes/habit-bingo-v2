@@ -85,7 +85,10 @@ describe('joinGroup', () => {
 		const owner = await makeUser();
 		const friend = await makeUser();
 		const { groupId, code } = await makeGroup(owner);
-		expect(await joinGroup(db, friend, code, now)).toEqual({ ok: true, groupId });
+		expect(await joinGroup(db, friend, code, new Date(now.getTime() + 1000))).toEqual({
+			ok: true,
+			groupId
+		});
 		expect(await joinGroup(db, friend, code, now)).toEqual({ ok: true, groupId });
 		expect(await memberIds(groupId)).toHaveLength(2);
 		expect(await listGroups(db, friend)).toEqual([
