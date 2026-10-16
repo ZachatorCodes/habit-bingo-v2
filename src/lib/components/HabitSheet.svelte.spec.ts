@@ -5,9 +5,9 @@ import HabitSheet, { type SheetData } from './HabitSheet.svelte';
 
 const data: SheetData = {
 	id: 'sq-1',
-	emoji: '💧',
+	icon: 'drop',
 	name: 'Drink water',
-	category: '🥗 Health',
+	category: 'Health',
 	rule: '8 times a day',
 	countMode: 'times',
 	state: 'atRisk',

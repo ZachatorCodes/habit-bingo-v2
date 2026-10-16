@@ -15,6 +15,9 @@ describe('icon registry', () => {
 		expect(new Set(ICONS.map((i) => i.name)).size).toBe(ICONS.length);
 		for (const icon of ICONS) expect(CATEGORIES.map((c) => c.id)).toContain(icon.group);
 	});
+	it('each category icon matches CATEGORY_ICON', () => {
+		for (const c of CATEGORIES) expect(c.icon).toBe(CATEGORY_ICON[c.id]);
+	});
 	it('isIconName accepts curated names only', () => {
 		expect(isIconName('book-open')).toBe(true);
 		expect(isIconName('BookOpen')).toBe(false);

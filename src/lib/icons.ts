@@ -67,7 +67,8 @@ export const ICONS = [
 	{ name: 'rocket', label: 'Rocket', group: 'other' },
 	{ name: 'cactus', label: 'Cactus', group: 'other' },
 	{ name: 'flower', label: 'Flower', group: 'other' },
-	{ name: 'pizza', label: 'Pizza', group: 'other' }
+	{ name: 'pizza', label: 'Pizza', group: 'other' },
+	{ name: 'lock', label: 'Private', group: 'other' }
 ] as const satisfies readonly { name: string; label: string; group: CategoryId }[];
 
 export type IconName = (typeof ICONS)[number]['name'];

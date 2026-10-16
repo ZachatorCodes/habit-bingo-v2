@@ -6,12 +6,12 @@ import type { SquareState } from '#lib/game/square-state.ts';
 import { getCard, type Card } from '#lib/server/cards.ts';
 import { getCheckIns } from '#lib/server/check-ins.ts';
 import type { Db } from '#lib/server/db/client.ts';
+import type { IconName } from '#lib/icons.ts';
 
 export type ViewSquare = {
 	/** Habit squares only: links to the habit sheet. */
 	id?: string;
-	/** Usually an `IconName`; private squares use 'lock'. */
-	icon: string;
+	icon: IconName;
 	name: string;
 	state: SquareState;
 	progress?: number;

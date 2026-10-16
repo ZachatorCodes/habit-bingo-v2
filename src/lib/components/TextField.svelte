@@ -11,7 +11,7 @@
 		hint?: string;
 		min?: number;
 		max?: number;
-		/** Extra classes for the input, e.g. a compact emoji box. */
+		/** Extra classes for the input, e.g. a compact box. */
 		inputClass?: string;
 	};
 

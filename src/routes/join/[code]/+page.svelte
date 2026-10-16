@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import TextField from '#lib/components/TextField.svelte';
 	import type { PageProps } from './$types';
@@ -29,7 +30,7 @@
 		<div
 			class="rounded-2xl border-2 border-line bg-white p-6 text-center shadow-[0_3px_0_var(--color-line)]"
 		>
-			<div class="text-5xl" aria-hidden="true">{data.group.emoji}</div>
+			<div class="text-5xl" aria-hidden="true"><Icon name={data.group.icon} /></div>
 			{#if data.member}
 				<h1 class="mt-2 text-2xl font-black">You're already in {data.group.name}.</h1>
 				<Button href={resolve('/(app)/groups/[id]', { id: data.group.id })} class="mt-6"

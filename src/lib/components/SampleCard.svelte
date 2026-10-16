@@ -3,18 +3,18 @@
 	import BingoSquare from './BingoSquare.svelte';
 	import type { SquareState } from '#lib/game/square-state.ts';
 
-	type Square = { emoji: string; label: string; state: SquareState; progress?: number };
+	type Square = { icon: string; label: string; state: SquareState; progress?: number };
 
 	const start: Square[] = [
-		{ emoji: '📚', label: 'Finish a book', state: 'inProgress', progress: 0.4 },
-		{ emoji: '🚴', label: 'Bike 3×', state: 'inProgress', progress: 0.66 },
-		{ emoji: '📞', label: 'Call an old friend', state: 'empty' },
-		{ emoji: '🐈', label: 'Litter box daily', state: 'held' },
-		{ emoji: '🍔', label: 'Eat out ≤ 10', state: 'atRisk' },
-		{ emoji: '🧘', label: 'Meditate 2×/week', state: 'held' },
-		{ emoji: '🧹', label: 'Power clean 2×/week', state: 'held' },
-		{ emoji: '😴', label: 'Naps ≤ 3', state: 'lost' },
-		{ emoji: '🌿', label: 'No weed', state: 'held' }
+		{ icon: 'book-open', label: 'Finish a book', state: 'inProgress', progress: 0.4 },
+		{ icon: 'bicycle', label: 'Bike 3×', state: 'inProgress', progress: 0.66 },
+		{ icon: 'phone', label: 'Call an old friend', state: 'empty' },
+		{ icon: 'cat', label: 'Litter box daily', state: 'held' },
+		{ icon: 'hamburger', label: 'Eat out ≤ 10', state: 'atRisk' },
+		{ icon: 'flower-lotus', label: 'Meditate 2×/week', state: 'held' },
+		{ icon: 'broom', label: 'Power clean 2×/week', state: 'held' },
+		{ icon: 'bed', label: 'Naps ≤ 3', state: 'lost' },
+		{ icon: 'leaf', label: 'No weed', state: 'held' }
 	];
 
 	// Each step completes one square; the last one finishes the top row for a bingo.

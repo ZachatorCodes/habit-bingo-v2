@@ -49,14 +49,14 @@ test('the profile can be changed', async ({ page }) => {
 	// Click the visible label: the radio itself is visually hidden.
 	await page
 		.locator('label')
-		.filter({ has: page.getByRole('radio', { name: '🐙' }) })
+		.filter({ has: page.getByRole('radio', { name: 'Cactus', exact: true }) })
 		.click();
-	await expect(page.getByRole('radio', { name: '🐙' })).toBeChecked();
+	await expect(page.getByRole('radio', { name: 'Cactus', exact: true })).toBeChecked();
 	await page.getByRole('button', { name: 'Save profile' }).click();
 	await expect(page.getByText('Profile saved.')).toBeVisible();
 	await page.reload();
 	await expect(page.getByLabel('Display name')).toHaveValue('Renamed');
-	await expect(page.locator('header')).toContainText('🐙');
+	await expect(page.locator('header .avatar svg')).toBeVisible();
 
 	await page.getByLabel('Display name').fill(' ');
 	await page.getByRole('button', { name: 'Save profile' }).click();

@@ -12,11 +12,14 @@ async function otherPerson(browser: Browser): Promise<Page> {
 	return (await browser.newContext()).newPage();
 }
 
-/** Creates "Climbers" 🧗 and returns the group page URL path and its invite link. */
+/** Creates "Climbers" and returns the group page URL path and its invite link. */
 async function createClimbers(page: Page): Promise<{ groupPath: string; link: string }> {
 	await page.goto('/groups/new');
 	await waitForHydration(page);
-	await page.getByRole('textbox', { name: 'Emoji' }).fill('🧗');
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: 'Mountains', exact: true }) })
+		.click();
 	await page.getByRole('textbox', { name: 'Name' }).fill('Climbers');
 	await page.getByRole('button', { name: 'Create group' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: /Climbers/ })).toBeVisible();
@@ -64,7 +67,10 @@ test("a member's card hides private habits", async ({ page, browser }) => {
 	const b = await newMemberWithHabits(pageB, 7);
 	await pageB.goto('/me/habits/new');
 	await waitForHydration(pageB);
-	await pageB.getByRole('textbox', { name: 'Emoji' }).fill('🤫');
+	await pageB
+		.locator('label')
+		.filter({ has: pageB.getByRole('radio', { name: 'Moon', exact: true }) })
+		.click();
 	await pageB.getByRole('textbox', { name: 'Name' }).fill('Secret stretch');
 	await pageB
 		.locator('label')
@@ -83,7 +89,7 @@ test("a member's card hides private habits", async ({ page, browser }) => {
 	await expect(
 		page.getByRole('heading', { level: 1, name: new RegExp(`@${b.username}`) })
 	).toBeVisible();
-	await expect(page.getByText('🔒').first()).toBeVisible();
+	await expect(page.getByRole('img', { name: /^Private:/ }).first()).toBeVisible();
 	await expect(page.getByText('Secret stretch')).toHaveCount(0);
 	await expect(page.locator('body')).not.toContainText('Secret stretch');
 	await pageB.context().close();

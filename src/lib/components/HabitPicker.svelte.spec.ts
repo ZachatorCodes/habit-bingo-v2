@@ -7,7 +7,7 @@ import HabitPicker from './HabitPicker.svelte';
 function habit(id: string, name: string, category: Habit['category'] = 'fitness'): Habit {
 	return {
 		id,
-		emoji: '🚴',
+		icon: 'bicycle',
 		name,
 		category,
 		direction: 'atLeast',

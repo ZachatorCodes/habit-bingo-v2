@@ -1,19 +1,20 @@
 <script lang="ts">
+	import Icon from './Icon.svelte';
 	import type { SquareState } from '#lib/game/square-state.ts';
 
 	type Props = {
-		emoji: string;
+		icon: string;
 		label: string;
 		state: SquareState;
 		/** 0..1, shown for inProgress squares. */
 		progress?: number;
-		/** Show the name under the emoji (default). Today's rows show it beside the square instead. */
+		/** Show the name under the icon (default). Today's rows show it beside the square instead. */
 		showLabel?: boolean;
-		/** A 5×5 card on a phone: smaller emoji, name in small text on up to 2 lines. */
+		/** A 5×5 card on a phone: smaller icon, name in small text on up to 2 lines. */
 		compact?: boolean;
 	};
 
-	let { emoji, label, state, progress = 0, showLabel = true, compact = false }: Props = $props();
+	let { icon, label, state, progress = 0, showLabel = true, compact = false }: Props = $props();
 
 	const percent = $derived(Math.round(Math.min(Math.max(progress, 0), 1) * 100));
 
@@ -58,7 +59,7 @@
 		<span aria-hidden="true" class="text-sm font-black tracking-wide">FREE</span>
 	{:else}
 		<span aria-hidden="true" class={[compact ? 'text-lg sm:text-2xl' : 'text-2xl', 'leading-none']}
-			>{emoji}</span
+			><Icon name={icon} /></span
 		>
 		{#if showLabel}
 			<span

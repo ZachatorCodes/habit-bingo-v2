@@ -1,8 +1,11 @@
 <script lang="ts">
 	import BingoSquare from './BingoSquare.svelte';
 	import Button from './Button.svelte';
+	import Icon from './Icon.svelte';
+	import IconPicker from './IconPicker.svelte';
 	import TextField from './TextField.svelte';
 	import { CATEGORIES, type CategoryId } from '#lib/game/categories.ts';
+	import { CATEGORY_ICON, FALLBACK_ICON } from '#lib/icons.ts';
 	import {
 		defaultCountMode,
 		describeRule,
@@ -21,21 +24,8 @@
 	};
 	let { values, errors = {}, submitLabel }: Props = $props();
 
-	/** A few suggestions per category; any single emoji can be typed instead. */
-	const QUICK_PICKS: Record<CategoryId, string[]> = {
-		fitness: ['🚴', '🏃', '🏋️', '🧘', '🏊', '🥾'],
-		health: ['💧', '🥗', '😴', '💊', '🍎', '🚭'],
-		mind: ['🧠', '📓', '🙏', '🌿', '📵', '🧩'],
-		home: ['🧹', '🧺', '🍳', '🌱', '🐈', '🗑️'],
-		social: ['📞', '💌', '🎂', '🤝', '👋', '🍻'],
-		learning: ['📚', '🎧', '🗣️', '💻', '✍️', '🔬'],
-		creative: ['🎨', '🎸', '📷', '🧶', '🎹', '✏️'],
-		money: ['💰', '🍔', '🛍️', '📊', '☕', '🏦'],
-		other: ['✨', '⭐', '🎯', '✅', '🔥', '🌈']
-	};
-
 	// svelte-ignore state_referenced_locally
-	let emoji = $state(values.emoji);
+	let picked = $state(values.icon);
 	// svelte-ignore state_referenced_locally
 	let name = $state(values.name);
 	// svelte-ignore state_referenced_locally
@@ -56,8 +46,7 @@
 	function trackTyping(event: Event) {
 		const input = event.target;
 		if (!(input instanceof HTMLInputElement)) return;
-		if (input.name === 'emoji') emoji = input.value;
-		else if (input.name === 'name') name = input.value;
+		if (input.name === 'name') name = input.value;
 		else if (input.name === 'target') target = input.value;
 	}
 
@@ -68,7 +57,9 @@
 
 	const range = $derived(targetRange(direction, period, period === 'day' ? 'times' : countMode));
 	const preview = $derived(normalizeRule({ direction, period, countMode, target }));
-	const picks = $derived(QUICK_PICKS[category as CategoryId] ?? QUICK_PICKS.other);
+
+	// Until the person picks, the icon follows the category.
+	const icon = $derived(picked || (CATEGORY_ICON[category as CategoryId] ?? FALLBACK_ICON));
 
 	const ids = $props.id();
 	const field = 'flex flex-col gap-1.5';
@@ -101,7 +92,7 @@
 						bind:group={category}
 						class="sr-only"
 					/>
-					<span aria-hidden="true">{option.emoji}</span>
+					<Icon name={option.icon} />
 					{option.label}
 				</label>
 			{/each}
@@ -109,41 +100,14 @@
 		{@render fieldError('category')}
 	</fieldset>
 
-	<div class={field}>
-		<!-- Emoji and name side by side: a small emoji box, the name filling the rest. -->
-		<div class="flex items-end gap-3" data-field-row>
-			<div class="w-16 shrink-0">
-				<TextField
-					label="Emoji"
-					name="emoji"
-					value={emoji}
-					error={errors.emoji}
-					inputClass="h-12 px-0 text-center text-2xl leading-6"
-				/>
-			</div>
-			<div class="min-w-0 flex-1">
-				<TextField
-					label="Name"
-					name="name"
-					value={name}
-					error={errors.name}
-					hint="e.g. Go biking"
-				/>
-			</div>
-		</div>
-		<div class="flex flex-wrap gap-2" role="group" aria-label="Suggested emoji">
-			{#each picks as pick (pick)}
-				<button
-					type="button"
-					aria-label={`Use ${pick}`}
-					aria-pressed={emoji === pick}
-					onclick={() => (emoji = pick)}
-					class="flex size-11 items-center justify-center rounded-xl border-2 border-line bg-white text-2xl focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink aria-pressed:border-ink aria-pressed:bg-cream"
-					>{pick}</button
-				>
-			{/each}
-		</div>
-	</div>
+	<TextField label="Name" name="name" value={name} error={errors.name} hint="e.g. Go biking" />
+
+	<IconPicker
+		name="icon"
+		groups
+		error={errors.icon}
+		bind:value={() => icon, (next) => (picked = next)}
+	/>
 
 	<fieldset
 		class={field}
@@ -160,7 +124,7 @@
 					onchange={() => setDirection('atLeast')}
 					class="sr-only"
 				/>
-				<span aria-hidden="true">✅</span> Do it
+				Do it
 			</label>
 			<label class={choice}>
 				<input
@@ -172,7 +136,7 @@
 					aria-describedby={`${ids}-limit-hint`}
 					class="sr-only"
 				/>
-				<span aria-hidden="true">🚫</span> Limit it
+				Limit it
 			</label>
 		</div>
 		<p id={`${ids}-limit-hint`} class="text-sm text-ink/75">
@@ -234,17 +198,12 @@
 			bind:checked={isPrivate}
 			class="mt-1 size-5 accent-ink"
 		/>
-		<span>Private: friends see <span aria-hidden="true">🔒</span> instead of the name</span>
+		<span>Private: friends see <Icon name="lock" /> instead of the name</span>
 	</label>
 
 	<section aria-label="Preview" class="flex items-center gap-4 rounded-2xl bg-cream p-4">
 		<div class="w-24 shrink-0">
-			<BingoSquare
-				emoji={emoji.trim() || '✨'}
-				label={name.trim() || 'Your habit'}
-				state="empty"
-				showLabel
-			/>
+			<BingoSquare {icon} label={name.trim() || 'Your habit'} state="empty" showLabel />
 		</div>
 		<p class="font-bold">
 			{preview.ok ? describeRule(preview.rule) : 'Finish the details to see how it reads.'}

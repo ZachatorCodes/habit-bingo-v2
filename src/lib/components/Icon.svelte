@@ -68,6 +68,7 @@
 	import Cactus from 'phosphor-svelte/lib/Cactus';
 	import Flower from 'phosphor-svelte/lib/Flower';
 	import Pizza from 'phosphor-svelte/lib/Pizza';
+	import Lock from 'phosphor-svelte/lib/Lock';
 
 	type IconProps = {
 		weight?: Props['weight'];
@@ -152,7 +153,8 @@
 		rocket: Rocket,
 		cactus: Cactus,
 		flower: Flower,
-		pizza: Pizza
+		pizza: Pizza,
+		lock: Lock
 	};
 
 	const Glyph = $derived(COMPONENTS[isIconName(name) ? name : FALLBACK_ICON]);

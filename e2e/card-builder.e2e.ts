@@ -86,7 +86,10 @@ test('a habit created inline is picked', async ({ page }) => {
 	await newMemberWithHabits(page, 3);
 	await startAtHabits(page);
 	await page.getByText('New habit', { exact: true }).click();
-	await page.getByRole('textbox', { name: 'Emoji' }).fill('🎯');
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: 'Target', exact: true }) })
+		.click();
 	await page.getByRole('textbox', { name: 'Name' }).fill('Stretch daily');
 	await page.getByRole('button', { name: 'Add habit' }).click();
 	await expect(page.getByRole('checkbox', { name: /Stretch daily/ })).toBeChecked();

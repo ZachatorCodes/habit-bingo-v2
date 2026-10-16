@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import ConfirmAction from '#lib/components/ConfirmAction.svelte';
 	import CopyField from '#lib/components/CopyField.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import { monthName } from '#lib/game/calendar.ts';
 	import type { PageProps } from './$types';
@@ -22,8 +23,12 @@
 
 <Seo title={data.group.name} description="A Habit Bingo group." path={page} noindex />
 
-{#snippet avatar(emoji: string, username: string, you = false)}
-	<span aria-hidden="true" class="text-2xl">{emoji}</span>
+{#snippet avatar(icon: string, username: string, you = false)}
+	<span
+		aria-hidden="true"
+		class="grid size-10 place-items-center rounded-full bg-earned-tile text-2xl text-forest"
+		><Icon name={icon} /></span
+	>
 	<span class="min-w-0 flex-1 truncate font-extrabold">@{username}{you ? ' (you)' : ''}</span>
 {/snippet}
 
@@ -35,7 +40,7 @@
 			>← Groups</a
 		>
 		<h1 class="text-3xl leading-tight font-black">
-			<span aria-hidden="true">{data.group.emoji}</span>
+			<span aria-hidden="true"><Icon name={data.group.icon} /></span>
 			{data.group.name}
 		</h1>
 	</div>
@@ -82,7 +87,7 @@
 							: 'border-line bg-white'}"
 					>
 						<span class="w-6 text-center font-black tabular-nums">{row.rank ?? ''}</span>
-						{@render avatar(row.avatarEmoji, row.displayUsername, row.isViewer)}
+						{@render avatar(row.avatarIcon, row.displayUsername, row.isViewer)}
 						{#if row.points === null}
 							<span class="text-ink/75">No card yet</span>
 						{:else}
@@ -105,7 +110,7 @@
 				<li
 					class="flex items-center gap-3 rounded-2xl border-2 border-line bg-white p-3 shadow-[0_3px_0_var(--color-line)]"
 				>
-					{@render avatar(member.avatarEmoji, member.displayUsername)}
+					{@render avatar(member.avatarIcon, member.displayUsername)}
 					{#if member.role === 'owner'}
 						<span class="rounded-full bg-cream px-2 py-0.5 text-xs font-bold">Owner</span>
 					{:else if data.isOwner}

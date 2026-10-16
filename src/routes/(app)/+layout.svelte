@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import Icon from '#lib/components/Icon.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import type { LayoutProps } from './$types';
 
@@ -22,7 +23,7 @@
 <header class="border-b-2 border-line bg-white">
 	<div class="shell">
 		<div class="who">
-			<span class="avatar" aria-hidden="true">{data.user.avatarEmoji}</span>
+			<span class="avatar" aria-hidden="true"><Icon name={data.user.avatarIcon} /></span>
 			<span class="name">@{data.user.displayUsername}</span>
 		</div>
 		<form method="POST" action="/signout">
@@ -96,7 +97,8 @@
 		height: 40px;
 		border-radius: 9999px;
 		border: 2px solid var(--color-line);
-		background: #fff;
+		background: var(--color-earned-tile);
+		color: var(--color-forest);
 		font-size: 1.25rem;
 	}
 	.name {

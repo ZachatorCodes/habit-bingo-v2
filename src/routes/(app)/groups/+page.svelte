@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
@@ -27,7 +28,7 @@
 						href={resolve('/(app)/groups/[id]', { id: group.id })}
 						class="flex items-center gap-3 rounded-2xl border-2 border-line bg-white p-4 shadow-[0_3px_0_var(--color-line)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 					>
-						<span class="text-3xl" aria-hidden="true">{group.emoji}</span>
+						<span class="text-3xl" aria-hidden="true"><Icon name={group.icon} /></span>
 						<span class="min-w-0 flex-1 truncate font-extrabold">{group.name}</span>
 						<span class="text-ink/75"
 							>{group.memberCount}

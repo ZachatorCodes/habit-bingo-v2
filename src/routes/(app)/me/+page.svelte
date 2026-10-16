@@ -2,7 +2,7 @@
 	import { enhance, type SubmitFunction } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
-	import EmojiPicker from '#lib/components/EmojiPicker.svelte';
+	import IconPicker from '#lib/components/IconPicker.svelte';
 	import TextField from '#lib/components/TextField.svelte';
 	import type { PageProps } from './$types';
 
@@ -23,7 +23,7 @@
 	const deleteErrors = $derived(errorsFor('delete'));
 
 	// svelte-ignore state_referenced_locally
-	let avatar = $state(data.profile.avatarEmoji);
+	let avatar = $state(data.profile.avatarIcon);
 	// svelte-ignore state_referenced_locally
 	let timezone = $state(data.settings.timezone);
 	// svelte-ignore state_referenced_locally
@@ -112,12 +112,12 @@
 				value={valuesFor('profile').name ?? data.profile.name}
 				error={profileErrors.name}
 			/>
-			<EmojiPicker
-				name="avatarEmoji"
+			<IconPicker
+				name="avatarIcon"
 				bind:value={avatar}
 				options={data.avatars}
 				label="Avatar"
-				error={profileErrors.avatarEmoji}
+				error={profileErrors.avatarIcon}
 			/>
 			<Button type="submit" class="self-start">Save profile</Button>
 		</form>

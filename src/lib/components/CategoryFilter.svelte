@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import Icon from './Icon.svelte';
 	import { CATEGORIES, type CategoryId } from '#lib/game/categories.ts';
 
 	type Props = {
@@ -44,7 +45,7 @@
 						chip,
 						selected === category.id ? 'border-ink bg-ink text-cream' : 'border-line bg-white'
 					]}
-					><span aria-hidden="true">{category.emoji}</span>
+					><Icon name={category.icon} />
 					{category.label}
 					<span class="opacity-75">{counts[category.id]}</span></a
 				>

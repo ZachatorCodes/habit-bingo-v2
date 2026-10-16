@@ -37,7 +37,7 @@ async function buildToBoard(page: Page): Promise<void> {
 /** The squares' accessible names, in board order. */
 async function squareNames(page: Page): Promise<string[]> {
 	return page
-		.locator('main [role="img"]')
+		.locator('main [role="img"][data-state]')
 		.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label') ?? ''));
 }
 
@@ -337,7 +337,7 @@ test('a 5×5 card with long names fits a phone', async ({ page, baseURL }) => {
 		const response = await page.request.post('/me/habits/new', {
 			headers: { origin: baseURL!, accept: 'text/html' },
 			form: {
-				emoji: '🧘',
+				icon: 'flower-lotus',
 				name,
 				category: 'mind',
 				direction: 'atLeast',

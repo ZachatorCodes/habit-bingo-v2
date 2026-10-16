@@ -182,7 +182,7 @@ describe('memberCard', () => {
 		const view = (await memberCard(db, owner.id, groupId, mate.id, now))!;
 		expect(view.monthName).toBe('October');
 		const habits = view.card!.squares.filter((s) => s.name !== 'Free');
-		expect(habits.filter((s) => s.name === '🔒' && s.icon === 'lock')).toHaveLength(7);
+		expect(habits.filter((s) => s.name === 'Private' && s.icon === 'lock')).toHaveLength(7);
 		expect(habits.filter((s) => s.name === 'Public one' && s.icon === 'flower-lotus')).toHaveLength(
 			1
 		);
@@ -214,7 +214,9 @@ describe('memberCard', () => {
 			mate.id,
 			new Date('2026-10-20T09:00:00Z')
 		))!;
-		expect(view.card!.squares.filter((s) => s.name === '🔒' && s.icon === 'lock')).toHaveLength(1);
+		expect(
+			view.card!.squares.filter((s) => s.name === 'Private' && s.icon === 'lock')
+		).toHaveLength(1);
 		expect(view.card!.squares.some((s) => s.name === h.name)).toBe(false);
 	});
 

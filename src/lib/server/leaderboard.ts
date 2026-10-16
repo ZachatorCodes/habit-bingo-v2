@@ -88,7 +88,7 @@ export async function groupBoard(
 	return { rows: rankRows(rows), provisionalMonth: provisional ? closing : null };
 }
 
-/** A member's current card for the viewer: private habits show as 🔒, no ids, links or rewards. */
+/** A member's current card for the viewer: private habits show as a lock icon, no ids, links or rewards. */
 export async function memberCard(
 	db: Db,
 	viewerId: string,
@@ -129,7 +129,7 @@ export async function memberCard(
 		const squares = view.squares.map((square) => {
 			const { id, link, ...rest } = square;
 			void link;
-			return id && privateIds.has(id) ? { ...rest, icon: 'lock', name: '🔒' } : rest;
+			return id && privateIds.has(id) ? { ...rest, icon: 'lock' as const, name: 'Private' } : rest;
 		});
 		shown = { size: card.size, squares, score: view.score };
 	}
