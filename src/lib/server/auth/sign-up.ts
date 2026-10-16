@@ -1,5 +1,6 @@
 import { APIError } from 'better-auth/api';
 import type { Auth } from './create-auth.ts';
+import { FULL_MESSAGE } from '#lib/server/groups.ts';
 import { PASSWORD_MESSAGES } from './password-policy.ts';
 
 export type SignUpResult =
@@ -18,6 +19,7 @@ const ERRORS: Record<string, { field: 'username' | 'password' | 'form'; message:
 	// Better Auth's own length checks; our policy hook normally rejects these first.
 	PASSWORD_TOO_SHORT: { field: 'password', message: PASSWORD_MESSAGES.tooShort },
 	PASSWORD_TOO_LONG: { field: 'password', message: PASSWORD_MESSAGES.tooLong },
+	GROUP_FULL: { field: 'form', message: FULL_MESSAGE },
 	INVITE_REQUIRED: { field: 'form', message: INVITE_INVALID_MESSAGE },
 	...Object.fromEntries(
 		Object.entries(PASSWORD_MESSAGES).map(([code, message]) => [

@@ -215,7 +215,7 @@ export function createAuth(db: Db, options: AuthOptions) {
 						// A dead group link falls through to consumeInvite, which refuses it as today.
 						const forGroup = await groupForInvite(db, code, new Date());
 						if (forGroup && forGroup !== 'dead' && forGroup.memberCount >= MAX_MEMBERS) {
-							throw new APIError('BAD_REQUEST', { message: FULL_MESSAGE });
+							throw new APIError('BAD_REQUEST', { message: FULL_MESSAGE, code: 'GROUP_FULL' });
 						}
 						if (!(await consumeInvite(db, code, new Date()))) throw inviteRequired();
 					},
