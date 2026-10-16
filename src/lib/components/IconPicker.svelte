@@ -18,7 +18,8 @@
 	let {
 		name,
 		value = $bindable(),
-		options = ICONS.map((icon) => icon.name),
+		// `lock` is reserved for private squares on member cards.
+		options = ICONS.map((icon) => icon.name).filter((n) => n !== 'lock'),
 		label = 'Icon',
 		error,
 		groups = false

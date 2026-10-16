@@ -69,6 +69,9 @@
 	import Flower from 'phosphor-svelte/lib/Flower';
 	import Pizza from 'phosphor-svelte/lib/Pizza';
 	import Lock from 'phosphor-svelte/lib/Lock';
+	import GridNine from 'phosphor-svelte/lib/GridNine';
+	import UserCircle from 'phosphor-svelte/lib/UserCircle';
+	import ShieldCheck from 'phosphor-svelte/lib/ShieldCheck';
 
 	type IconProps = {
 		weight?: Props['weight'];
@@ -154,6 +157,9 @@
 		cactus: Cactus,
 		flower: Flower,
 		pizza: Pizza,
+		'grid-nine': GridNine,
+		'user-circle': UserCircle,
+		'shield-check': ShieldCheck,
 		lock: Lock
 	};
 

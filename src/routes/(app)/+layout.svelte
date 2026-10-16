@@ -20,7 +20,7 @@
 	noindex
 />
 
-<header class="border-b-2 border-line bg-white">
+<header class="border-b border-line bg-surface">
 	<div class="shell">
 		<div class="who">
 			<span class="avatar" aria-hidden="true"><Icon name={data.user.avatarIcon} /></span>
@@ -31,38 +31,20 @@
 		</form>
 		<nav aria-label="Main" class="bar">
 			<a href={resolve('/(app)/today')} aria-current={current('/today')} class="tab"
-				><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"
-					><rect x="3.5" y="5" width="17" height="15.5" rx="3.5" /><path
-						d="M3.5 10h17M8 3v4M16 3v4"
-					/><path d="m9 15 2 2 4-4" /></svg
-				><span class="label">Today</span></a
+				><Icon name="sun-horizon" size={26} /><span class="label">Today</span></a
 			>
 			<a href={resolve('/(app)/card')} aria-current={current('/card', true)} class="tab"
-				><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"
-					><rect x="3.5" y="3.5" width="17" height="17" rx="3.5" /><path
-						d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"
-					/></svg
-				><span class="label">Card</span></a
+				><Icon name="grid-nine" size={26} /><span class="label">Card</span></a
 			>
 			<a href={resolve('/(app)/groups')} aria-current={current('/groups', true)} class="tab"
-				><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"
-					><circle cx="9" cy="8.5" r="3.5" /><path
-						d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"
-					/><path d="M15.5 5.3a3.5 3.5 0 0 1 0 6.4M18 14.9c1.8.8 3 2.5 3.5 5.1" /></svg
-				><span class="label">Groups</span></a
+				><Icon name="users-three" size={26} /><span class="label">Groups</span></a
 			>
 			<a href={resolve('/(app)/me')} aria-current={current('/me')} class="tab"
-				><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"
-					><circle cx="12" cy="8" r="4" /><path d="M4 21c.8-4.2 4-6.5 8-6.5s7.2 2.3 8 6.5" /></svg
-				><span class="label">Me</span></a
+				><Icon name="user-circle" size={26} /><span class="label">Me</span></a
 			>
 			{#if data.user.isAdmin}
 				<a href={resolve('/(app)/admin')} aria-current={current('/admin')} class="tab"
-					><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"
-						><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.9 7.5-9.5V6L12 3Z" /><path
-							d="m9 12 2 2 4-4"
-						/></svg
-					><span class="label">Admin</span></a
+					><Icon name="shield-check" size={26} /><span class="label">Admin</span></a
 				>
 			{/if}
 		</nav>
@@ -96,7 +78,7 @@
 		width: 40px;
 		height: 40px;
 		border-radius: 9999px;
-		border: 2px solid var(--color-line);
+		border: 1px solid var(--color-line);
 		background: var(--color-earned-tile);
 		color: var(--color-forest);
 		font-size: 1.25rem;
@@ -118,20 +100,11 @@
 	}
 	.signout:focus-visible,
 	.tab:focus-visible {
-		outline: 3px solid var(--color-ink);
+		outline: 3px solid var(--color-forest);
 		outline-offset: 2px;
 	}
-	.icon {
-		width: 26px;
-		height: 26px;
-		fill: none;
-		stroke: currentColor;
-		stroke-width: 2.25;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-	}
 	.label {
-		font-size: 0.75rem;
+		font-size: 0.75rem; /* 12px */
 		font-weight: 800;
 		line-height: 1;
 	}
@@ -151,10 +124,10 @@
 		flex: 1;
 		max-width: 104px;
 		height: 74px;
-		border: 2px solid var(--color-line);
+		border: 1px solid var(--color-line);
 		border-bottom: 0;
 		border-radius: 16px 16px 0 0;
-		background: #fff;
+		background: var(--color-surface);
 		color: var(--color-ink);
 	}
 	/* --tab-bar also lifts the cookie notice above the tabs. */
@@ -175,15 +148,13 @@
 	}
 	.tab:hover {
 		transform: translateY(-4px);
-		border-color: color-mix(in srgb, var(--color-ink) 35%, var(--color-line));
+		border-color: var(--color-leaf);
 	}
 	.tab[aria-current='page'] {
 		transform: translateY(-8px);
-		border-color: var(--color-ink);
-		background: var(--color-cream);
-	}
-	.tab[aria-current='page'] .icon {
-		stroke-width: 2.75;
+		border-color: var(--color-forest);
+		background: var(--color-page);
+		color: var(--color-forest);
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.tab {

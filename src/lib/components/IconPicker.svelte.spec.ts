@@ -15,6 +15,11 @@ describe('IconPicker', () => {
 		expect(checked.value).toBe('leaf');
 	});
 
+	it('does not offer the reserved lock icon by default', () => {
+		render(IconPicker, { name: 'icon', value: '' });
+		expect(page.getByRole('radio', { name: 'Private' }).elements()).toHaveLength(0);
+	});
+
 	it('names each option by its label', async () => {
 		render(IconPicker, { name: 'icon', value: '', options: ['book-open'] });
 		await expect.element(page.getByRole('radio', { name: 'Book' })).toBeInTheDocument();

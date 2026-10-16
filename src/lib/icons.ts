@@ -68,6 +68,9 @@ export const ICONS = [
 	{ name: 'cactus', label: 'Cactus', group: 'other' },
 	{ name: 'flower', label: 'Flower', group: 'other' },
 	{ name: 'pizza', label: 'Pizza', group: 'other' },
+	{ name: 'grid-nine', label: 'Grid', group: 'other' },
+	{ name: 'user-circle', label: 'Person', group: 'other' },
+	{ name: 'shield-check', label: 'Shield', group: 'other' },
 	{ name: 'lock', label: 'Private', group: 'other' }
 ] as const satisfies readonly { name: string; label: string; group: CategoryId }[];
 
