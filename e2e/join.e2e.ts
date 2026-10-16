@@ -83,5 +83,5 @@ test('a valid invite offers people who already have an account a way to sign in'
 	await page.goto('/join/E2E-OPEN');
 	await expect(page.getByText('Already have an account?')).toBeVisible();
 	await page.getByRole('link', { name: 'Sign in' }).click();
-	await expect(page).toHaveURL(//signin?next=%2Fjoin%2FE2E-OPEN$/);
+	await expect(page).toHaveURL(/\/signin\?next=%2Fjoin%2FE2E-OPEN$/);
 });
