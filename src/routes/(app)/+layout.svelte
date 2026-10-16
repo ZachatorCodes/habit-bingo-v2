@@ -41,6 +41,11 @@
 				aria-current={current('/card', true)}
 				class={linkClass('/card', true)}>Card</a
 			>
+			<a
+				href={resolve('/(app)/groups')}
+				aria-current={current('/groups', true)}
+				class={linkClass('/groups', true)}>Groups</a
+			>
 			<a href={resolve('/(app)/me')} aria-current={current('/me')} class={linkClass('/me')}>Me</a>
 			{#if data.user.isAdmin}
 				<a

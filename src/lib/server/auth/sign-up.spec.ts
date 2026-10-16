@@ -2,7 +2,8 @@ import { APIError } from 'better-auth/api';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from '#lib/server/db/client.ts';
-import { invite, user } from '#lib/server/db/schema.ts';
+import { groupMember, invite, user } from '#lib/server/db/schema.ts';
+import { createGroup, getMembership, MAX_MEMBERS } from '#lib/server/groups.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import type { Auth } from './create-auth.ts';
 import { createInvite } from './invites.ts';
@@ -160,5 +161,30 @@ describe('concurrent sign-ups for the same username', () => {
 				new Headers()
 			)
 		).rejects.toBe(outage);
+	});
+
+	it('maps a full group link to a form error', async () => {
+		const ownerId = crypto.randomUUID();
+		await db.insert(user).values({ id: ownerId, name: 'O', email: `${ownerId}@users.invalid` });
+		const made = await createGroup(db, ownerId, { name: 'Crew', emoji: '🔥' }, new Date());
+		if (!made.ok) throw new Error(made.message);
+		const groupCode = (await getMembership(db, ownerId, made.groupId))!.inviteCode;
+		const ids = Array.from({ length: MAX_MEMBERS - 1 }, () => crypto.randomUUID());
+		await db
+			.insert(user)
+			.values(ids.map((id) => ({ id, name: 'M', email: `${id}@users.invalid` })));
+		await db.insert(groupMember).values(
+			ids.map((userId) => ({
+				groupId: made.groupId,
+				userId,
+				role: 'member' as const,
+				joinedAt: new Date()
+			}))
+		);
+		expect(await signUp({}, withInvite(groupCode))).toEqual({
+			ok: false,
+			field: 'form',
+			message: 'This group is full.'
+		});
 	});
 });

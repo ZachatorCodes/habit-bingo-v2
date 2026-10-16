@@ -6,6 +6,7 @@ import { sveltekitCookies } from 'better-auth/svelte-kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { Db } from '#lib/server/db/client.ts';
 import { account, rateLimit, session, user, verification } from '#lib/server/db/schema.ts';
+import { FULL_MESSAGE, groupForInvite, joinGroup, MAX_MEMBERS } from '#lib/server/groups.ts';
 import { consumeInvite } from './invites.ts';
 import { checkPassword, PASSWORD_MESSAGES } from './password-policy.ts';
 
@@ -211,12 +212,20 @@ export function createAuth(db: Db, options: AuthOptions) {
 							const [anyUser] = await db.select({ id: user.id }).from(user).limit(1);
 							if (!anyUser) return { data: { ...newUser, isAdmin: true } };
 						}
+						// A dead group link falls through to consumeInvite, which refuses it as today.
+						const forGroup = await groupForInvite(db, code, new Date());
+						if (forGroup && forGroup !== 'dead' && forGroup.memberCount >= MAX_MEMBERS) {
+							throw new APIError('BAD_REQUEST', { message: FULL_MESSAGE, code: 'GROUP_FULL' });
+						}
 						if (!(await consumeInvite(db, code, new Date()))) throw inviteRequired();
 					},
 					// The invite is spent: clear its cookie, for Google sign-ups (whose callback is Better
 					// Auth's own route) as well as password ones. Set on Better Auth's response, so it reaches
 					// the browser from the OAuth callback and, via sveltekitCookies, from our form actions.
-					after: async (_created, ctx) => {
+					after: async (created, ctx) => {
+						// Join the invite's group, if it has one; a refusal (full, raced) leaves the account as is.
+						const code = readCookie(ctx?.headers, INVITE_COOKIE);
+						if (code) await joinGroup(db, created.id, code, new Date());
 						ctx?.setCookie(INVITE_COOKIE, '', {
 							httpOnly: true,
 							secure: true,

@@ -1,0 +1,153 @@
+import { expect, test, type Browser, type Page } from '@playwright/test';
+import {
+	newMember,
+	newMemberWithHabits,
+	startCard,
+	uniqueUsername,
+	waitForHydration
+} from './fixtures.ts';
+
+/** A second person in their own browser context. */
+async function otherPerson(browser: Browser): Promise<Page> {
+	return (await browser.newContext()).newPage();
+}
+
+/** Creates "Climbers" 🧗 and returns the group page URL path and its invite link. */
+async function createClimbers(page: Page): Promise<{ groupPath: string; link: string }> {
+	await page.goto('/groups/new');
+	await waitForHydration(page);
+	await page.getByRole('textbox', { name: 'Emoji' }).fill('🧗');
+	await page.getByRole('textbox', { name: 'Name' }).fill('Climbers');
+	await page.getByRole('button', { name: 'Create group' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: /Climbers/ })).toBeVisible();
+	const groupPath = new URL(page.url()).pathname;
+	await page.goto(`${groupPath}?tab=members`);
+	const link = await page.getByRole('textbox', { name: 'Invite link' }).inputValue();
+	return { groupPath, link };
+}
+
+/** B joins through the link, as an existing signed-in account. */
+async function join(page: Page, link: string): Promise<void> {
+	await page.goto(link);
+	await waitForHydration(page);
+	await expect(page.getByRole('heading', { level: 1, name: 'Join Climbers' })).toBeVisible();
+	await page.getByRole('button', { name: 'Join', exact: true }).click();
+	await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+}
+
+test('a group gets a member through its link', async ({ page, browser }) => {
+	const a = await newMember(page);
+	const { groupPath, link } = await createClimbers(page);
+
+	const pageB = await otherPerson(browser);
+	const b = await newMember(pageB);
+	await join(pageB, link);
+	await expect(pageB.getByRole('heading', { level: 1, name: /Climbers/ })).toBeVisible();
+	await expect(pageB.getByRole('link', { name: 'This month' })).toHaveAttribute(
+		'aria-current',
+		'page'
+	);
+	await expect(pageB.getByText(`@${b.username} (you)`)).toBeVisible();
+	await expect(pageB.getByText(`@${a.username}`)).toBeVisible();
+
+	await page.goto(groupPath);
+	await expect(page.getByText(`@${b.username}`)).toBeVisible();
+	await expect(page.getByText(`@${a.username} (you)`)).toBeVisible();
+	await pageB.context().close();
+});
+
+test("a member's card hides private habits", async ({ page, browser }) => {
+	await newMember(page);
+	const { link } = await createClimbers(page);
+
+	const pageB = await otherPerson(browser);
+	const b = await newMemberWithHabits(pageB, 7);
+	await pageB.goto('/me/habits/new');
+	await waitForHydration(pageB);
+	await pageB.getByRole('textbox', { name: 'Emoji' }).fill('🤫');
+	await pageB.getByRole('textbox', { name: 'Name' }).fill('Secret stretch');
+	await pageB
+		.locator('label')
+		.filter({ has: pageB.getByRole('radio', { name: /Mind/ }) })
+		.click();
+	await pageB.getByRole('checkbox', { name: /Private/ }).check();
+	await pageB.getByRole('button', { name: 'Add habit' }).click();
+	await expect(pageB).toHaveURL(/\/me\/habits\?/);
+	await startCard(pageB);
+	await expect(pageB.getByText('Secret stretch').first()).toBeVisible();
+	await join(pageB, link);
+
+	await page.goto('/groups');
+	await page.getByRole('link', { name: /Climbers/ }).click();
+	await page.getByRole('link', { name: new RegExp(`@${b.username}`) }).click();
+	await expect(
+		page.getByRole('heading', { level: 1, name: new RegExp(`@${b.username}`) })
+	).toBeVisible();
+	await expect(page.getByText('🔒').first()).toBeVisible();
+	await expect(page.getByText('Secret stretch')).toHaveCount(0);
+	await expect(page.locator('body')).not.toContainText('Secret stretch');
+	await pageB.context().close();
+});
+
+test('a new person signs up through a group link', async ({ page, browser }) => {
+	await newMember(page);
+	const { link } = await createClimbers(page);
+
+	const pageC = await otherPerson(browser);
+	await pageC.goto(link);
+	await waitForHydration(pageC);
+	await pageC.getByLabel('Username').fill(uniqueUsername());
+	await pageC.getByLabel('Display name').fill('Newcomer');
+	await pageC.getByLabel('Password').fill('a long new password 1');
+	await pageC.getByRole('button', { name: 'Create account' }).click();
+	await pageC.waitForURL(/\/onboarding$/);
+	await waitForHydration(pageC);
+	await pageC.getByRole('button', { name: "Let's go" }).click();
+	await pageC.waitForURL((url) => !url.pathname.startsWith('/onboarding'));
+
+	await pageC.goto('/groups');
+	await expect(pageC.getByRole('link', { name: /Climbers/ })).toBeVisible();
+	await pageC.context().close();
+});
+
+test('the owner leaves and the other member becomes owner', async ({ page, browser }) => {
+	await newMember(page);
+	const { groupPath, link } = await createClimbers(page);
+
+	const pageB = await otherPerson(browser);
+	const b = await newMember(pageB);
+	await join(pageB, link);
+
+	await page.goto(`${groupPath}?tab=members`);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Leave group' }).click();
+	await expect(page.getByRole('dialog')).toContainText(`Ownership passes to @${b.username}.`);
+	await page.getByRole('dialog').getByRole('button', { name: 'Leave group' }).click();
+	await expect(page).toHaveURL(/\/groups$/);
+
+	await pageB.goto(`${groupPath}?tab=members`);
+	await expect(pageB.getByRole('listitem').filter({ hasText: `@${b.username}` })).toContainText(
+		'Owner'
+	);
+	await pageB.context().close();
+});
+
+test('strangers get a 404', async ({ page, browser }) => {
+	await newMember(page);
+	const { groupPath, link } = await createClimbers(page);
+
+	const pageB = await otherPerson(browser);
+	await newMember(pageB);
+	await join(pageB, link);
+	const cardPath = new URL(
+		(await pageB.getByRole('link', { name: /\(you\)/ }).getAttribute('href'))!,
+		pageB.url()
+	).pathname;
+
+	const pageC = await otherPerson(browser);
+	await newMember(pageC);
+	expect((await pageC.goto(groupPath))?.status()).toBe(404);
+	expect((await pageC.goto(cardPath))?.status()).toBe(404);
+	await pageB.context().close();
+	await pageC.context().close();
+});

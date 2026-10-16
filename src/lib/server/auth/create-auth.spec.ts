@@ -1,9 +1,16 @@
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Db } from '#lib/server/db/client.ts';
-import { account, invite, session, user } from '#lib/server/db/schema.ts';
+import { account, groupMember, invite, session, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import { DISABLED_PATHS, type Auth } from './create-auth.ts';
+import {
+	createGroup,
+	FULL_MESSAGE,
+	getMembership,
+	MAX_MEMBERS,
+	resetInvite
+} from '#lib/server/groups.ts';
 import { createInvite, getInviteStatus } from './invites.ts';
 import { createTestAuth } from './test-auth.ts';
 
@@ -220,6 +227,57 @@ describe('createAuth', () => {
 });
 
 describe('invites at sign-up', () => {
+	async function newGroup() {
+		const made = await createGroup(db, inviterId, { name: 'Crew', emoji: '🔥' }, new Date());
+		if (!made.ok) throw new Error(made.message);
+		const membership = await getMembership(db, inviterId, made.groupId);
+		return { groupId: made.groupId, code: membership!.inviteCode };
+	}
+	const members = (groupId: string) =>
+		db.select().from(groupMember).where(eq(groupMember.groupId, groupId));
+
+	it('adds a person who signs up through a group link to that group', async () => {
+		const { groupId, code } = await newGroup();
+		const { user: created } = await signUp('grouped', PASSWORD, code);
+		expect((await members(groupId)).find((m) => m.userId === created.id)).toMatchObject({
+			role: 'member'
+		});
+	});
+
+	it('refuses a sign-up through a full group and keeps the invite use', async () => {
+		const { groupId, code } = await newGroup();
+		const ids = Array.from({ length: MAX_MEMBERS - 1 }, () => crypto.randomUUID());
+		await db
+			.insert(user)
+			.values(ids.map((id) => ({ id, name: 'M', email: `${id}@users.invalid` })));
+		await db
+			.insert(groupMember)
+			.values(
+				ids.map((userId) => ({ groupId, userId, role: 'member' as const, joinedAt: new Date() }))
+			);
+		const usesBefore = await usesOf(code);
+		await expect(signUp('toolate', PASSWORD, code)).rejects.toMatchObject({
+			body: { message: FULL_MESSAGE }
+		});
+		expect(await usesOf(code)).toBe(usesBefore);
+		expect(await db.select().from(user).where(eq(user.username, 'toolate'))).toEqual([]);
+	});
+
+	it('treats a reset group link as an invite that no longer works', async () => {
+		const { groupId, code } = await newGroup();
+		await resetInvite(db, inviterId, groupId, new Date());
+		await expect(signUp('stale', PASSWORD, code)).rejects.toEqual(
+			apiError('FORBIDDEN', 'INVITE_REQUIRED')
+		);
+	});
+
+	it('does not add a person who signs up with an admin invite to any group', async () => {
+		await newGroup();
+		const { user: created } = await signUp('plain');
+		const rows = await db.select().from(groupMember).where(eq(groupMember.userId, created.id));
+		expect(rows).toEqual([]);
+	});
+
 	it('refuses sign-up without an invite cookie', async () => {
 		await expect(signUp('uninvited', PASSWORD, null)).rejects.toEqual(
 			apiError('FORBIDDEN', 'INVITE_REQUIRED', 'You need an invite to join.')

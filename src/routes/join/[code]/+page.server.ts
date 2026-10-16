@@ -2,6 +2,7 @@ import { error, fail, redirect, type Cookies } from '@sveltejs/kit';
 import * as z from 'zod';
 import {
 	BOOTSTRAP_INVITE_CODE,
+	TEST_CLOCK,
 	GOOGLE_CLIENT_ID,
 	GOOGLE_CLIENT_SECRET,
 	IP_LIMIT_MULTIPLIER
@@ -13,7 +14,9 @@ import { getJoinStatus } from '#lib/server/auth/invites.ts';
 import { checkAndRecordIp, TOO_MANY_ATTEMPTS_MESSAGE } from '#lib/server/auth/ip-limit.ts';
 import { checkPassword, PASSWORD_MESSAGES } from '#lib/server/auth/password-policy.ts';
 import { signUpWithPassword, USERNAME_RULES_MESSAGE } from '#lib/server/auth/sign-up.ts';
+import { requestNow } from '#lib/server/clock.ts';
 import { getDb } from '#lib/server/db/client.ts';
+import { DEAD_LINK_MESSAGE, getMembership, groupForInvite, joinGroup } from '#lib/server/groups.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 type Field = 'username' | 'name' | 'password' | 'form';
@@ -53,9 +56,15 @@ function setInviteCookie(cookies: Cookies, code: string) {
 }
 
 export const load: PageServerLoad = async ({ params, cookies, locals }) => {
-	if (locals.user) redirect(303, '/today');
 	const db = getDb();
 	if (!db) error(503, 'Sign-up is not available right now.');
+	if (locals.user) {
+		const found = await groupForInvite(db, params.code, requestNow(cookies, TEST_CLOCK));
+		if (!found) redirect(303, '/today');
+		if (found === 'dead') return { status: 'groupDead' as const, message: DEAD_LINK_MESSAGE };
+		const member = Boolean(await getMembership(db, locals.user.id, found.group.id));
+		return { status: 'group' as const, ...found, member };
+	}
 
 	const status = await getJoinStatus(db, params.code, new Date(), BOOTSTRAP_INVITE_CODE);
 	// Dead invites get a friendly page and no cookie (Review Focus 3).
@@ -66,6 +75,19 @@ export const load: PageServerLoad = async ({ params, cookies, locals }) => {
 };
 
 export const actions: Actions = {
+	join: async ({ params, cookies, locals }) => {
+		if (!locals.user) redirect(303, `/signin?next=${encodeURIComponent(`/join/${params.code}`)}`);
+		const db = getDb();
+		if (!db) error(503, 'Groups are not available right now.');
+		const result = await joinGroup(
+			db,
+			locals.user.id,
+			params.code,
+			requestNow(cookies, TEST_CLOCK)
+		);
+		if (!result.ok) return fail(400, { message: result.message });
+		redirect(303, `/groups/${result.groupId}`);
+	},
 	google: async ({ params, request, cookies, locals }) => {
 		if (locals.user) redirect(303, '/today');
 		if (!googleEnabled()) error(404, 'Google sign-in is not available.');

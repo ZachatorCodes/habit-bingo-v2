@@ -3,6 +3,7 @@ import { and, eq, isNotNull, isNull, or } from 'drizzle-orm';
 import { AVATAR_EMOJI, isValidTimezone, type WeekStart } from '#lib/profile.ts';
 import type { Db } from '#lib/server/db/client.ts';
 import { account, user } from '#lib/server/db/schema.ts';
+import { leaveGroup, listGroups } from '#lib/server/groups.ts';
 import type { Auth } from './create-auth.ts';
 import { PASSWORD_MESSAGES } from './password-policy.ts';
 import { isUniqueViolation, USERNAME_RULES_MESSAGE, USERNAME_TAKEN_MESSAGE } from './sign-up.ts';
@@ -148,7 +149,9 @@ export async function getSignInMethods(
 }
 
 /** Deletes the user row; sessions, accounts, reset links and everything else cascade. */
-export async function deleteAccount(db: Db, userId: string): Promise<void> {
+export async function deleteAccount(db: Db, userId: string, now = new Date()): Promise<void> {
+	// Leave each group first so ownership passes on and an empty group's link dies.
+	for (const g of await listGroups(db, userId)) await leaveGroup(db, userId, g.id, now);
 	await db.delete(user).where(eq(user.id, userId));
 }
 
