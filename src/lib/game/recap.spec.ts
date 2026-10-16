@@ -12,8 +12,8 @@ describe('isFinal', () => {
 });
 
 describe('mostLogged', () => {
-	const bike = { id: 'a', emoji: '🚴', name: 'Go biking' };
-	const water = { id: 'b', emoji: '💧', name: 'Drink water' };
+	const bike = { id: 'a', icon: 'bicycle', name: 'Go biking' };
+	const water = { id: 'b', icon: 'drop', name: 'Drink water' };
 	const days = (entries: Record<string, number>) => new Map(Object.entries(entries));
 
 	it('sums every day and picks the highest total', () => {
@@ -22,7 +22,7 @@ describe('mostLogged', () => {
 			['b', days({ '2026-10-01': 9 })]
 		]);
 		expect(mostLogged([water, bike], checkIns)).toEqual({
-			emoji: '🚴',
+			icon: 'bicycle',
 			name: 'Go biking',
 			total: 14
 		});
@@ -55,8 +55,8 @@ describe('categoryBreakdown', () => {
 				{ category: 'mind', state: 'empty' }
 			])
 		).toEqual([
-			{ id: 'fitness', emoji: '💪', label: 'Fitness', counting: 2, total: 4 },
-			{ id: 'mind', emoji: '🧠', label: 'Mind', counting: 2, total: 3 }
+			{ id: 'fitness', icon: 'barbell', label: 'Fitness', counting: 2, total: 4 },
+			{ id: 'mind', icon: 'brain', label: 'Mind', counting: 2, total: 3 }
 		]);
 		expect(categoryBreakdown([])).toEqual([]);
 	});

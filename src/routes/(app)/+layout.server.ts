@@ -1,4 +1,5 @@
 import { redirect } from '@sveltejs/kit';
+import { DEFAULT_AVATAR_ICON } from '#lib/icons.ts';
 import { requireUser } from '#lib/server/auth/guards.ts';
 import type { LayoutServerLoad } from './$types';
 
@@ -12,13 +13,13 @@ export const load: LayoutServerLoad = ({ locals, url, setHeaders }) => {
 	// Personal pages: never stored by a shared cache.
 	setHeaders({ 'cache-control': 'private, no-store' });
 
-	const { id, username, displayUsername, name, avatarEmoji, isAdmin } = user;
+	const { id, username, displayUsername, name, avatarIcon, isAdmin } = user;
 	return {
 		user: {
 			id,
 			displayUsername: displayUsername ?? username ?? name,
 			name,
-			avatarEmoji: avatarEmoji ?? '🙂',
+			avatarIcon: avatarIcon ?? DEFAULT_AVATAR_ICON,
 			isAdmin: isAdmin ?? false
 		}
 	};

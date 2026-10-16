@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from '$app/env/private';
-import { AVATAR_EMOJI, type WeekStart } from '#lib/profile.ts';
+import { AVATAR_ICONS } from '#lib/icons.ts';
+import type { WeekStart } from '#lib/profile.ts';
 import {
 	changeUserPassword,
 	deleteAccount,
@@ -63,12 +64,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	return {
 		profile: {
 			name: user.name,
-			avatarEmoji: user.avatarEmoji ?? AVATAR_EMOJI[0],
+			avatarIcon: user.avatarIcon ?? AVATAR_ICONS[0],
 			displayUsername: user.displayUsername ?? user.username ?? ''
 		},
 		settings: { timezone, weekStartsOn: (user.weekStartsOn ?? 'monday') as WeekStart },
 		timezones: timezoneOptions(timezone),
-		avatars: AVATAR_EMOJI,
+		avatars: AVATAR_ICONS,
 		methods,
 		googleEnabled: googleEnabled(),
 		// Better Auth sends failed Google links back here with ?error=<code>.
@@ -81,7 +82,7 @@ export const actions: Actions = {
 		const user = requireUser(locals);
 		const db = requireDb();
 		const text = await readForm(request);
-		const values = { name: text('name'), avatarEmoji: text('avatarEmoji') };
+		const values = { name: text('name'), avatarIcon: text('avatarIcon') };
 		const result = await updateProfile(db, user.id, values);
 		if (!result.ok) return failed('profile', result.field, result.message, values);
 		return { section: 'profile', saved: true };

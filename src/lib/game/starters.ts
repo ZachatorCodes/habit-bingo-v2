@@ -1,9 +1,10 @@
+import type { IconName } from '#lib/icons.ts';
 import type { CategoryId } from './categories.ts';
 import type { HabitRule } from './habit-rules.ts';
 
 export type Starter = {
 	id: string;
-	emoji: string;
+	icon: IconName;
 	name: string;
 	category: CategoryId;
 	rule: HabitRule;
@@ -13,70 +14,70 @@ export type Starter = {
 export const STARTERS: readonly Starter[] = [
 	{
 		id: 'read-book',
-		emoji: '📚',
+		icon: 'book-open',
 		name: 'Finish a book',
 		category: 'learning',
 		rule: { direction: 'atLeast', period: 'month', countMode: 'days', target: 1 }
 	},
 	{
 		id: 'bike',
-		emoji: '🚴',
+		icon: 'bicycle',
 		name: 'Go biking',
 		category: 'fitness',
 		rule: { direction: 'atLeast', period: 'month', countMode: 'times', target: 3 }
 	},
 	{
 		id: 'meditate',
-		emoji: '🧘',
+		icon: 'flower-lotus',
 		name: 'Meditate',
 		category: 'mind',
 		rule: { direction: 'atLeast', period: 'week', countMode: 'days', target: 2 }
 	},
 	{
 		id: 'power-clean',
-		emoji: '🧹',
+		icon: 'broom',
 		name: 'Power clean',
 		category: 'home',
 		rule: { direction: 'atLeast', period: 'week', countMode: 'days', target: 2 }
 	},
 	{
 		id: 'litter',
-		emoji: '🐈',
+		icon: 'cat',
 		name: 'Scoop the litter box',
 		category: 'home',
 		rule: { direction: 'atLeast', period: 'day', countMode: 'times', target: 1 }
 	},
 	{
 		id: 'water',
-		emoji: '💧',
+		icon: 'drop',
 		name: 'Drink water',
 		category: 'health',
 		rule: { direction: 'atLeast', period: 'day', countMode: 'times', target: 8 }
 	},
 	{
 		id: 'call-friend',
-		emoji: '📞',
+		icon: 'phone',
 		name: 'Call an old friend',
 		category: 'social',
 		rule: { direction: 'atLeast', period: 'month', countMode: 'days', target: 1 }
 	},
 	{
 		id: 'eat-out',
-		emoji: '🍔',
+		icon: 'hamburger',
 		name: 'Eat out',
 		category: 'money',
 		rule: { direction: 'atMost', period: 'month', countMode: 'times', target: 10 }
 	},
 	{
 		id: 'naps',
-		emoji: '😴',
+		icon: 'bed',
 		name: 'Nap',
 		category: 'health',
 		rule: { direction: 'atMost', period: 'month', countMode: 'days', target: 3 }
 	},
 	{
 		id: 'no-alcohol',
-		emoji: '🍺',
+		icon: 'wine',
 		name: 'Alcohol',
 		category: 'health',
 		rule: { direction: 'atMost', period: 'month', countMode: 'days', target: 0 }

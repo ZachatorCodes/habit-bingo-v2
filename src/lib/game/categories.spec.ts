@@ -2,17 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { CATEGORIES, isCategoryId } from './categories';
 
 describe('categories', () => {
-	it('lists the nine categories in spec order with their emoji', () => {
-		expect(CATEGORIES.map((c) => `${c.emoji} ${c.label}`)).toEqual([
-			'💪 Fitness',
-			'🥗 Health',
-			'🧠 Mind',
-			'🏠 Home',
-			'👥 Social',
-			'📚 Learning',
-			'🎨 Creative',
-			'💰 Money',
-			'✨ Other'
+	it('lists the nine categories in spec order with their icons', () => {
+		expect(CATEGORIES.map((c) => `${c.icon} ${c.label}`)).toEqual([
+			'barbell Fitness',
+			'heartbeat Health',
+			'brain Mind',
+			'house Home',
+			'users-three Social',
+			'graduation-cap Learning',
+			'palette Creative',
+			'piggy-bank Money',
+			'sparkle Other'
 		]);
 		expect(CATEGORIES.map((c) => c.id)).toEqual([
 			'fitness',

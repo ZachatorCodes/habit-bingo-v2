@@ -101,7 +101,7 @@ describe('createAuth', () => {
 		const { user: created } = await signUp('defaults');
 		const [row] = await db.select().from(user).where(eq(user.id, created.id));
 		expect(row).toMatchObject({
-			avatarEmoji: '🙂',
+			avatarIcon: 'smiley',
 			timezone: 'UTC',
 			weekStartsOn: 'monday',
 			isAdmin: false,
@@ -228,7 +228,7 @@ describe('createAuth', () => {
 
 describe('invites at sign-up', () => {
 	async function newGroup() {
-		const made = await createGroup(db, inviterId, { name: 'Crew', emoji: '🔥' }, new Date());
+		const made = await createGroup(db, inviterId, { name: 'Crew', icon: 'rocket' }, new Date());
 		if (!made.ok) throw new Error(made.message);
 		const membership = await getMembership(db, inviterId, made.groupId);
 		return { groupId: made.groupId, code: membership!.inviteCode };

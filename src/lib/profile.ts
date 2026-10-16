@@ -1,31 +1,3 @@
-/** The avatars people can pick from. */
-export const AVATAR_EMOJI = [
-	'🙂',
-	'😎',
-	'🤓',
-	'🥳',
-	'😺',
-	'🐶',
-	'🦊',
-	'🐼',
-	'🐸',
-	'🐵',
-	'🦄',
-	'🐙',
-	'🌵',
-	'🌻',
-	'🍀',
-	'🍉',
-	'🍕',
-	'🍩',
-	'⚽',
-	'🏀',
-	'🎸',
-	'🎨',
-	'🚀',
-	'⭐'
-] as const;
-
 export type WeekStart = 'monday' | 'sunday';
 
 /** True for IANA zone names the runtime knows, plus `UTC`. */

@@ -4,6 +4,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { username } from 'better-auth/plugins';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import type { RequestEvent } from '@sveltejs/kit';
+import { DEFAULT_AVATAR_ICON } from '#lib/icons.ts';
 import type { Db } from '#lib/server/db/client.ts';
 import { account, rateLimit, session, user, verification } from '#lib/server/db/schema.ts';
 import { FULL_MESSAGE, groupForInvite, joinGroup, MAX_MEMBERS } from '#lib/server/groups.ts';
@@ -146,7 +147,7 @@ export function createAuth(db: Db, options: AuthOptions) {
 			: undefined,
 		user: {
 			additionalFields: {
-				avatarEmoji: { type: 'string', required: false, defaultValue: '🙂' },
+				avatarIcon: { type: 'string', required: false, defaultValue: DEFAULT_AVATAR_ICON },
 				timezone: { type: 'string', required: false, defaultValue: 'UTC' },
 				weekStartsOn: { type: ['monday', 'sunday'], required: false, defaultValue: 'monday' },
 				isAdmin: { type: 'boolean', required: false, defaultValue: false, input: false },

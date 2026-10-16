@@ -10,7 +10,8 @@ import type { Db } from '#lib/server/db/client.ts';
 export type ViewSquare = {
 	/** Habit squares only: links to the habit sheet. */
 	id?: string;
-	emoji: string;
+	/** Usually an `IconName`; private squares use 'lock'. */
+	icon: string;
 	name: string;
 	state: SquareState;
 	progress?: number;
@@ -41,17 +42,17 @@ export async function cardView(
 	const state = centerState(card.month, today, builtInTime);
 	const center: ViewSquare =
 		today < nextMonthOpens(card.month)
-			? { emoji: '⭐', name: 'Free', state, points: 0 }
+			? { icon: 'star', name: 'Free', state, points: 0 }
 			: state === 'buildNext'
-				? { emoji: '🗓️', name: `Build ${next}'s card`, state, link: true, points: 0 }
-				: { emoji: '🗓️', name: `${next} ready`, state, link: true, points: 0 };
+				? { icon: 'rocket', name: `Build ${next}'s card`, state, link: true, points: 0 }
+				: { icon: 'rocket', name: `${next} ready`, state, link: true, points: 0 };
 	const squares = card.squares.map((square): ViewSquare => {
 		if (square.isCenter) return center;
 		const counts = checkIns.get(square.id) ?? new Map<string, number>();
 		const evaluation = evaluateSquare(square, card, counts, today);
 		return {
 			id: square.id,
-			emoji: square.emoji,
+			icon: square.icon,
 			name: square.name,
 			...evaluation,
 			points: squarePoints(square, card, counts, today, evaluation.state)

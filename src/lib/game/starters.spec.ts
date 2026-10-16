@@ -1,24 +1,25 @@
 import { describe, expect, it } from 'vitest';
+import { isIconName } from '#lib/icons.ts';
 import { isCategoryId } from './categories';
-import { describeRule, isSingleEmoji, normalizeRule } from './habit-rules';
+import { describeRule, normalizeRule } from './habit-rules';
 import { STARTERS } from './starters';
 
 describe('STARTERS', () => {
 	it('has exactly the ten starters, each a valid rule', () => {
-		expect(STARTERS.map((s) => `${s.id} ${s.emoji} ${s.name} ${s.category}`)).toEqual([
-			'read-book 📚 Finish a book learning',
-			'bike 🚴 Go biking fitness',
-			'meditate 🧘 Meditate mind',
-			'power-clean 🧹 Power clean home',
-			'litter 🐈 Scoop the litter box home',
-			'water 💧 Drink water health',
-			'call-friend 📞 Call an old friend social',
-			'eat-out 🍔 Eat out money',
-			'naps 😴 Nap health',
-			'no-alcohol 🍺 Alcohol health'
+		expect(STARTERS.map((s) => `${s.id} ${s.icon} ${s.name} ${s.category}`)).toEqual([
+			'read-book book-open Finish a book learning',
+			'bike bicycle Go biking fitness',
+			'meditate flower-lotus Meditate mind',
+			'power-clean broom Power clean home',
+			'litter cat Scoop the litter box home',
+			'water drop Drink water health',
+			'call-friend phone Call an old friend social',
+			'eat-out hamburger Eat out money',
+			'naps bed Nap health',
+			'no-alcohol wine Alcohol health'
 		]);
 		for (const starter of STARTERS) {
-			expect(isSingleEmoji(starter.emoji)).toBe(true);
+			expect(isIconName(starter.icon)).toBe(true);
 			expect(isCategoryId(starter.category)).toBe(true);
 			expect(normalizeRule(starter.rule)).toEqual({ ok: true, rule: starter.rule });
 		}

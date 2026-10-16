@@ -72,7 +72,7 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 		};
 		sections[todaySection(square, card, counts, day)].push({
 			squareId: square.id,
-			emoji: square.emoji,
+			icon: square.icon,
 			name: square.name,
 			...view(count),
 			ifLogged: view(Math.min(count + 1, MAX_COUNT)),

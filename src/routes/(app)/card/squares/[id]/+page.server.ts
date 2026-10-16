@@ -53,9 +53,9 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 	const category = CATEGORIES.find((c) => c.id === square.category)!;
 	const sheet: SheetData = {
 		id: square.id,
-		emoji: square.emoji,
+		icon: square.icon,
 		name: square.name,
-		category: `${category.emoji} ${category.label}`,
+		category: category.label,
 		rule: describeRule(square),
 		countMode: square.period === 'day' ? 'times' : square.countMode,
 		state,

@@ -33,10 +33,10 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 		isOwner: membership.role === 'owner',
 		tab,
 		board,
-		members: members.map(({ userId, displayUsername, avatarEmoji, role }) => ({
+		members: members.map(({ userId, displayUsername, avatarIcon, role }) => ({
 			userId,
 			displayUsername: displayUsername ?? 'Someone',
-			avatarEmoji,
+			avatarIcon,
 			role
 		})),
 		inviteLink: `${url.origin}/join/${membership.inviteCode}`,

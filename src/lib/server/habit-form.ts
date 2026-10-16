@@ -8,7 +8,7 @@ export async function readHabitForm(request: Request): Promise<HabitInput> {
 		return typeof value === 'string' ? value : '';
 	};
 	return {
-		emoji: text('emoji'),
+		icon: text('icon'),
 		name: text('name'),
 		category: text('category'),
 		direction: text('direction'),
@@ -27,7 +27,7 @@ export function libraryUrl(category: string, flag: 'created' | 'saved'): string 
 
 /** A blank habit form's starting values. */
 export const DEFAULT_HABIT_INPUT: HabitInput = {
-	emoji: '',
+	icon: '',
 	name: '',
 	category: 'other',
 	direction: 'atLeast',

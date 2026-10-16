@@ -40,7 +40,7 @@ async function makeUser(
 
 async function makeHabit(userId: string, name: string, overrides: Record<string, unknown> = {}) {
 	const result = await createHabit(db, userId, {
-		emoji: '🚴',
+		icon: 'bicycle',
 		name,
 		category: 'fitness',
 		direction: 'atLeast',
@@ -135,7 +135,7 @@ describe('startCard', () => {
 		expect(built.squares.filter((s) => !s.isCenter)).toHaveLength(8);
 		const readSquare = built.squares.find((s) => !s.isCenter && s.habitId === read.id);
 		expect(readSquare).toMatchObject({
-			emoji: '🚴',
+			icon: 'bicycle',
 			name: 'Read',
 			category: 'fitness',
 			direction: 'atLeast',
@@ -147,6 +147,22 @@ describe('startCard', () => {
 		const walkSquare = built.squares.find((s) => !s.isCenter && s.habitId === walk.id);
 		expect(walkSquare).toMatchObject({ target: 5 });
 		expect(await getCard(db, me.id, '2026-10')).toEqual(built);
+	});
+
+	it("snapshots each habit's icon onto its square; the center has none", async () => {
+		const me = await makeUser();
+		const water = await makeHabit(me.id, 'Water', { icon: 'drop' });
+		const others = await makeHabits(me.id, 7);
+		const result = await startCard(db, me, plan([water, ...others], 3), OCT_19);
+		if (!result.ok) throw new Error(result.message);
+		const squares = result.card.squares;
+		expect(squares.find((s) => !s.isCenter && s.habitId === water.id)).toMatchObject({
+			icon: 'drop'
+		});
+		expect(squares[4]).not.toHaveProperty('icon');
+		const rows = await db.select().from(cardSquare).where(eq(cardSquare.cardId, result.card.id));
+		expect(rows.find((r) => r.isCenter)!.icon).toBeNull();
+		expect(rows.find((r) => r.habitId === water.id)!.icon).toBe('drop');
 	});
 
 	it('5×5 has a FREE square at position 12 and 24 habit squares', async () => {
@@ -272,7 +288,7 @@ describe('startCard', () => {
 		const habits = await makeHabits(me.id, 8);
 		const before = await started(me, habits);
 		await updateHabit(db, me.id, habits[0].id, {
-			emoji: '🍎',
+			icon: 'carrot',
 			name: 'Renamed',
 			category: 'health',
 			direction: 'atMost',
@@ -403,7 +419,7 @@ describe('updateCard', () => {
 	it('updates within the window, keeping square ids for habits that stay', async () => {
 		const me = await makeUser();
 		const habits = await makeHabits(me.id, 8);
-		const extra = await makeHabit(me.id, 'Extra', { emoji: '📚', category: 'mind' });
+		const extra = await makeHabit(me.id, 'Extra', { icon: 'book-open', category: 'mind' });
 		const before = await started(me, habits);
 		const swapped = [...habits.slice(0, 7), extra];
 		const layout = plan(swapped).layout.slice().reverse();
@@ -433,7 +449,7 @@ describe('updateCard', () => {
 		expect(after.squares.some((s) => s.id === droppedId)).toBe(false);
 		expect(after.squares.find((s) => !s.isCenter && s.habitId === extra.id)).toMatchObject({
 			name: 'Extra',
-			emoji: '📚'
+			icon: 'book-open'
 		});
 		expect(await db.select().from(cardSquare)).toHaveLength(9);
 	});
@@ -443,7 +459,7 @@ describe('updateCard', () => {
 		const habits = await makeHabits(me.id, 8);
 		const before = await started(me, habits);
 		await updateHabit(db, me.id, habits[0].id, {
-			emoji: '🍎',
+			icon: 'carrot',
 			name: 'Renamed',
 			category: 'health',
 			direction: 'atLeast',

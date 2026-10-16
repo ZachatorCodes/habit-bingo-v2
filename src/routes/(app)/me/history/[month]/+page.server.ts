@@ -52,7 +52,7 @@ export const load: PageServerLoad = async ({ locals, cookies, params }) => {
 		monthName: monthName(params.month),
 		size: card.size,
 		// Read-only: no habit sheet, no link to next month.
-		board: squares.map(({ emoji, name, state, progress }) => ({ emoji, name, state, progress })),
+		board: squares.map(({ icon, name, state, progress }) => ({ icon, name, state, progress })),
 		result,
 		percent: Math.round((result.squaresCounting / card.size ** 2) * 100),
 		rewards: result.tiers.map((tier) => ({ label: labels[tier], reward: rewards[tier] })),
