@@ -110,7 +110,7 @@ export async function memberCard(
 	if (card) {
 		const view = await cardView(db, memberId, card, today);
 		// Private at card start, or made private since.
-		const habitIds = card.squares.flatMap((s) => (s.habitId ? [s.habitId] : []));
+		const habitIds = card.squares.flatMap((s) => (!s.isCenter && s.habitId ? [s.habitId] : []));
 		const nowPrivate = new Set(
 			(
 				await db
@@ -121,7 +121,9 @@ export async function memberCard(
 		);
 		const privateIds = new Set(
 			card.squares
-				.filter((s) => !s.isCenter && (s.isPrivate || (s.habitId && nowPrivate.has(s.habitId))))
+				.filter(
+					(s) => !s.isCenter && (s.isPrivate || (s.habitId !== null && nowPrivate.has(s.habitId)))
+				)
 				.map((s) => s.id)
 		);
 		const squares = view.squares.map((square) => {
