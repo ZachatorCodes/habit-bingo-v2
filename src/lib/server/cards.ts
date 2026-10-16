@@ -223,6 +223,7 @@ function snapshot(habit: Habit, target: number) {
 	return {
 		habitId: habit.id,
 		emoji: habit.emoji,
+		icon: 'sparkle', // interim until Task 6 carries the habit's icon through Habit
 		name: habit.name,
 		category: habit.category,
 		direction: habit.direction,

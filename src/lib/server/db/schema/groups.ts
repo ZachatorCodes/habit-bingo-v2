@@ -6,7 +6,8 @@ import { user } from './auth.ts';
 export const group = pgTable('group', {
 	id: text('id').primaryKey(),
 	name: text('name').notNull(),
-	emoji: text('emoji').notNull(),
+	emoji: text('emoji').notNull().default('✨'),
+	icon: text('icon').notNull().default('sparkle'),
 	createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });

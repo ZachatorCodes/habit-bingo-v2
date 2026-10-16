@@ -38,6 +38,7 @@ export const user = pgTable(
 		displayUsername: text('display_username'),
 		// Profile.
 		avatarEmoji: text('avatar_emoji').notNull().default('🙂'),
+		avatarIcon: text('avatar_icon').notNull().default('smiley'),
 		timezone: text('timezone').notNull().default('UTC'),
 		weekStartsOn: text('week_starts_on', { enum: WEEK_STARTS_ON }).notNull().default('monday'),
 		isAdmin: boolean('is_admin').notNull().default(false),
