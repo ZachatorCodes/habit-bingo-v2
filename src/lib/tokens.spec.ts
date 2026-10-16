@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-// The square states' border styles are their non-colour cue (spec §4), so each state's edge must
-// stand out from the page and from its own fill: WCAG 1.4.11 non-text contrast, 3:1.
+// Text is WCAG AA 4.5:1 and state rings or icons are 3:1 (WCAG 1.4.11), so the state cues stand out
+// from the page and from their own fill.
 const css = readFileSync('src/routes/layout.css', 'utf8');
 const token = (name: string) => {
 	const match = css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`));
@@ -21,12 +21,29 @@ const contrast = (a: string, b: string) => {
 	return (hi + 0.05) / (lo + 0.05);
 };
 
-describe('square state borders', () => {
-	it.each(['earn', 'protect', 'risk'])(
-		'the %s edge stands out from the page and its fill',
-		(state) => {
-			expect(contrast(token(`${state}-edge`), token('cream'))).toBeGreaterThanOrEqual(3);
-			expect(contrast(token(`${state}-edge`), token(state))).toBeGreaterThanOrEqual(3);
-		}
+describe('garden colour tokens', () => {
+	it.each([
+		['ink', 'page'],
+		['ink', 'surface'],
+		['muted', 'page'],
+		['muted', 'surface'],
+		['ink', 'earned-tile'],
+		['ink', 'protected-tile'],
+		['ink', 'risk-tile']
+	])('%s text on %s meets 4.5:1', (fg, bg) =>
+		expect(contrast(token(fg), token(bg))).toBeGreaterThanOrEqual(4.5)
 	);
+	it('white on forest meets 4.5:1', () =>
+		expect(contrast('#ffffff', token('forest'))).toBeGreaterThanOrEqual(4.5));
+	it.each([
+		['forest', 'earned-tile'],
+		['protected-ring', 'protected-tile'],
+		['terracotta', 'risk-tile'],
+		['lost-ring', 'page'],
+		['forest', 'surface']
+	])('%s ring on %s meets 3:1', (ring, bg) =>
+		expect(contrast(token(ring), token(bg))).toBeGreaterThanOrEqual(3)
+	);
+	it('white icon on terracotta meets 3:1', () =>
+		expect(contrast('#ffffff', token('terracotta'))).toBeGreaterThanOrEqual(3));
 });
