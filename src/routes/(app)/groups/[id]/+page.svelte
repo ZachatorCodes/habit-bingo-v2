@@ -22,9 +22,9 @@
 
 <Seo title={data.group.name} description="A Habit Bingo group." path={page} noindex />
 
-{#snippet avatar(emoji: string, username: string)}
+{#snippet avatar(emoji: string, username: string, you = false)}
 	<span aria-hidden="true" class="text-2xl">{emoji}</span>
-	<span class="min-w-0 flex-1 truncate font-extrabold">@{username}</span>
+	<span class="min-w-0 flex-1 truncate font-extrabold">@{username}{you ? ' (you)' : ''}</span>
 {/snippet}
 
 <section class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
@@ -82,7 +82,7 @@
 							: 'border-line bg-white'}"
 					>
 						<span class="w-6 text-center font-black tabular-nums">{row.rank ?? ''}</span>
-						{@render avatar(row.avatarEmoji, row.displayUsername)}
+						{@render avatar(row.avatarEmoji, row.displayUsername, row.isViewer)}
 						{#if row.points === null}
 							<span class="text-ink/75">No card yet</span>
 						{:else}
