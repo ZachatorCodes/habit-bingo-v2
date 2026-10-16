@@ -1,3 +1,4 @@
+import { and, eq, inArray } from 'drizzle-orm';
 import { backfillMonths } from '#lib/game/backfill.ts';
 import { monthName, monthOf } from '#lib/game/calendar.ts';
 import { rankRows } from '#lib/game/leaderboard.ts';
@@ -6,6 +7,7 @@ import { cardView, type ViewSquare } from '#lib/server/card-view.ts';
 import { getCard } from '#lib/server/cards.ts';
 import { localDate } from '#lib/server/clock.ts';
 import type { Db } from '#lib/server/db/client.ts';
+import { habit } from '#lib/server/db/schema.ts';
 import { getMembership, listMembers } from '#lib/server/groups.ts';
 import { finalizeMonths, listResults } from '#lib/server/month-results.ts';
 
@@ -43,7 +45,8 @@ export async function groupBoard(
 ): Promise<{ rows: BoardRow[]; provisionalMonth: string | null } | null> {
 	if (!(await getMembership(db, viewerId, groupId))) return null;
 	const members = await listMembers(db, groupId);
-	const viewer = members.find((m) => m.userId === viewerId)!;
+	const viewer = members.find((m) => m.userId === viewerId);
+	if (!viewer) return null;
 	const viewerToday = todayOf(viewer, now);
 	const closing = backfillMonths(viewerToday).find((m) => m < monthOf(viewerToday)) ?? null;
 	let provisional = false;
@@ -106,8 +109,20 @@ export async function memberCard(
 	let shown = null;
 	if (card) {
 		const view = await cardView(db, memberId, card, today);
+		// Private at card start, or made private since.
+		const habitIds = card.squares.flatMap((s) => (s.habitId ? [s.habitId] : []));
+		const nowPrivate = new Set(
+			(
+				await db
+					.select({ id: habit.id })
+					.from(habit)
+					.where(and(inArray(habit.id, habitIds), eq(habit.isPrivate, true)))
+			).map((h) => h.id)
+		);
 		const privateIds = new Set(
-			card.squares.filter((s) => !s.isCenter && s.isPrivate).map((s) => s.id)
+			card.squares
+				.filter((s) => !s.isCenter && (s.isPrivate || (s.habitId && nowPrivate.has(s.habitId))))
+				.map((s) => s.id)
 		);
 		const squares = view.squares.map((square) => {
 			const { id, link, ...rest } = square;

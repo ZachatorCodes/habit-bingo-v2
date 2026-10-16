@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CARD_SIZES } from '#lib/game/card-layout.ts';
 import type { Db } from '#lib/server/db/client.ts';
-import { monthResult, user } from '#lib/server/db/schema.ts';
+import { cardSquare, habit, monthResult, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import { eq } from 'drizzle-orm';
 import { cardView } from './card-view.ts';
 import { startCard, type CardPlan } from './cards.ts';
 import { logCheckIn } from './check-ins.ts';
 import { createGroup, getMembership, joinGroup } from './groups.ts';
-import { createHabit, type Habit } from './habits.ts';
+import { createHabit, updateHabit, type Habit } from './habits.ts';
 import { groupBoard, memberCard } from './leaderboard.ts';
 
 let db: Db;
@@ -96,7 +96,7 @@ beforeEach(async () => {
 describe('groupBoard month', () => {
 	it('ranks by points, puts no-card last, flags the viewer, hides from strangers', async () => {
 		const [a, b, c] = [await makeUser(), await makeUser(), await makeUser()];
-		const { owner, groupId } = await setup(a, b, c);
+		const { groupId } = await setup(a, b, c);
 		await logSome(a, await cardFor(a, OCT_1), 2, '2026-10-20');
 		await logSome(b, await cardFor(b, OCT_1), 4, '2026-10-20');
 		const now = new Date('2026-10-20T15:00:00Z');
@@ -109,7 +109,6 @@ describe('groupBoard month', () => {
 		expect(board.provisionalMonth).toBeNull();
 		const stranger = await makeUser();
 		expect(await groupBoard(db, stranger.id, groupId, 'month', now)).toBeNull();
-		expect(owner.id).toBeTruthy();
 	});
 
 	it('scores each member on their own local month', async () => {
@@ -171,15 +170,50 @@ describe('memberCard', () => {
 	it('shows the current card with private habits as a lock and no rewards', async () => {
 		const mate = await makeUser();
 		const { owner, groupId } = await setup(mate);
-		await cardFor(mate, OCT_1, { isPrivate: true });
+		const card = await cardFor(mate, OCT_1, { isPrivate: true });
+		// Swap one square to a public habit: it must still show its name.
+		const [pub] = await makeHabits(mate.id, { name: 'Public one', emoji: '🧘' });
+		const target = card.squares.find((s) => !s.isCenter)!;
+		await db
+			.update(cardSquare)
+			.set({ habitId: pub.id, name: pub.name, emoji: pub.emoji, isPrivate: false })
+			.where(eq(cardSquare.id, target.id));
 		const now = new Date('2026-10-20T09:00:00Z');
 		const view = (await memberCard(db, owner.id, groupId, mate.id, now))!;
 		expect(view.monthName).toBe('October');
 		const habits = view.card!.squares.filter((s) => s.name !== 'Free');
-		expect(habits.every((s) => s.name === '🔒' && s.emoji === '🔒')).toBe(true);
+		expect(habits.filter((s) => s.name === '🔒' && s.emoji === '🔒')).toHaveLength(7);
+		expect(habits.filter((s) => s.name === 'Public one' && s.emoji === '🧘')).toHaveLength(1);
 		expect(view.card!.squares.some((s) => 'id' in s || 'link' in s)).toBe(false);
 		expect(view.card).not.toHaveProperty('rewards');
 		expect(view).not.toHaveProperty('rewards');
+	});
+
+	it('hides a habit made private after the card started', async () => {
+		const mate = await makeUser();
+		const { owner, groupId } = await setup(mate);
+		const card = await cardFor(mate, OCT_1);
+		const square = card.squares.find((s) => !s.isCenter)!;
+		const [h] = await db.select().from(habit).where(eq(habit.id, square.habitId!));
+		await updateHabit(db, mate.id, h.id, {
+			emoji: h.emoji,
+			name: h.name,
+			category: h.category,
+			direction: h.direction,
+			period: h.period,
+			countMode: h.countMode,
+			target: h.target,
+			isPrivate: true
+		});
+		const view = (await memberCard(
+			db,
+			owner.id,
+			groupId,
+			mate.id,
+			new Date('2026-10-20T09:00:00Z')
+		))!;
+		expect(view.card!.squares.filter((s) => s.name === '🔒' && s.emoji === '🔒')).toHaveLength(1);
+		expect(view.card!.squares.some((s) => s.name === h.name)).toBe(false);
 	});
 
 	it('is null outside this group, and card is null without a card', async () => {
