@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
 	import Button from '#lib/components/Button.svelte';
-	import EmojiPicker from '#lib/components/EmojiPicker.svelte';
+	import IconPicker from '#lib/components/IconPicker.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import TextField from '#lib/components/TextField.svelte';
 	import type { PageProps } from './$types';
@@ -15,7 +15,7 @@
 	let timezone = $state('UTC');
 	let weekStartsOn = $state('monday');
 	// svelte-ignore state_referenced_locally
-	let avatar = $state(form?.values?.avatarEmoji || data.avatarEmoji);
+	let avatar = $state(form?.values?.avatarIcon || data.avatarIcon);
 
 	onMount(() => {
 		timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
@@ -74,12 +74,12 @@
 			value={form?.values?.name ?? data.name}
 			error={errors.name}
 		/>
-		<EmojiPicker
-			name="avatarEmoji"
+		<IconPicker
+			name="avatarIcon"
 			bind:value={avatar}
 			options={data.avatars}
 			label="Avatar"
-			error={errors.avatarEmoji}
+			error={errors.avatarIcon}
 		/>
 		<input type="hidden" name="timezone" value={timezone} />
 		<input type="hidden" name="weekStartsOn" value={weekStartsOn} />

@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 </script>
 
 <section class="mx-auto flex max-w-md flex-col gap-4 px-4 py-12">
-	<div class="text-4xl" aria-hidden="true">{data.habit.emoji}</div>
+	<div class="text-4xl" aria-hidden="true"><Icon name={data.habit.icon} /></div>
 	<h1 class="text-3xl leading-tight font-black">Delete {data.habit.name} forever?</h1>
 	<p class="text-lg text-ink/75">Your cards keep their copy of it. This can't be undone.</p>
 	{#if form?.message}

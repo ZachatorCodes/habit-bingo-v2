@@ -34,7 +34,7 @@ async function makeHabits(
 	const habits: Habit[] = [];
 	for (let i = 0; i < n; i++) {
 		const result = await createHabit(db, userId, {
-			emoji: '🚴',
+			icon: 'bicycle',
 			name: `Habit ${i}`,
 			category: 'fitness',
 			direction: 'atLeast',

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from './Icon.svelte';
 	import { CATEGORIES } from '#lib/game/categories.ts';
 	import { describeRule } from '#lib/game/habit-rules.ts';
 	import type { Habit } from '#lib/server/habits.ts';
@@ -19,7 +20,7 @@
 	{#each groups as group (group.category.id)}
 		<fieldset class="flex flex-col gap-2">
 			<legend class="mb-1.5 text-lg font-black">
-				<span aria-hidden="true">{group.category.emoji}</span>
+				<Icon name={group.category.icon} />
 				{group.category.label}
 			</legend>
 			{#each group.habits as habit (habit.id)}
@@ -33,7 +34,7 @@
 						bind:group={selected}
 						class="size-5 accent-ink"
 					/>
-					<span aria-hidden="true" class="text-2xl leading-none">{habit.emoji}</span>
+					<span aria-hidden="true" class="text-2xl leading-none"><Icon name={habit.icon} /></span>
 					<span class="min-w-0 flex-1">
 						<span class="block font-extrabold">{habit.name}</span>
 						<span class="block text-sm text-ink/75">{describeRule(habit)}</span>

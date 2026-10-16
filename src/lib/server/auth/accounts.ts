@@ -1,6 +1,7 @@
 import { APIError } from 'better-auth/api';
 import { and, eq, isNotNull, isNull, or } from 'drizzle-orm';
-import { AVATAR_EMOJI, isValidTimezone, type WeekStart } from '#lib/profile.ts';
+import { AVATAR_ICONS } from '#lib/icons.ts';
+import { isValidTimezone, type WeekStart } from '#lib/profile.ts';
 import type { Db } from '#lib/server/db/client.ts';
 import { account, user } from '#lib/server/db/schema.ts';
 import { leaveGroup, listGroups } from '#lib/server/groups.ts';
@@ -14,14 +15,14 @@ export type Result = { ok: true } | Invalid;
 /** Display name (trimmed, 1–40 characters) and avatar. */
 export function validateProfileInput(input: {
 	name: string;
-	avatarEmoji: string;
+	avatarIcon: string;
 }): { ok: true; name: string } | Invalid {
 	const name = input.name.trim();
 	if (name.length < 1) return { ok: false, field: 'name', message: 'Enter a display name.' };
 	if ([...name].length > 40)
 		return { ok: false, field: 'name', message: 'Use at most 40 characters.' };
-	if (!(AVATAR_EMOJI as readonly string[]).includes(input.avatarEmoji))
-		return { ok: false, field: 'avatarEmoji', message: 'Pick one of the avatars.' };
+	if (!(AVATAR_ICONS as readonly string[]).includes(input.avatarIcon))
+		return { ok: false, field: 'avatarIcon', message: 'Pick one of the avatars.' };
 	return { ok: true, name };
 }
 
@@ -47,7 +48,7 @@ export async function completeOnboarding(
 	input: {
 		username?: string;
 		name: string;
-		avatarEmoji: string;
+		avatarIcon: string;
 		timezone: string;
 		weekStartsOn: WeekStart;
 	},
@@ -80,7 +81,7 @@ export async function completeOnboarding(
 			.set({
 				...username,
 				name: profile.name,
-				avatarEmoji: input.avatarEmoji,
+				avatarIcon: input.avatarIcon,
 				timezone: settings.timezone,
 				weekStartsOn: settings.weekStartsOn,
 				onboardedAt: now
@@ -99,13 +100,13 @@ export async function completeOnboarding(
 export async function updateProfile(
 	db: Db,
 	userId: string,
-	input: { name: string; avatarEmoji: string }
+	input: { name: string; avatarIcon: string }
 ): Promise<Result> {
 	const profile = validateProfileInput(input);
 	if (!profile.ok) return profile;
 	await db
 		.update(user)
-		.set({ name: profile.name, avatarEmoji: input.avatarEmoji })
+		.set({ name: profile.name, avatarIcon: input.avatarIcon })
 		.where(eq(user.id, userId));
 	return { ok: true };
 }

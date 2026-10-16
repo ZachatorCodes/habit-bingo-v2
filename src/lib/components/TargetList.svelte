@@ -3,7 +3,7 @@
 	import TextField from './TextField.svelte';
 
 	type Row = {
-		habit: Pick<Habit, 'id' | 'emoji' | 'name' | 'direction' | 'period' | 'countMode' | 'target'>;
+		habit: Pick<Habit, 'id' | 'icon' | 'name' | 'direction' | 'period' | 'countMode' | 'target'>;
 		/** The target for a card started on `startDate`. */
 		prorated: number;
 		/** What the field shows: the current target, or what the person typed. */
@@ -49,7 +49,7 @@
 	{/if}
 	{#each rows as row (row.habit.id)}
 		<TextField
-			label="{row.habit.emoji} {row.habit.name}"
+			label={row.habit.name}
 			name="target:{row.habit.id}"
 			type="number"
 			value={row.value}

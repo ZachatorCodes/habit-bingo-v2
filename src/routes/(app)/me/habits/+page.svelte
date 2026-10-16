@@ -3,6 +3,7 @@
 	import Button from '#lib/components/Button.svelte';
 	import CategoryFilter from '#lib/components/CategoryFilter.svelte';
 	import HabitRow from '#lib/components/HabitRow.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import StarterHabits from '#lib/components/StarterHabits.svelte';
 	import { CATEGORIES } from '#lib/game/categories.ts';
 	import type { PageProps } from './$types';
@@ -103,7 +104,7 @@
 		{#each groups as group (group.category.id)}
 			<section aria-labelledby={`cat-${group.category.id}`} class="flex flex-col gap-3">
 				<h2 id={`cat-${group.category.id}`} class="text-xl font-black">
-					<span aria-hidden="true">{group.category.emoji}</span>
+					<span aria-hidden="true"><Icon name={group.category.icon} /></span>
 					{group.category.label}
 				</h2>
 				<ul class="flex flex-col gap-2">

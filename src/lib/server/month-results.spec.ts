@@ -32,7 +32,7 @@ async function makeHabits(userId: string, overrides: Record<string, unknown> = {
 	const habits: Habit[] = [];
 	for (let i = 0; i < 8; i++) {
 		const result = await createHabit(db, userId, {
-			emoji: '🚴',
+			icon: 'bicycle',
 			name: `Habit ${i}`,
 			category: 'fitness',
 			direction: 'atLeast',

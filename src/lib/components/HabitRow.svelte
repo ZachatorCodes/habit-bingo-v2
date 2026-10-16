@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
+	import Icon from './Icon.svelte';
 	import { describeRule } from '#lib/game/habit-rules.ts';
 	import type { Habit } from '#lib/server/habits.ts';
 
@@ -33,13 +34,13 @@
 <li
 	class="flex items-center gap-3 rounded-2xl border-2 border-line bg-white p-3 shadow-[0_3px_0_var(--color-line)]"
 >
-	<span aria-hidden="true" class="text-3xl leading-none">{habit.emoji}</span>
+	<span aria-hidden="true" class="text-3xl leading-none"><Icon name={habit.icon} /></span>
 	<div class="min-w-0 flex-1">
 		<p class="flex flex-wrap items-center gap-2 font-extrabold">
 			<span>{habit.name}</span>
 			{#if habit.isPrivate}
 				<span class="rounded-full bg-cream px-2 py-0.5 text-xs font-bold text-ink">
-					<span aria-hidden="true">🔒</span> Private
+					<Icon name="lock" /> Private
 				</span>
 			{/if}
 		</p>

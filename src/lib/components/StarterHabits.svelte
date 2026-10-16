@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Icon from './Icon.svelte';
 	import { describeRule } from '#lib/game/habit-rules.ts';
 	import { STARTERS } from '#lib/game/starters.ts';
 
@@ -44,7 +45,9 @@
 						aria-label={added ? `${starter.name} added` : `Add ${starter.name}`}
 						class="flex w-full items-center gap-3 rounded-2xl border-2 border-line bg-white p-3 text-left shadow-[0_3px_0_var(--color-line)] transition-transform focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink active:translate-y-[3px] active:shadow-none disabled:translate-y-0 disabled:bg-cream disabled:shadow-none"
 					>
-						<span aria-hidden="true" class="text-3xl leading-none">{starter.emoji}</span>
+						<span aria-hidden="true" class="text-3xl leading-none"
+							><Icon name={starter.icon} /></span
+						>
 						<span class="flex-1">
 							<span class="block font-extrabold">{starter.name}</span>
 							<span class="block text-sm text-ink/75">{describeRule(starter.rule)}</span>

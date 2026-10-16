@@ -5,7 +5,7 @@ import type { HabitInput } from '#lib/server/habits.ts';
 import HabitForm from './HabitForm.svelte';
 
 const defaults: HabitInput = {
-	emoji: '',
+	icon: '',
 	name: '',
 	category: 'other',
 	direction: 'atLeast',
@@ -56,7 +56,7 @@ describe('HabitForm', () => {
 
 	it('previews the rule sentence and square as you type', async () => {
 		render(HabitForm, { values: defaults, submitLabel: 'Add habit' });
-		await page.getByRole('textbox', { name: 'Emoji' }).fill('🚴');
+		await page.getByRole('radio', { name: 'Bicycle' }).click();
 		await page.getByRole('textbox', { name: 'Name' }).fill('Bike');
 		await page.getByRole('spinbutton', { name: 'How many' }).fill('3');
 		await userEvent.selectOptions(periodSelect(), 'month');
@@ -83,16 +83,24 @@ describe('HabitForm', () => {
 		await expect.element(target).toHaveAccessibleDescription(/Pick a number from 1 to 7\./);
 	});
 
-	it('puts Category first, then the emoji and name side by side', async () => {
+	it('puts Category first, then the name and icon picker', async () => {
 		render(HabitForm, { values: defaults, submitLabel: 'Add habit' });
 		const category = page.getByRole('group', { name: 'Category' }).element();
-		const emoji = page.getByRole('textbox', { name: 'Emoji' }).element();
 		const name = page.getByRole('textbox', { name: 'Name' }).element();
+		const icons = page.getByRole('radiogroup', { name: 'Icon' }).element();
 		const before = (a: Element, b: Element) =>
 			Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-		expect(before(category, emoji)).toBe(true);
-		expect(before(emoji, name)).toBe(true);
-		expect(emoji.closest('[data-field-row]')).not.toBeNull();
-		expect(emoji.closest('[data-field-row]')).toBe(name.closest('[data-field-row]'));
+		expect(before(category, name)).toBe(true);
+		expect(before(name, icons)).toBe(true);
+	});
+
+	it('selects the category icon until one is picked', async () => {
+		render(HabitForm, { values: defaults, submitLabel: 'Add habit' });
+		await expect.element(page.getByRole('radio', { name: 'Sparkle' })).toBeChecked();
+		await page.getByRole('radio', { name: /Fitness/ }).click();
+		await expect.element(page.getByRole('radio', { name: 'Barbell' })).toBeChecked();
+		await page.getByRole('radio', { name: 'Cat' }).click();
+		await page.getByRole('radio', { name: /Health/ }).click();
+		await expect.element(page.getByRole('radio', { name: 'Cat' })).toBeChecked();
 	});
 });

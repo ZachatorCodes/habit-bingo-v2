@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { AVATAR_EMOJI } from '#lib/profile.ts';
+import { AVATAR_ICONS } from '#lib/icons.ts';
 import type { Db } from '#lib/server/db/client.ts';
 import { account, passwordReset, session, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
@@ -26,7 +26,7 @@ let db: Db;
 const NOW = new Date('2026-10-10T12:00:00Z');
 const base = {
 	name: 'Zach',
-	avatarEmoji: '🦊',
+	avatarIcon: 'cat',
 	timezone: 'Europe/London',
 	weekStartsOn: 'sunday' as const
 };
@@ -59,7 +59,7 @@ describe('completeOnboarding', () => {
 		expect(await completeOnboarding(db, id, base, NOW)).toEqual({ ok: true });
 		expect(await row(id)).toMatchObject({
 			name: 'Zach',
-			avatarEmoji: '🦊',
+			avatarIcon: 'cat',
 			timezone: 'Europe/London',
 			weekStartsOn: 'sunday',
 			onboardedAt: NOW,
@@ -68,14 +68,14 @@ describe('completeOnboarding', () => {
 	});
 
 	it('accepts every avatar in the list and nothing else', async () => {
-		for (const avatarEmoji of AVATAR_EMOJI) {
+		for (const avatarIcon of AVATAR_ICONS) {
 			const id = await makeUser();
-			expect(await completeOnboarding(db, id, { ...base, avatarEmoji }, NOW)).toEqual({ ok: true });
+			expect(await completeOnboarding(db, id, { ...base, avatarIcon }, NOW)).toEqual({ ok: true });
 		}
 		const id = await makeUser();
-		expect(await completeOnboarding(db, id, { ...base, avatarEmoji: '💩' }, NOW)).toMatchObject({
+		expect(await completeOnboarding(db, id, { ...base, avatarIcon: 'nope' }, NOW)).toMatchObject({
 			ok: false,
-			field: 'avatarEmoji'
+			field: 'avatarIcon'
 		});
 		expect((await row(id)).onboardedAt).toBeNull();
 	});
@@ -157,13 +157,13 @@ describe('completeOnboarding', () => {
 
 describe('validators', () => {
 	it('validateProfileInput trims and checks the avatar', () => {
-		expect(validateProfileInput({ name: ' A ', avatarEmoji: '🙂' })).toEqual({
+		expect(validateProfileInput({ name: ' A ', avatarIcon: 'smiley' })).toEqual({
 			ok: true,
 			name: 'A'
 		});
-		expect(validateProfileInput({ name: 'A', avatarEmoji: 'x' })).toMatchObject({
+		expect(validateProfileInput({ name: 'A', avatarIcon: 'x' })).toMatchObject({
 			ok: false,
-			field: 'avatarEmoji'
+			field: 'avatarIcon'
 		});
 	});
 
@@ -187,31 +187,31 @@ describe('validators', () => {
 describe('updateProfile', () => {
 	it('updates display name and avatar with the onboarding rules', async () => {
 		const id = await makeUser();
-		expect(await updateProfile(db, id, { name: '  New Name ', avatarEmoji: '🐼' })).toEqual({
+		expect(await updateProfile(db, id, { name: '  New Name ', avatarIcon: 'dog' })).toEqual({
 			ok: true
 		});
-		expect(await row(id)).toMatchObject({ name: 'New Name', avatarEmoji: '🐼' });
+		expect(await row(id)).toMatchObject({ name: 'New Name', avatarIcon: 'dog' });
 
-		expect(await updateProfile(db, id, { name: ' ', avatarEmoji: '🐼' })).toEqual({
+		expect(await updateProfile(db, id, { name: ' ', avatarIcon: 'dog' })).toEqual({
 			ok: false,
 			field: 'name',
 			message: 'Enter a display name.'
 		});
-		expect(await updateProfile(db, id, { name: 'x'.repeat(41), avatarEmoji: '🐼' })).toMatchObject({
+		expect(await updateProfile(db, id, { name: 'x'.repeat(41), avatarIcon: 'dog' })).toMatchObject({
 			ok: false,
 			field: 'name'
 		});
-		expect(await updateProfile(db, id, { name: 'Fine', avatarEmoji: '💩' })).toMatchObject({
+		expect(await updateProfile(db, id, { name: 'Fine', avatarIcon: 'nope' })).toMatchObject({
 			ok: false,
-			field: 'avatarEmoji'
+			field: 'avatarIcon'
 		});
-		expect(await row(id)).toMatchObject({ name: 'New Name', avatarEmoji: '🐼' });
+		expect(await row(id)).toMatchObject({ name: 'New Name', avatarIcon: 'dog' });
 	});
 
 	it('only changes the given user', async () => {
 		const id = await makeUser();
 		const other = await makeUser();
-		await updateProfile(db, id, { name: 'Changed', avatarEmoji: '🦄' });
+		await updateProfile(db, id, { name: 'Changed', avatarIcon: 'star' });
 		expect((await row(other)).name).toBe('Old');
 	});
 });
@@ -309,7 +309,7 @@ describe('deleteAccount', () => {
 
 describe('deleteAccount and groups', () => {
 	async function groupOf(ownerId: string) {
-		const made = await createGroup(db, ownerId, { name: 'Crew', emoji: '🔥' }, NOW);
+		const made = await createGroup(db, ownerId, { name: 'Crew', icon: 'rocket' }, NOW);
 		if (!made.ok) throw new Error(made.message);
 		const code = (await getMembership(db, ownerId, made.groupId))!.inviteCode;
 		return { groupId: made.groupId, code };

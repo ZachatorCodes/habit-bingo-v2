@@ -6,7 +6,7 @@ import HabitRow from './HabitRow.svelte';
 
 const bike: Habit = {
 	id: 'h1',
-	emoji: '🚴',
+	icon: 'bicycle',
 	name: 'Bike',
 	category: 'fitness',
 	direction: 'atLeast',
@@ -18,9 +18,9 @@ const bike: Habit = {
 };
 
 describe('HabitRow', () => {
-	it('shows the emoji, name and rule sentence', async () => {
-		render(HabitRow, { habit: bike });
-		await expect.element(page.getByText('🚴')).toBeInTheDocument();
+	it('shows the icon, name and rule sentence', async () => {
+		const { container } = render(HabitRow, { habit: bike });
+		expect(container.querySelector('svg')).not.toBeNull();
 		await expect.element(page.getByText('Bike', { exact: true })).toBeInTheDocument();
 		await expect.element(page.getByText('3 times a month')).toBeInTheDocument();
 		await expect
@@ -30,9 +30,9 @@ describe('HabitRow', () => {
 	});
 
 	it('marks private habits with a lock and text, not color alone', async () => {
-		render(HabitRow, { habit: { ...bike, isPrivate: true } });
+		const { container } = render(HabitRow, { habit: { ...bike, isPrivate: true } });
 		await expect.element(page.getByText('Private')).toBeInTheDocument();
-		await expect.element(page.getByText('🔒')).toBeInTheDocument();
+		expect(container.querySelectorAll('svg').length).toBe(2);
 	});
 
 	it('offers Restore instead of Archive for archived habits', async () => {

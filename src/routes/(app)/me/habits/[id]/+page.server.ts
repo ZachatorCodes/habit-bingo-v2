@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const habit = await getHabit(requireDb(), user.id, params.id);
 	if (!habit) error(404, 'Not found');
 	const values: HabitInput = {
-		emoji: habit.emoji,
+		icon: habit.icon,
 		name: habit.name,
 		category: habit.category,
 		direction: habit.direction,

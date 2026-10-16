@@ -2,7 +2,8 @@
 // indistinguishable from one that doesn't exist.
 import { and, count, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { CATEGORIES, isCategoryId, type CategoryId } from '#lib/game/categories.ts';
-import { isSingleEmoji, normalizeRule, type HabitRule } from '#lib/game/habit-rules.ts';
+import { normalizeRule, type HabitRule } from '#lib/game/habit-rules.ts';
+import { isPickableIcon, type IconName } from '#lib/icons.ts';
 import { STARTERS } from '#lib/game/starters.ts';
 import type { Db } from '#lib/server/db/client.ts';
 import { habit } from '#lib/server/db/schema.ts';
@@ -12,7 +13,7 @@ const CAP_MESSAGE = 'You can have up to 100 habits. Archive some to add more.';
 
 export type Habit = {
 	id: string;
-	emoji: string;
+	icon: IconName;
 	name: string;
 	category: CategoryId;
 	isPrivate: boolean;
@@ -20,7 +21,7 @@ export type Habit = {
 } & HabitRule;
 
 export type HabitInput = {
-	emoji: string;
+	icon: string;
 	name: string;
 	category: string;
 	direction: string;
@@ -39,8 +40,8 @@ export function validateHabitInput(input: HabitInput): { ok: true; value: HabitV
 	if (name.length < 1 || name.length > 40) {
 		return { ok: false, field: 'name', message: 'Give it a name (up to 40 characters).' };
 	}
-	const emoji = input.emoji.trim();
-	if (!isSingleEmoji(emoji)) return { ok: false, field: 'emoji', message: 'Pick one emoji.' };
+	const icon = input.icon;
+	if (!isPickableIcon(icon)) return { ok: false, field: 'icon', message: 'Pick an icon.' };
 	if (!isCategoryId(input.category)) {
 		return { ok: false, field: 'category', message: 'Pick a category.' };
 	}
@@ -48,7 +49,7 @@ export function validateHabitInput(input: HabitInput): { ok: true; value: HabitV
 	if (!rule.ok) return rule;
 	return {
 		ok: true,
-		value: { emoji, name, category: input.category, isPrivate: input.isPrivate, ...rule.rule }
+		value: { icon, name, category: input.category, isPrivate: input.isPrivate, ...rule.rule }
 	};
 }
 
@@ -57,7 +58,7 @@ type Row = typeof habit.$inferSelect;
 function toHabit(row: Row): Habit {
 	return {
 		id: row.id,
-		emoji: row.emoji,
+		icon: row.icon as IconName,
 		name: row.name,
 		category: row.category as CategoryId,
 		direction: row.direction as Habit['direction'],
@@ -225,7 +226,7 @@ export async function addStarter(
 		await tx.insert(habit).values({
 			id: crypto.randomUUID(),
 			userId,
-			emoji: starter.emoji,
+			icon: starter.icon,
 			name: starter.name,
 			category: starter.category,
 			isPrivate: false,

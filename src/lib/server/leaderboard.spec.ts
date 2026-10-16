@@ -33,7 +33,7 @@ async function makeHabits(userId: string, overrides: Record<string, unknown> = {
 	const habits: Habit[] = [];
 	for (let i = 0; i < 8; i++) {
 		const result = await createHabit(db, userId, {
-			emoji: '🚴',
+			icon: 'bicycle',
 			name: `Habit ${i}`,
 			category: 'fitness',
 			direction: 'atLeast',
@@ -80,7 +80,7 @@ async function logSome(
 
 async function setup(...others: TestUser[]) {
 	const owner = await makeUser();
-	const created = await createGroup(db, owner.id, { name: 'Crew', emoji: '🔥' }, new Date());
+	const created = await createGroup(db, owner.id, { name: 'Crew', icon: 'rocket' }, new Date());
 	if (!created.ok) throw new Error(created.message);
 	const code = (await getMembership(db, owner.id, created.groupId))!.inviteCode;
 	for (const o of others) await joinGroup(db, o.id, code, new Date());
@@ -172,18 +172,20 @@ describe('memberCard', () => {
 		const { owner, groupId } = await setup(mate);
 		const card = await cardFor(mate, OCT_1, { isPrivate: true });
 		// Swap one square to a public habit: it must still show its name.
-		const [pub] = await makeHabits(mate.id, { name: 'Public one', emoji: '🧘' });
+		const [pub] = await makeHabits(mate.id, { name: 'Public one', icon: 'flower-lotus' });
 		const target = card.squares.find((s) => !s.isCenter)!;
 		await db
 			.update(cardSquare)
-			.set({ habitId: pub.id, name: pub.name, emoji: pub.emoji, isPrivate: false })
+			.set({ habitId: pub.id, name: pub.name, icon: pub.icon, isPrivate: false })
 			.where(eq(cardSquare.id, target.id));
 		const now = new Date('2026-10-20T09:00:00Z');
 		const view = (await memberCard(db, owner.id, groupId, mate.id, now))!;
 		expect(view.monthName).toBe('October');
 		const habits = view.card!.squares.filter((s) => s.name !== 'Free');
-		expect(habits.filter((s) => s.name === '🔒' && s.emoji === '🔒')).toHaveLength(7);
-		expect(habits.filter((s) => s.name === 'Public one' && s.emoji === '🧘')).toHaveLength(1);
+		expect(habits.filter((s) => s.name === 'Private' && s.icon === 'lock')).toHaveLength(7);
+		expect(habits.filter((s) => s.name === 'Public one' && s.icon === 'flower-lotus')).toHaveLength(
+			1
+		);
 		expect(view.card!.squares.some((s) => 'id' in s || 'link' in s)).toBe(false);
 		expect(view.card).not.toHaveProperty('rewards');
 		expect(view).not.toHaveProperty('rewards');
@@ -196,7 +198,7 @@ describe('memberCard', () => {
 		const square = card.squares.find((s) => !s.isCenter)!;
 		const [h] = await db.select().from(habit).where(eq(habit.id, square.habitId!));
 		await updateHabit(db, mate.id, h.id, {
-			emoji: h.emoji,
+			icon: h.icon,
 			name: h.name,
 			category: h.category,
 			direction: h.direction,
@@ -212,7 +214,9 @@ describe('memberCard', () => {
 			mate.id,
 			new Date('2026-10-20T09:00:00Z')
 		))!;
-		expect(view.card!.squares.filter((s) => s.name === '🔒' && s.emoji === '🔒')).toHaveLength(1);
+		expect(
+			view.card!.squares.filter((s) => s.name === 'Private' && s.icon === 'lock')
+		).toHaveLength(1);
 		expect(view.card!.squares.some((s) => s.name === h.name)).toBe(false);
 	});
 
@@ -222,7 +226,7 @@ describe('memberCard', () => {
 		const now = new Date('2026-10-20T09:00:00Z');
 		expect((await memberCard(db, owner.id, groupId, mate.id, now))!.card).toBeNull();
 		const lone = await makeUser();
-		const shared = await createGroup(db, lone.id, { name: 'Other', emoji: '🌱' }, now);
+		const shared = await createGroup(db, lone.id, { name: 'Other', icon: 'plant' }, now);
 		if (!shared.ok) throw new Error(shared.message);
 		const code = (await getMembership(db, lone.id, shared.groupId))!.inviteCode;
 		await joinGroup(db, owner.id, code, now);

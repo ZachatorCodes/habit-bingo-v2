@@ -7,6 +7,7 @@ import type { CategoryId } from '#lib/game/categories.ts';
 import { normalizeRule, targetRange, type HabitRule } from '#lib/game/habit-rules.ts';
 import { canBuildNextMonth } from '#lib/game/next-month.ts';
 import { prorateTarget } from '#lib/game/proration.ts';
+import type { IconName } from '#lib/icons.ts';
 import { isUniqueViolation } from '#lib/server/auth/sign-up.ts';
 import { localDate, startOfLocalDay } from '#lib/server/clock.ts';
 import type { Db } from '#lib/server/db/client.ts';
@@ -25,7 +26,7 @@ export type CardSquare =
 			position: number;
 			isCenter: false;
 			habitId: string | null;
-			emoji: string;
+			icon: IconName;
 			name: string;
 			category: CategoryId;
 			isPrivate: boolean;
@@ -113,7 +114,7 @@ function toCard(row: typeof card.$inferSelect, squares: (typeof cardSquare.$infe
 					position: s.position,
 					isCenter: false,
 					habitId: s.habitId,
-					emoji: s.emoji!,
+					icon: s.icon as IconName,
 					name: s.name!,
 					category: s.category as CategoryId,
 					direction: s.direction as HabitRule['direction'],
@@ -222,7 +223,7 @@ async function resolvePlan(
 function snapshot(habit: Habit, target: number) {
 	return {
 		habitId: habit.id,
-		emoji: habit.emoji,
+		icon: habit.icon,
 		name: habit.name,
 		category: habit.category,
 		direction: habit.direction,

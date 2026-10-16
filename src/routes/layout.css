@@ -5,54 +5,73 @@
 @theme {
 	--font-sans: 'Nunito Variable', system-ui, sans-serif;
 
-	--color-cream: #fff7ec;
-	--color-ink: #2b2340;
-	--color-line: #f1e4d3;
-	--color-accent: #ff7a59;
-	--color-accent-edge: #d9573a;
+	--color-page: #f5f1e8;
+	--color-surface: #fffdf8;
+	--color-ink: #1f2b23;
+	--color-muted: #5c6a60;
+	--color-line: #e4ddcd;
+	--color-forest: #2f5d46;
+	--color-leaf: #3e7258;
+	--color-leaf-2: #4e7e62;
+	--color-terracotta: #d9693f;
+	--color-earned-tile: #e3ecdd;
+	--color-protected-tile: #e5edf1;
+	--color-protected-ring: #5b8aa6;
+	--color-risk-tile: #faede4;
+	--color-lost-ring: #8a8373;
 
-	--color-earn: #b8ebc6;
-	--color-earn-edge: #2a8447;
-	--color-earn-shadow: #1f6b38;
-	--color-protect: #c7d9ff;
-	--color-protect-edge: #3366cc;
-	--color-protect-shadow: #2852a8;
-	--color-risk: #ffe7a6;
-	--color-risk-edge: #a86b00;
-	--color-risk-shadow: #875600;
-	--color-lost: #efe8df;
+	/* Aliases for the pre-Garden names, removed in PR 4. */
+	--color-cream: #f5f1e8;
+	--color-accent: #2f5d46;
+	--color-accent-edge: #2f5d46;
+	--color-earn: #e3ecdd;
+	--color-earn-edge: #2f5d46;
+	--color-earn-shadow: #2f5d46;
+	--color-protect: #e5edf1;
+	--color-protect-edge: #5b8aa6;
+	--color-protect-shadow: #5b8aa6;
+	--color-risk: #faede4;
+	--color-risk-edge: #d9693f;
+	--color-risk-shadow: #d9693f;
+	--color-lost: #f5f1e8;
 
-	--radius-square: 1rem;
+	--radius-sheet: 24px;
+	--radius-tile: 18px;
+	--radius-row: 16px;
+	--radius-input: 14px;
+	--radius-square: 18px;
+
+	--shadow-sheet: 0 1px 2px rgb(36 51 42 / 6%), 0 14px 30px -16px rgb(36 51 42 / 30%);
 }
 
 @layer base {
 	body {
-		@apply bg-cream font-sans text-ink antialiased;
+		@apply bg-page font-sans text-ink antialiased;
 	}
 }
 
-/* A completed line's squares ripple gold in sequence (spec §4.7); a still outline under reduced motion. */
+/* A completed line's squares ripple in sequence (spec §4.7); a still outline under reduced motion. */
 @keyframes ripple {
 	0% {
 		transform: scale(1);
-		box-shadow: 0 0 0 0 var(--color-risk-edge);
+		box-shadow: 0 0 0 0 var(--color-forest);
 	}
 	50% {
 		transform: scale(1.08);
-		box-shadow: 0 0 0 6px var(--color-risk-edge);
+		box-shadow: 0 0 0 6px var(--color-forest);
 	}
 	100% {
 		transform: scale(1);
-		box-shadow: 0 0 0 3px var(--color-risk-edge);
+		box-shadow: 0 0 0 3px var(--color-forest);
 	}
 }
 .ripple {
-	border-radius: var(--radius-square, 1rem);
+	border-radius: var(--radius-square, 18px);
 	animation: ripple 0.6s ease-out both;
 }
 @media (prefers-reduced-motion: reduce) {
 	.ripple {
 		animation: none;
-		box-shadow: 0 0 0 3px var(--color-risk-edge);
+		box-shadow: 0 0 0 3px var(--color-forest);
 	}
 }

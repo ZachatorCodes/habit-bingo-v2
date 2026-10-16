@@ -166,7 +166,7 @@ describe('concurrent sign-ups for the same username', () => {
 	it('maps a full group link to a form error', async () => {
 		const ownerId = crypto.randomUUID();
 		await db.insert(user).values({ id: ownerId, name: 'O', email: `${ownerId}@users.invalid` });
-		const made = await createGroup(db, ownerId, { name: 'Crew', emoji: '🔥' }, new Date());
+		const made = await createGroup(db, ownerId, { name: 'Crew', icon: 'rocket' }, new Date());
 		if (!made.ok) throw new Error(made.message);
 		const groupCode = (await getMembership(db, ownerId, made.groupId))!.inviteCode;
 		const ids = Array.from({ length: MAX_MEMBERS - 1 }, () => crypto.randomUUID());

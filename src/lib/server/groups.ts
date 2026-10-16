@@ -1,5 +1,5 @@
 import { and, asc, count, desc, eq, gt, sql } from 'drizzle-orm';
-import { isSingleEmoji } from '#lib/game/habit-rules.ts';
+import { isPickableIcon } from '#lib/icons.ts';
 import { createInvite, getInviteStatus } from '#lib/server/auth/invites.ts';
 import type { Db } from '#lib/server/db/client.ts';
 import { group, groupMember, invite, user } from '#lib/server/db/schema.ts';
@@ -8,7 +8,7 @@ export const MAX_MEMBERS = 50;
 export const DEAD_LINK_MESSAGE = 'This invite link no longer works.';
 export const FULL_MESSAGE = 'This group is full.';
 
-type GroupSummary = { id: string; name: string; emoji: string };
+type GroupSummary = { id: string; name: string; icon: string };
 
 const lockGroup = (tx: Db, groupId: string) =>
 	tx.execute(sql`select pg_advisory_xact_lock(hashtext(${'group:' + groupId}))`);
@@ -20,21 +20,19 @@ const standingInvite = (db: Db, createdBy: string, groupId: string, now: Date) =
 export async function createGroup(
 	db: Db,
 	userId: string,
-	input: { name: string; emoji: string },
+	input: { name: string; icon: string },
 	now: Date
-): Promise<
-	{ ok: true; groupId: string } | { ok: false; field: 'name' | 'emoji'; message: string }
-> {
+): Promise<{ ok: true; groupId: string } | { ok: false; field: 'name' | 'icon'; message: string }> {
 	const name = input.name.trim();
 	if (name.length < 1 || name.length > 40) {
 		return { ok: false, field: 'name', message: 'Name must be 1 to 40 characters.' };
 	}
-	if (!isSingleEmoji(input.emoji)) {
-		return { ok: false, field: 'emoji', message: 'Pick a single emoji.' };
+	if (!isPickableIcon(input.icon)) {
+		return { ok: false, field: 'icon', message: 'Pick an icon.' };
 	}
 	const groupId = crypto.randomUUID();
 	await db.transaction(async (tx) => {
-		await tx.insert(group).values({ id: groupId, name, emoji: input.emoji, createdBy: userId });
+		await tx.insert(group).values({ id: groupId, name, icon: input.icon, createdBy: userId });
 		await tx.insert(groupMember).values({ groupId, userId, role: 'owner', joinedAt: now });
 		await standingInvite(tx, userId, groupId, now);
 	});
@@ -50,7 +48,7 @@ export async function listGroups(
 		.from(groupMember)
 		.where(eq(groupMember.userId, userId));
 	const rows = await db
-		.select({ id: group.id, name: group.name, emoji: group.emoji, memberCount: count() })
+		.select({ id: group.id, name: group.name, icon: group.icon, memberCount: count() })
 		.from(group)
 		.innerJoin(groupMember, eq(groupMember.groupId, group.id))
 		.where(sql`${group.id} in (${mine})`)
@@ -65,7 +63,7 @@ export async function getMembership(
 	groupId: string
 ): Promise<{ group: GroupSummary; role: 'owner' | 'member'; inviteCode: string } | null> {
 	const [row] = await db
-		.select({ id: group.id, name: group.name, emoji: group.emoji, role: groupMember.role })
+		.select({ id: group.id, name: group.name, icon: group.icon, role: groupMember.role })
 		.from(groupMember)
 		.innerJoin(group, eq(group.id, groupMember.groupId))
 		.where(and(eq(groupMember.groupId, groupId), eq(groupMember.userId, userId)));
@@ -78,7 +76,7 @@ export async function getMembership(
 		.orderBy(desc(invite.expiresAt))
 		.limit(1);
 	return {
-		group: { id: row.id, name: row.name, emoji: row.emoji },
+		group: { id: row.id, name: row.name, icon: row.icon },
 		role: row.role,
 		inviteCode: link?.code ?? ''
 	};
@@ -89,7 +87,7 @@ export async function listMembers(db: Db, groupId: string) {
 		.select({
 			userId: groupMember.userId,
 			displayUsername: user.displayUsername,
-			avatarEmoji: user.avatarEmoji,
+			avatarIcon: user.avatarIcon,
 			timezone: user.timezone,
 			role: groupMember.role,
 			joinedAt: groupMember.joinedAt
@@ -125,7 +123,7 @@ export async function groupForInvite(
 	if (!groupId) return null;
 	if ((await getInviteStatus(db, code, now)) !== 'valid') return 'dead';
 	const [found] = await db
-		.select({ id: group.id, name: group.name, emoji: group.emoji })
+		.select({ id: group.id, name: group.name, icon: group.icon })
 		.from(group)
 		.where(eq(group.id, groupId));
 	if (!found) return 'dead';

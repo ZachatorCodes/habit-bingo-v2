@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const habit = await getHabit(requireDb(), user.id, params.id);
 	if (!habit) error(404, 'Not found');
 	if (habit.archivedAt === null) redirect(303, '/me/habits');
-	return { habit: { id: habit.id, emoji: habit.emoji, name: habit.name } };
+	return { habit: { id: habit.id, icon: habit.icon, name: habit.name } };
 };
 
 export const actions: Actions = {

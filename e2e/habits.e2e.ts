@@ -55,7 +55,7 @@ async function chooseRadio(page: Page, name: RegExp): Promise<void> {
 async function addHabit(
 	page: Page,
 	habit: {
-		emoji: string;
+		icon: string;
 		name: string;
 		category: RegExp;
 		howMany: string;
@@ -65,7 +65,10 @@ async function addHabit(
 ): Promise<void> {
 	await page.goto('/me/habits/new');
 	await waitForHydration(page);
-	await page.getByRole('textbox', { name: 'Emoji' }).fill(habit.emoji);
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: habit.icon, exact: true }) })
+		.click();
 	await page.getByRole('textbox', { name: 'Name' }).fill(habit.name);
 	await chooseRadio(page, habit.category);
 	await page.getByRole('spinbutton', { name: 'How many' }).fill(habit.howMany);
@@ -78,7 +81,7 @@ async function addHabit(
 test('create a habit and see it in its category', async ({ page }) => {
 	await newMember(page);
 	await addHabit(page, {
-		emoji: '🚴',
+		icon: 'Bicycle',
 		name: 'Go biking',
 		category: /Fitness/,
 		howMany: '3',
@@ -95,7 +98,7 @@ test('create a habit and see it in its category', async ({ page }) => {
 test('edit a habit and see the change', async ({ page }) => {
 	await newMember(page);
 	await addHabit(page, {
-		emoji: '📚',
+		icon: 'Book',
 		name: 'Read',
 		category: /Learning/,
 		howMany: '1',
@@ -114,7 +117,7 @@ test('edit a habit and see the change', async ({ page }) => {
 test('archive from the edit page, then restore from the archived view', async ({ page }) => {
 	await newMember(page);
 	await addHabit(page, {
-		emoji: '🧘',
+		icon: 'Lotus',
 		name: 'Meditate',
 		category: /Mind/,
 		howMany: '2',
@@ -137,7 +140,10 @@ test('a limit per day can be added without JS', async ({ browser }) => {
 	const page = await context.newPage();
 	await newMemberWithoutJs(page);
 	await page.goto('/me/habits/new');
-	await page.getByRole('textbox', { name: 'Emoji' }).fill('☕');
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: 'Coffee', exact: true }) })
+		.click();
 	await page.getByRole('textbox', { name: 'Name' }).fill('Coffee');
 	await chooseRadio(page, /Limit it/);
 	await page.getByRole('spinbutton', { name: 'How many' }).fill('1');
@@ -153,7 +159,10 @@ test('the form works without JavaScript', async ({ browser }) => {
 	const page = await context.newPage();
 	await newMemberWithoutJs(page);
 	await page.goto('/me/habits/new');
-	await page.getByRole('textbox', { name: 'Emoji' }).fill('💧');
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: 'Drop', exact: true }) })
+		.click();
 	await page.getByRole('textbox', { name: 'Name' }).fill('Drink water');
 	await chooseRadio(page, /Health/);
 	await page.getByRole('spinbutton', { name: 'How many' }).fill('8');
@@ -169,7 +178,7 @@ test("someone else's habit is a 404", async ({ browser }) => {
 	const pageA = await a.newPage();
 	await newMember(pageA);
 	await addHabit(pageA, {
-		emoji: '🎸',
+		icon: 'Guitar',
 		name: 'Guitar',
 		category: /Creative/,
 		howMany: '3',
@@ -191,7 +200,7 @@ test("someone else's habit is a 404", async ({ browser }) => {
 	for (const action of ['save', 'archive']) {
 		const post = await pageB.request.post(`${habitUrl}?/${action}`, {
 			form: {
-				emoji: '🎸',
+				icon: 'guitar',
 				name: 'Mine',
 				category: 'creative',
 				direction: 'atLeast',
@@ -259,16 +268,16 @@ test('archiving while filtered keeps the filter', async ({ page }) => {
 	await expect(page.getByRole('link', { name: /Fitness/ })).toHaveAttribute('aria-current', 'true');
 });
 
-test('the habit form puts a small emoji box beside the name', async ({ page }) => {
+test('the habit form shows the name, then the icon picker, after the category', async ({
+	page
+}) => {
 	await newMember(page);
 	await page.goto('/me/habits/new');
-	const emoji = await page.getByRole('textbox', { name: 'Emoji' }).boundingBox();
-	const name = await page.getByRole('textbox', { name: 'Name' }).boundingBox();
 	const category = await page.getByRole('group', { name: 'Category' }).boundingBox();
-	expect(emoji!.width).toBeLessThan(90);
-	expect(Math.abs(emoji!.y - name!.y)).toBeLessThan(4);
-	expect(name!.x).toBeGreaterThan(emoji!.x + emoji!.width);
-	expect(category!.y).toBeLessThan(emoji!.y);
+	const name = await page.getByRole('textbox', { name: 'Name' }).boundingBox();
+	const icons = await page.getByRole('radiogroup', { name: 'Icon' }).boundingBox();
+	expect(category!.y).toBeLessThan(name!.y);
+	expect(name!.y).toBeLessThan(icons!.y);
 });
 
 /** A member with "Go biking" archived, looking at the archived view. */

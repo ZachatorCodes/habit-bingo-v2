@@ -11,7 +11,7 @@
 		hint?: string;
 		min?: number;
 		max?: number;
-		/** Extra classes for the input, e.g. a compact emoji box. */
+		/** Extra classes for the input, e.g. a compact box. */
 		inputClass?: string;
 	};
 
@@ -52,8 +52,8 @@
 		aria-invalid={error ? 'true' : undefined}
 		aria-describedby={describedBy}
 		class={[
-			'w-full rounded-2xl border-2 bg-white px-4 py-2.5 text-ink shadow-[0_3px_0_var(--color-line)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink',
-			error ? 'border-accent-edge' : 'border-line',
+			'w-full rounded-[14px] border bg-surface px-4 py-2.5 text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-forest',
+			error ? 'border-terracotta' : 'border-line',
 			inputClass
 		]}
 	/>

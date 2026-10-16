@@ -19,11 +19,11 @@
 	}: Props = $props();
 
 	const styles = {
-		primary: 'bg-accent text-white border-accent-edge shadow-[0_3px_0_var(--color-accent-edge)]',
-		secondary: 'bg-white text-ink border-line shadow-[0_3px_0_var(--color-line)]'
+		primary: 'bg-forest text-white border-forest',
+		secondary: 'bg-surface text-ink border-line'
 	};
 	const base =
-		'inline-flex items-center justify-center gap-2 rounded-2xl border-2 px-5 py-2.5 font-extrabold transition-transform active:translate-y-[3px] active:shadow-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
+		'inline-flex items-center justify-center gap-2 min-h-11 rounded-full border px-5 py-2.5 font-extrabold transition-transform motion-safe:active:scale-[0.97] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
 </script>
 
 {#if href}

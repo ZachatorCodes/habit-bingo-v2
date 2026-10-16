@@ -22,9 +22,9 @@ test('a new sign-up completes onboarding and reaches Today', async ({ page }) =>
 	// Click the visible label: the radio itself is visually hidden.
 	await page
 		.locator('label')
-		.filter({ has: page.getByRole('radio', { name: '🦊' }) })
+		.filter({ has: page.getByRole('radio', { name: 'Cat', exact: true }) })
 		.click();
-	await expect(page.getByRole('radio', { name: '🦊' })).toBeChecked();
+	await expect(page.getByRole('radio', { name: 'Cat', exact: true })).toBeChecked();
 	await page.getByRole('button', { name: "Let's go" }).click();
 	// Step 2 of onboarding: start the habit library (spec §4.2).
 	await expect(page).toHaveURL(/\/me\/habits\?welcome=1$/);

@@ -33,7 +33,7 @@ async function makeUser() {
 
 function input(overrides: Partial<HabitInput> = {}): HabitInput {
 	return {
-		emoji: '🚴',
+		icon: 'bicycle',
 		name: 'Go biking',
 		category: 'fitness',
 		direction: 'atLeast',
@@ -56,17 +56,17 @@ beforeEach(async () => {
 });
 
 describe('createHabit', () => {
-	it('creates a habit with normalized rule and trimmed name and emoji', async () => {
+	it('creates a habit with normalized rule and trimmed name', async () => {
 		const me = await makeUser();
 		const result = await createHabit(
 			db,
 			me,
-			input({ name: '  Drink water  ', emoji: ' 💧 ', period: 'day', countMode: 'days', target: 8 })
+			input({ name: '  Drink water  ', icon: 'drop', period: 'day', countMode: 'days', target: 8 })
 		);
 		expect(result).toMatchObject({
 			ok: true,
 			habit: {
-				emoji: '💧',
+				icon: 'drop',
 				name: 'Drink water',
 				category: 'fitness',
 				direction: 'atLeast',
@@ -82,8 +82,10 @@ describe('createHabit', () => {
 	it.each([
 		[{ name: '' }, 'name', 'Give it a name (up to 40 characters).'],
 		[{ name: 'x'.repeat(41) }, 'name', 'Give it a name (up to 40 characters).'],
-		[{ emoji: 'ab' }, 'emoji', 'Pick one emoji.'],
-		[{ emoji: '📚📚' }, 'emoji', 'Pick one emoji.'],
+		[{ icon: 'ab' }, 'icon', 'Pick an icon.'],
+		[{ icon: 'not-an-icon' }, 'icon', 'Pick an icon.'],
+		[{ icon: '🚴' }, 'icon', 'Pick an icon.'],
+		[{ icon: 'lock' }, 'icon', 'Pick an icon.'],
 		[{ category: 'sports' }, 'category', 'Pick a category.'],
 		[{ direction: 'atMost', period: 'day', target: '20' }, 'target', 'Pick a number from 1 to 19.'],
 		[{ target: '0' }, 'target', 'Pick a number from 1 to 100.']
@@ -217,7 +219,7 @@ describe('deleteHabit', () => {
 		expect(await deleteHabit(db, me, habits[0].id)).toBe(true);
 		const squares = await db.select().from(cardSquare).where(eq(cardSquare.name, 'Habit 0'));
 		expect(squares).toHaveLength(1);
-		expect(squares[0]).toMatchObject({ habitId: null, emoji: habits[0].emoji });
+		expect(squares[0]).toMatchObject({ habitId: null, icon: habits[0].icon });
 	});
 });
 
@@ -265,7 +267,7 @@ describe('addStarter', () => {
 		const habits = await listHabits(db, me);
 		expect(habits).toHaveLength(1);
 		expect(habits[0]).toMatchObject({
-			emoji: '🚴',
+			icon: 'bicycle',
 			name: 'Go biking',
 			category: 'fitness',
 			direction: 'atLeast',

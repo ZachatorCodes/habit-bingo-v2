@@ -36,7 +36,7 @@ async function makeUser(id: string = crypto.randomUUID()): Promise<string> {
 }
 
 async function makeGroup(ownerId: string) {
-	const result = await createGroup(db, ownerId, { name: 'Crew', emoji: '🔥' }, now);
+	const result = await createGroup(db, ownerId, { name: 'Crew', icon: 'rocket' }, now);
 	if (!result.ok) throw new Error(result.message);
 	const membership = await getMembership(db, ownerId, result.groupId);
 	return { groupId: result.groupId, code: membership!.inviteCode };
@@ -54,11 +54,11 @@ beforeEach(async () => {
 describe('createGroup', () => {
 	it('makes the creator owner, with one live invite and a trimmed name', async () => {
 		const owner = await makeUser();
-		const result = await createGroup(db, owner, { name: '  Crew  ', emoji: '🔥' }, now);
+		const result = await createGroup(db, owner, { name: '  Crew  ', icon: 'rocket' }, now);
 		if (!result.ok) throw new Error('expected ok');
 		const membership = await getMembership(db, owner, result.groupId);
 		expect(membership).toMatchObject({
-			group: { id: result.groupId, name: 'Crew', emoji: '🔥' },
+			group: { id: result.groupId, name: 'Crew', icon: 'rocket' },
 			role: 'owner'
 		});
 		const invites = await db.select().from(invite).where(eq(invite.groupId, result.groupId));
@@ -67,15 +67,18 @@ describe('createGroup', () => {
 		expect(invites[0].expiresAt > now).toBe(true);
 	});
 
-	it('refuses a bad name or emoji with the field', async () => {
+	it('refuses a bad name or icon with the field', async () => {
 		const owner = await makeUser();
-		const bad = async (name: string, emoji: string) => {
-			const r = await createGroup(db, owner, { name, emoji }, now);
+		const bad = async (name: string, icon: string) => {
+			const r = await createGroup(db, owner, { name, icon }, now);
 			return r.ok ? null : r.field;
 		};
-		expect(await bad('   ', '🔥')).toBe('name');
-		expect(await bad('x'.repeat(41), '🔥')).toBe('name');
-		expect(await bad('Crew', 'ab')).toBe('emoji');
+		expect(await bad('   ', 'rocket')).toBe('name');
+		expect(await bad('x'.repeat(41), 'rocket')).toBe('name');
+		expect(await bad('Crew', 'ab')).toBe('icon');
+		expect(await bad('Crew', 'nope')).toBe('icon');
+		expect(await bad('Crew', 'lock')).toBe('icon');
+		expect(await bad('Crew', '🔥')).toBe('icon');
 		expect(await db.select().from(group)).toHaveLength(0);
 	});
 });
@@ -92,7 +95,7 @@ describe('joinGroup', () => {
 		expect(await joinGroup(db, friend, code, now)).toEqual({ ok: true, groupId });
 		expect(await memberIds(groupId)).toHaveLength(2);
 		expect(await listGroups(db, friend)).toEqual([
-			{ id: groupId, name: 'Crew', emoji: '🔥', memberCount: 2 }
+			{ id: groupId, name: 'Crew', icon: 'rocket', memberCount: 2 }
 		]);
 		expect((await listMembers(db, groupId)).map((m) => m.role)).toEqual(['owner', 'member']);
 	});

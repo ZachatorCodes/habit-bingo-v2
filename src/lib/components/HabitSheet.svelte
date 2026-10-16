@@ -4,9 +4,9 @@
 	/** One habit square as the habit sheet shows it (spec §4.6). */
 	export type SheetData = {
 		id: string;
-		emoji: string;
+		icon: string;
 		name: string;
-		/** "🥗 Health" */
+		/** "Health" */
 		category: string;
 		/** "8 times a day" */
 		rule: string;
@@ -35,6 +35,7 @@
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { burst, tap } from '#lib/celebrate.ts';
 	import { addDays, weekday } from '#lib/game/calendar.ts';
+	import Plus from 'phosphor-svelte/lib/Plus';
 	import BingoSquare from './BingoSquare.svelte';
 	import Toast from './Toast.svelte';
 
@@ -118,7 +119,7 @@
 	<div class="flex items-center gap-4">
 		<div class="w-20 shrink-0">
 			<BingoSquare
-				emoji={data.emoji}
+				icon={data.icon}
 				label={data.name}
 				state={data.state}
 				progress={data.progress}
@@ -174,7 +175,8 @@
 				<button
 					type="submit"
 					aria-label="Add one"
-					class={[round, 'border-ink bg-accent shadow-[0_3px_0_var(--color-ink)]']}>+</button
+					class={[round, 'border-terracotta bg-terracotta text-white']}
+					><Plus weight="bold" aria-hidden="true" /></button
 				>
 			</form>
 		</div>

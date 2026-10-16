@@ -14,7 +14,7 @@ import { finalizeMonths, listResults } from '#lib/server/month-results.ts';
 export type BoardRow = {
 	userId: string;
 	displayUsername: string;
-	avatarEmoji: string;
+	avatarIcon: string;
 	points: number | null;
 	lines: number | null;
 	rank: number | null;
@@ -78,7 +78,7 @@ export async function groupBoard(
 			return {
 				userId: m.userId,
 				displayUsername: m.displayUsername ?? 'Someone',
-				avatarEmoji: m.avatarEmoji,
+				avatarIcon: m.avatarIcon,
 				points,
 				lines,
 				isViewer: m.userId === viewerId
@@ -88,7 +88,7 @@ export async function groupBoard(
 	return { rows: rankRows(rows), provisionalMonth: provisional ? closing : null };
 }
 
-/** A member's current card for the viewer: private habits show as 🔒, no ids, links or rewards. */
+/** A member's current card for the viewer: private habits show as a lock icon, no ids, links or rewards. */
 export async function memberCard(
 	db: Db,
 	viewerId: string,
@@ -96,7 +96,7 @@ export async function memberCard(
 	memberId: string,
 	now: Date
 ): Promise<{
-	member: { displayUsername: string; avatarEmoji: string };
+	member: { displayUsername: string; avatarIcon: string };
 	monthName: string;
 	card: { size: number; squares: ViewSquare[]; score: CardScore } | null;
 } | null> {
@@ -129,14 +129,14 @@ export async function memberCard(
 		const squares = view.squares.map((square) => {
 			const { id, link, ...rest } = square;
 			void link;
-			return id && privateIds.has(id) ? { ...rest, emoji: '🔒', name: '🔒' } : rest;
+			return id && privateIds.has(id) ? { ...rest, icon: 'lock' as const, name: 'Private' } : rest;
 		});
 		shown = { size: card.size, squares, score: view.score };
 	}
 	return {
 		member: {
 			displayUsername: member.displayUsername ?? 'Someone',
-			avatarEmoji: member.avatarEmoji
+			avatarIcon: member.avatarIcon
 		},
 		monthName: monthName(month),
 		card: shown

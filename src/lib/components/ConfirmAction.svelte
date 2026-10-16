@@ -22,7 +22,7 @@
 	let dialog = $state<HTMLDialogElement>();
 	const dialogTitle = $props.id();
 	const buttonClass =
-		'rounded-xl border-2 border-line bg-white px-3 py-1.5 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
+		'min-h-11 rounded-full border border-line bg-surface px-3 py-1.5 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
 </script>
 
 {#snippet hidden()}
@@ -41,7 +41,7 @@
 	<dialog
 		bind:this={dialog}
 		aria-labelledby={dialogTitle}
-		class="m-auto max-w-sm rounded-2xl border-2 border-ink bg-white p-5 text-ink shadow-[0_4px_0_var(--color-ink)] backdrop:bg-ink/40"
+		class="m-auto max-w-sm rounded-[24px] bg-surface p-5 text-ink shadow-sheet backdrop:bg-ink/40"
 	>
 		<h2 id={dialogTitle} class="text-xl font-black">{title}</h2>
 		<p class="mt-2 text-ink/75">{text}</p>
@@ -50,12 +50,12 @@
 			<button
 				type="button"
 				onclick={() => dialog?.close()}
-				class="rounded-xl px-3 py-1.5 font-bold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+				class="min-h-11 rounded-xl px-3 py-1.5 font-bold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 				>Cancel</button
 			>
 			<button
 				type="submit"
-				class="rounded-xl border-2 border-ink bg-risk px-3 py-1.5 font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+				class="min-h-11 rounded-full border border-terracotta bg-risk px-4 py-1.5 font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 				>{confirm}</button
 			>
 		</form>

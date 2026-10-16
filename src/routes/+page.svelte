@@ -2,21 +2,22 @@
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
 	import SampleCard from '#lib/components/SampleCard.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 
 	const steps = [
 		{
-			emoji: '🎯',
+			icon: 'target',
 			title: 'Build your card',
 			text: 'Pick habits for a 3×3 or 5×5 card and set your own rewards.'
 		},
 		{
-			emoji: '✅',
+			icon: 'alarm',
 			title: 'Check in daily',
 			text: 'Earn squares, protect your streaks, and watch the board fill up.'
 		},
 		{
-			emoji: '🏆',
+			icon: 'trophy',
 			title: 'Win with friends',
 			text: 'Hit bingo, unlock rewards, and climb your group leaderboard.'
 		}
@@ -52,7 +53,7 @@
 <section class="mx-auto mt-16 grid max-w-5xl gap-4 px-4 sm:grid-cols-3">
 	{#each steps as step (step.title)}
 		<div class="rounded-2xl border-2 border-line bg-white p-5 shadow-[0_3px_0_var(--color-line)]">
-			<div class="text-3xl" aria-hidden="true">{step.emoji}</div>
+			<div class="text-3xl" aria-hidden="true"><Icon name={step.icon} /></div>
 			<h2 class="mt-2 text-lg font-extrabold">{step.title}</h2>
 			<p class="mt-1 text-ink/75">{step.text}</p>
 		</div>

@@ -7,7 +7,7 @@ import TargetList from './TargetList.svelte';
 function habit(id: string, name: string, over: Partial<Habit> = {}): Habit {
 	return {
 		id,
-		emoji: '🚴',
+		icon: 'bicycle',
 		name,
 		category: 'fitness',
 		direction: 'atLeast',
@@ -45,7 +45,7 @@ describe('TargetList', () => {
 		await expect.element(page.getByText('Prorated from 10')).toBeInTheDocument();
 		await expect.element(page.getByText('Every day from October 19')).toBeInTheDocument();
 		await expect.element(page.getByText('3 a week (short weeks scale down)')).toBeInTheDocument();
-		const input = page.getByRole('spinbutton', { name: '🚴 Bike' });
+		const input = page.getByRole('spinbutton', { name: 'Bike' });
 		await expect.element(input).toHaveAttribute('name', 'target:a');
 		await expect.element(input).toHaveValue(5);
 	});
@@ -68,7 +68,7 @@ describe('TargetList', () => {
 			...props,
 			errors: { 'target:a': 'Pick a number from 1 to 100.' }
 		});
-		const input = page.getByRole('spinbutton', { name: '🚴 Bike' });
+		const input = page.getByRole('spinbutton', { name: 'Bike' });
 		await expect.element(input).toHaveAttribute('aria-invalid', 'true');
 		await expect.element(input).toHaveAccessibleDescription(/Pick a number from 1 to 100\./);
 	});

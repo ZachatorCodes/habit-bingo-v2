@@ -12,7 +12,7 @@
 	/** One habit on Today, with how it will look after one more check-in or one fewer. */
 	export type TodayRowData = TodayRowView & {
 		squareId: string;
-		emoji: string;
+		icon: string;
 		name: string;
 		ifLogged: TodayRowView;
 		ifUndone: TodayRowView | null;
@@ -24,6 +24,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { prefersReducedMotion, Spring } from 'svelte/motion';
 	import { burst, tap } from '#lib/celebrate.ts';
+	import Plus from 'phosphor-svelte/lib/Plus';
 	import BingoSquare from './BingoSquare.svelte';
 
 	type Props = {
@@ -93,6 +94,7 @@
 
 	const button =
 		'grid size-11 shrink-0 place-items-center rounded-2xl border-2 text-xl font-black focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
+	const logClass = 'border-terracotta bg-terracotta text-white';
 </script>
 
 <li class="flex items-center gap-3 rounded-2xl border-2 border-line bg-white p-2 pr-3">
@@ -102,7 +104,7 @@
 		style:opacity={prefersReducedMotion.current && pending ? 0.6 : 1}
 	>
 		<BingoSquare
-			emoji={row.emoji}
+			icon={row.icon}
 			label={row.name}
 			state={view.state}
 			progress={view.progress}
@@ -135,7 +137,7 @@
 			type="submit"
 			bind:this={logButton}
 			aria-label="Log {row.name}"
-			class={[button, 'border-ink bg-accent text-ink shadow-[0_3px_0_var(--color-ink)]']}>+</button
+			class={[button, logClass]}><Plus weight="bold" aria-hidden="true" /></button
 		>
 	</form>
 </li>

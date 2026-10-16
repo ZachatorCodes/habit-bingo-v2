@@ -5,7 +5,7 @@ import TodayRow from './TodayRow.svelte';
 
 const row = {
 	squareId: 'sq-1',
-	emoji: '💧',
+	icon: 'drop',
 	name: 'Drink water',
 	state: 'held' as const,
 	progress: 0,

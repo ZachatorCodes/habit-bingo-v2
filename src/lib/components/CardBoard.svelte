@@ -9,7 +9,7 @@
 		squares: {
 			/** A habit square's id: it links to its habit sheet. */
 			id?: string;
-			emoji: string;
+			icon: string;
 			name: string;
 			state: SquareState;
 			/** 0–1, shown on earn squares in progress. */
@@ -40,7 +40,7 @@
 		'block rounded-square focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
 </script>
 
-<!-- Every square shows its name; 5×5 squares are compact on phones (smaller emoji and text). -->
+<!-- Every square shows its name; 5×5 squares are compact on phones (smaller icons and text). -->
 <div class="grid gap-1.5 sm:gap-2" style:grid-template-columns="repeat({size}, minmax(0, 1fr))">
 	{#each squares as square, index (index)}
 		<div
@@ -50,7 +50,7 @@
 			{#if square.link}
 				<a href={resolve('/(app)/card/next')} class={linkClass}>
 					<BingoSquare
-						emoji={square.emoji}
+						icon={square.icon}
 						label={square.name}
 						state={square.state}
 						progress={square.progress}
@@ -61,7 +61,7 @@
 				{@const href = resolve('/(app)/card/squares/[id]', { id: square.id })}
 				<a {href} onclick={(event) => onopen?.(event, href)} class={linkClass}>
 					<BingoSquare
-						emoji={square.emoji}
+						icon={square.icon}
 						label={square.name}
 						state={square.state}
 						progress={square.progress}
@@ -70,7 +70,7 @@
 				</a>
 			{:else}
 				<BingoSquare
-					emoji={square.emoji}
+					icon={square.icon}
 					label={square.name}
 					state={square.state}
 					progress={square.progress}

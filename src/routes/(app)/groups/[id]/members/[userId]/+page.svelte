@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import CardBoard from '#lib/components/CardBoard.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import type { CardSize } from '#lib/game/card-layout.ts';
 	import type { PageProps } from './$types';
@@ -25,7 +26,11 @@
 			>← Group</a
 		>
 		<h1 class="text-3xl leading-tight font-black">
-			<span aria-hidden="true">{data.member.avatarEmoji}</span>
+			<span
+				aria-hidden="true"
+				class="inline-grid size-9 place-items-center rounded-full bg-earned-tile text-forest"
+				><Icon name={data.member.avatarIcon} /></span
+			>
 			@{data.member.displayUsername}
 		</h1>
 		<h2 class="text-xl font-black">{data.monthName}</h2>

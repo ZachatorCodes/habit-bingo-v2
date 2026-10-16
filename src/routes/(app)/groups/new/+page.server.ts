@@ -20,7 +20,7 @@ export const actions: Actions = {
 			const value = formData.get(key);
 			return typeof value === 'string' ? value : '';
 		};
-		const values = { name: text('name'), emoji: text('emoji') };
+		const values = { name: text('name'), icon: text('icon') };
 		const result = await createGroup(db, user.id, values, requestNow(cookies, TEST_CLOCK));
 		if (!result.ok) return fail(400, { values, errors: { [result.field]: result.message } });
 		redirect(303, `/groups/${result.groupId}`);

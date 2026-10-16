@@ -108,10 +108,10 @@ function startDateOf(
 	return draft.month === monthOf(today) ? today : `${draft.month}-01`;
 }
 
-/** What the builder needs of a habit: its emoji, name and rule. */
+/** What the builder needs of a habit: its icon, name and rule. */
 type PickedHabit = Pick<
 	Habit,
-	'id' | 'emoji' | 'name' | 'direction' | 'period' | 'countMode' | 'target'
+	'id' | 'icon' | 'name' | 'direction' | 'period' | 'countMode' | 'target'
 >;
 
 /** The squares of the card being edited, by habit id; nothing when building a new card. */
@@ -203,7 +203,7 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 	}
 	let board: {
 		size: CardSize;
-		squares: { emoji: string; name: string; state: SquareState }[];
+		squares: { icon: string; name: string; state: SquareState }[];
 	} | null = null;
 	if (params.step === 'board') {
 		if (size === null) redirect(303, to('size'));
@@ -223,11 +223,11 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 				const habit = id === null ? null : byId.get(id)!;
 				return habit
 					? {
-							emoji: habit.emoji,
+							icon: habit.icon,
 							name: habit.name,
 							state: evaluateSquare(habit, preview, new Map(), start).state
 						}
-					: { emoji: '⭐', name: 'Free', state: 'complete' as const };
+					: { icon: 'star', name: 'Free', state: 'complete' as const };
 			})
 		};
 	}

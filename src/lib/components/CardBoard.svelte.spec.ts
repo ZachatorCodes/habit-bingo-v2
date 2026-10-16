@@ -6,7 +6,7 @@ import CardBoard from './CardBoard.svelte';
 
 function squares(count: number, free: number | null = null) {
 	return Array.from({ length: count }, (_, i) => ({
-		emoji: '🧘',
+		icon: 'flower-lotus',
 		name: i === free ? 'Free' : `Habit ${i}`,
 		state: (i === free ? 'free' : 'held') as SquareState
 	}));
@@ -29,14 +29,14 @@ describe('CardBoard', () => {
 	it('names each square with its state in text', async () => {
 		render(CardBoard, {
 			size: 3,
-			squares: [{ emoji: '🧘', name: 'Meditate', state: 'held' }, ...squares(8)]
+			squares: [{ icon: 'flower-lotus', name: 'Meditate', state: 'held' }, ...squares(8)]
 		});
 		await expect.element(page.getByRole('img', { name: 'Meditate: protected' })).toBeVisible();
 	});
 
 	it('renders a linked center square with its label and state', async () => {
-		const board: { emoji: string; name: string; state: SquareState; link?: boolean }[] = squares(9);
-		board[4] = { emoji: '🗓️', name: "Build November's card", state: 'buildNext', link: true };
+		const board: { icon: string; name: string; state: SquareState; link?: boolean }[] = squares(9);
+		board[4] = { icon: 'alarm', name: "Build November's card", state: 'buildNext', link: true };
 		render(CardBoard, { size: 3, squares: board });
 		const link = page.getByRole('link', {
 			name: "Build November's card: build next month's card"

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { prefersReducedMotion } from 'svelte/motion';
+	import Icon from './Icon.svelte';
 	import { fullScreenConfetti } from '#lib/celebrate.ts';
 	import type { Tier } from '#lib/game/score.ts';
 	import type { Rewards } from '#lib/server/cards.ts';
@@ -81,7 +82,7 @@
 		}}
 		class="m-auto max-w-sm rounded-3xl border-4 border-ink bg-cream p-6 text-center text-ink shadow-[0_6px_0_var(--color-ink)] backdrop:bg-ink/50"
 	>
-		<p class="text-5xl" aria-hidden="true">🎉</p>
+		<p class="text-5xl text-terracotta" aria-hidden="true"><Icon name="trophy" /></p>
 		<h2 id={revealId} class="mt-2 text-2xl font-black">You earned a reward</h2>
 		<ul class="mt-3 flex flex-col gap-2">
 			{#each earned as { label, reward } (label)}
@@ -91,7 +92,7 @@
 		<button
 			type="button"
 			onclick={finish}
-			class="mt-5 rounded-2xl border-2 border-ink bg-accent px-5 py-2.5 font-extrabold shadow-[0_3px_0_var(--color-ink)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+			class="mt-5 rounded-2xl border-2 border-forest bg-forest px-5 py-2.5 font-extrabold text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 			>Nice!</button
 		>
 	</dialog>

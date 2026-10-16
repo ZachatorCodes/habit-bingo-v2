@@ -31,13 +31,13 @@
 		role="region"
 		aria-label="Cookie notice"
 		transition:fly={flyOrFade(24, prefersReducedMotion.current)}
-		class="fixed inset-x-4 bottom-[calc(1rem+var(--tab-bar,0px))] z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border-2 border-line bg-white p-4 text-sm shadow-[0_3px_0_var(--color-line)]"
+		class="fixed inset-x-4 bottom-[calc(1rem+var(--tab-bar,0px))] z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-line bg-surface p-4 text-sm shadow-sheet"
 	>
 		<p class="flex-1">We only use essential cookies to keep you signed in.</p>
 		<button
 			type="button"
 			onclick={dismiss}
-			class="rounded-xl bg-ink px-3 py-1.5 font-extrabold text-cream focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-accent"
+			class="min-h-11 rounded-full bg-forest px-4 py-1.5 font-extrabold text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-forest"
 		>
 			Got it
 		</button>

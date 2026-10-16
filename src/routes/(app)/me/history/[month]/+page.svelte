@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
 	import CardBoard from '#lib/components/CardBoard.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -40,7 +41,7 @@
 		<section aria-labelledby="highlight" class="flex flex-col gap-2">
 			<h2 id="highlight" class="text-xl font-black">Most logged</h2>
 			<p>
-				<span aria-hidden="true">{data.highlight.emoji}</span>
+				<span aria-hidden="true"><Icon name={data.highlight.icon} /></span>
 				<span class="font-extrabold">{data.highlight.name}:</span>
 				{plural(data.highlight.total, 'check-in')}
 			</p>
@@ -52,7 +53,7 @@
 		<ul class="flex flex-col gap-1">
 			{#each data.categories as category (category.id)}
 				<li class="tabular-nums">
-					<span aria-hidden="true">{category.emoji}</span>
+					<span aria-hidden="true"><Icon name={category.icon} /></span>
 					{category.label}
 					{category.counting} of {category.total}
 				</li>

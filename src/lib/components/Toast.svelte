@@ -24,7 +24,9 @@
 >
 	{#if shown}
 		{#key shown.id}
-			<p class="pointer-events-auto rounded-xl bg-ink px-4 py-3 font-bold text-cream shadow-lg">
+			<p
+				class="pointer-events-auto rounded-2xl border border-line bg-surface px-4 py-3 font-bold text-ink shadow-sheet"
+			>
 				<span aria-hidden="true">⚠</span>
 				{shown.text}
 			</p>

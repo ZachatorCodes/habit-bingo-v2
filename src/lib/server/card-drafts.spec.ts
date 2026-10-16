@@ -125,7 +125,7 @@ describe('card drafts', () => {
 			position,
 			isCenter: false as const,
 			habitId,
-			emoji: '🏃',
+			icon: 'person-simple-run' as const,
 			name: habitId,
 			category: 'fitness' as const,
 			isPrivate: false,

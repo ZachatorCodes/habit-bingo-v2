@@ -10,7 +10,8 @@ export const habit = pgTable(
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
-		emoji: text('emoji').notNull(),
+		emoji: text('emoji').notNull().default('✨'),
+		icon: text('icon').notNull().default('sparkle'),
 		name: text('name').notNull(),
 		category: text('category').notNull(),
 		direction: text('direction').notNull(),

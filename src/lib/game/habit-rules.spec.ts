@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
 	defaultCountMode,
 	describeRule,
-	isSingleEmoji,
 	normalizeRule,
 	targetRange,
 	type CountMode,
@@ -158,41 +157,5 @@ describe('describeRule', () => {
 		[{ direction: 'atMost', period: 'week', countMode: 'days', target: 0 }, 'None this week']
 	] as const)('describes %o as %s', (rule, sentence) => {
 		expect(describeRule(rule as HabitRule)).toBe(sentence);
-	});
-});
-
-describe('isSingleEmoji', () => {
-	it.each([
-		'📚',
-		'🧘',
-		'👩‍👩‍👧',
-		'🇯🇵',
-		'👍🏽',
-		'1️⃣',
-		'❤️',
-		// The longest standard sequences: a kiss with two skin tones, a family of four, a tag flag.
-		'\u{1F469}\u{1F3FB}\u200D\u2764\uFE0F\u200D\u{1F48B}\u200D\u{1F468}\u{1F3FC}',
-		'\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466}',
-		'\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}'
-	])('accepts %s', (value) => {
-		expect(isSingleEmoji(value)).toBe(true);
-	});
-
-	it.each([
-		'',
-		'a',
-		'ab',
-		'📚📚',
-		'📚 ',
-		' ',
-		'🇯',
-		'1',
-		// One grapheme that renders as many pictographs: a long made-up ZWJ chain.
-		Array(6).fill('\u{1F642}').join('\u200D'),
-		// Combining-mark floods are one grapheme too.
-		'\u{1F642}' + '\u0301'.repeat(3),
-		'\u{1F642}' + '\u0301'.repeat(50)
-	])('rejects %j', (value) => {
-		expect(isSingleEmoji(value)).toBe(false);
 	});
 });

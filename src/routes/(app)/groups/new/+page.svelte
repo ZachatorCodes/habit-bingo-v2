@@ -3,10 +3,13 @@
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
 	import Seo from '#lib/components/Seo.svelte';
+	import IconPicker from '#lib/components/IconPicker.svelte';
 	import TextField from '#lib/components/TextField.svelte';
 	import type { PageProps } from './$types';
 
 	let { form }: PageProps = $props();
+	// svelte-ignore state_referenced_locally
+	let icon = $state(form?.values?.icon || 'users-three');
 	const errors = $derived<Record<string, string>>(form?.errors ?? {});
 </script>
 
@@ -28,19 +31,9 @@
 				formElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
 			}}
 	>
-		<div class="flex items-end gap-3" data-field-row>
-			<div class="w-16 shrink-0">
-				<TextField
-					label="Emoji"
-					name="emoji"
-					value={form?.values?.emoji}
-					error={errors.emoji}
-					inputClass="h-12 px-0 text-center text-2xl leading-6"
-				/>
-			</div>
-			<div class="min-w-0 flex-1">
-				<TextField label="Name" name="name" value={form?.values?.name} error={errors.name} />
-			</div>
+		<div class="flex flex-col gap-5">
+			<TextField label="Name" name="name" value={form?.values?.name} error={errors.name} />
+			<IconPicker name="icon" groups bind:value={icon} error={errors.icon} />
 		</div>
 		<Button type="submit" class="mt-5 w-full">Create group</Button>
 	</form>
