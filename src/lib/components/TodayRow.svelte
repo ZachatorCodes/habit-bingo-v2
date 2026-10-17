@@ -24,6 +24,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { prefersReducedMotion, Spring } from 'svelte/motion';
 	import { burst, tap } from '#lib/celebrate.ts';
+	import Check from 'phosphor-svelte/lib/Check';
 	import Plus from 'phosphor-svelte/lib/Plus';
 	import BingoSquare from './BingoSquare.svelte';
 
@@ -92,12 +93,13 @@
 		};
 	}
 
+	// The day's target is met: the check is the undo action.
+	const met = $derived(view.count > 0 && view.state === 'complete');
 	const button =
-		'grid size-11 shrink-0 place-items-center rounded-2xl border-2 text-xl font-black focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
-	const logClass = 'border-terracotta bg-terracotta text-white';
+		'grid size-11 shrink-0 place-items-center rounded-full text-xl font-black focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
 </script>
 
-<li class="flex items-center gap-3 rounded-2xl border-2 border-line bg-white p-2 pr-3">
+<li class="flex items-center gap-3 py-3">
 	<div
 		class={['w-14 shrink-0', prefersReducedMotion.current && 'transition-opacity duration-200']}
 		style:transform="scale({scale.current})"
@@ -112,10 +114,10 @@
 		/>
 	</div>
 	<div class="min-w-0 flex-1">
-		<p class="truncate font-extrabold">{row.name}</p>
-		<p class="text-sm text-ink/75">{view.text}</p>
+		<p class="truncate text-[14.5px] font-bold">{row.name}</p>
+		<p class="text-xs font-semibold text-muted">{view.text}</p>
 	</div>
-	{#if view.count > 0}
+	{#if met}
 		<form
 			method="POST"
 			action={`?/unlog${keep}`}
@@ -126,18 +128,36 @@
 			<button
 				type="submit"
 				aria-label="Undo one {row.name}"
-				class={[button, 'border-line bg-white text-ink/75']}>−</button
+				class={[button, 'bg-earned-tile text-forest']}
+				><Check weight="bold" aria-hidden="true" /></button
+			>
+		</form>
+	{:else}
+		{#if view.count > 0}
+			<form
+				method="POST"
+				action={`?/unlog${keep}`}
+				use:enhance={optimistic(() => row.ifUndone, false)}
+			>
+				<input type="hidden" name="squareId" value={row.squareId} />
+				<input type="hidden" name="date" value={day} />
+				<button
+					type="submit"
+					aria-label="Undo one {row.name}"
+					class={[button, 'bg-page text-muted']}>−</button
+				>
+			</form>
+		{/if}
+		<form method="POST" action={`?/log${keep}`} use:enhance={optimistic(() => row.ifLogged, true)}>
+			<input type="hidden" name="squareId" value={row.squareId} />
+			<input type="hidden" name="date" value={day} />
+			<button
+				type="submit"
+				bind:this={logButton}
+				aria-label="Log {row.name}"
+				class={[button, 'bg-terracotta text-white']}
+				><Plus weight="bold" aria-hidden="true" /></button
 			>
 		</form>
 	{/if}
-	<form method="POST" action={`?/log${keep}`} use:enhance={optimistic(() => row.ifLogged, true)}>
-		<input type="hidden" name="squareId" value={row.squareId} />
-		<input type="hidden" name="date" value={day} />
-		<button
-			type="submit"
-			bind:this={logButton}
-			aria-label="Log {row.name}"
-			class={[button, logClass]}><Plus weight="bold" aria-hidden="true" /></button
-		>
-	</form>
 </li>

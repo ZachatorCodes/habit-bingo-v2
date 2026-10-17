@@ -19,7 +19,7 @@ async function octoberCard(page: Page): Promise<void> {
 	await expect(page.getByText('1/8 today')).toBeVisible();
 }
 
-const banner = (page: Page) => page.getByRole('link', { name: '🎉 Your October recap is ready' });
+const banner = (page: Page) => page.getByRole('link', { name: 'Your October recap is ready' });
 
 test('a finished month gets a banner, a recap and a History entry', async ({ page }) => {
 	await octoberCard(page);

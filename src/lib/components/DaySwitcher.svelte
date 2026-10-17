@@ -15,8 +15,8 @@
 	const label = (day: string) =>
 		day === today ? 'Today' : day === addDays(today, -1) ? 'Yesterday' : WEEKDAYS[weekday(day)];
 	const linkClass = (day: string) => [
-		'rounded-full border-2 px-3 py-1 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink',
-		day === selected ? 'border-ink bg-ink text-cream' : 'border-line bg-white'
+		'rounded-full px-3.5 py-1.5 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink',
+		day === selected ? 'bg-forest text-white' : 'bg-surface text-ink'
 	];
 </script>
 

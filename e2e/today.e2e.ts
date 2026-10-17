@@ -28,7 +28,9 @@ const section = (page: Page, name: string) =>
 
 test('a new card fills the Today sections', async ({ page }) => {
 	await onToday(page);
-	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await expect(
+		page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening), / })
+	).toBeVisible();
 	await expect(section(page, 'Do today')).toHaveCount(2);
 	await expect(section(page, 'This week')).toHaveCount(2);
 	await expect(section(page, 'Anytime this month')).toHaveCount(3);
@@ -113,7 +115,7 @@ test('all done today', async ({ page }) => {
 	await page.getByRole('button', { name: 'Log Power clean' }).click();
 	await expect(page.getByText(/Done \(2\)/)).toBeVisible();
 	await page.goto('/today');
-	await expect(page.getByText('All done today 🎉')).toBeVisible();
+	await expect(page.getByText('All done today', { exact: true })).toBeVisible();
 });
 
 test("on the 1st–3rd, last month's last days can still be logged", async ({ page }) => {
@@ -163,7 +165,7 @@ test('heads up points at what needs doing today', async ({ page }) => {
 test('no card yet', async ({ page }) => {
 	await newMember(page);
 	await page.goto('/today');
-	await expect(page.getByText('No card yet.')).toBeVisible();
+	await expect(page.getByText('No card yet', { exact: true })).toBeVisible();
 	await expect(page.getByRole('link', { name: 'Build one' })).toBeVisible();
 });
 
