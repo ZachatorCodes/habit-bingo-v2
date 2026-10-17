@@ -49,7 +49,9 @@
 	<div class="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-6">
 		<div class="flex items-end justify-between gap-4">
 			<p class="text-[26px] leading-none font-extrabold text-forest tabular-nums">
-				{score.points}<span class="ml-1 text-[11px] font-semibold text-muted">pts</span>
+				<span aria-hidden="true"
+					>{score.points}<span class="ml-1 text-[11px] font-semibold text-muted">pts</span></span
+				><span class="sr-only">{score.points} {score.points === 1 ? 'point' : 'points'}</span>
 			</p>
 			<div class="text-right text-[13px] font-semibold">
 				<p>{lineText}</p>

@@ -7,7 +7,7 @@ import {
 	waitForHydration
 } from './fixtures.ts';
 
-// The first 8 Quick start habits: Finish a book, Finish a book, Call an old friend (anytime this
+// The first 8 Quick start habits: Finish a book, Go biking, Call an old friend (anytime this
 // month); Meditate, Power clean (2 days a week, this week); Scoop the litter box (every day); Drink water
 // (8 a day); Eat out (a slip). The card starts on Thursday Oct 15; "today" is Tuesday Oct 20.
 const OCT_15 = '2026-10-15T12:00:00Z';
@@ -300,10 +300,7 @@ test('the card header reflects check-ins', async ({ page }) => {
 	await onToday(page);
 	const pointsOf = async () => {
 		await page.goto('/card');
-		const text = await page
-			.getByText(/\d+ points?$/)
-			.first()
-			.innerText();
+		const text = await page.getByText(/^\d+ points?$/).innerText();
 		return Number(text.split(' ')[0]);
 	};
 	const before = await pointsOf();
@@ -313,7 +310,7 @@ test('the card header reflects check-ins', async ({ page }) => {
 	await page.getByRole('button', { name: 'Log Finish a book' }).click();
 	await expect(
 		section(page, 'Anytime this month').filter({ hasText: 'Finish a book' })
-	).toContainText('1 more · 12 days left');
+	).toContainText('1 of 1 this month');
 	expect(await pointsOf()).toBeGreaterThan(before);
 });
 
