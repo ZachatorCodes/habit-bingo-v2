@@ -25,7 +25,7 @@
 <ol aria-label="Card builder steps" class="mt-4 grid grid-cols-5 gap-1.5 text-[12px] font-semibold">
 	{#each steps as step (step)}
 		{@const done = completed.includes(step) && step !== current}
-		<li aria-current={step === current ? 'step' : undefined} class="flex flex-col gap-1.5">
+		<li aria-current={step === current ? 'step' : undefined} class="relative flex flex-col gap-1.5">
 			<span
 				aria-hidden="true"
 				class={[
@@ -38,7 +38,7 @@
 				<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve() can't carry the ?for=next query -->
 				<a
 					href={resolve('/(app)/card/build/[step]', { step }) + (forNext ? '?for=next' : '')}
-					class="min-h-6 truncate underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-surface"
+					class="truncate underline underline-offset-4 after:absolute after:inset-x-0 after:-inset-y-2 after:content-[''] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-surface"
 					>{LABELS[step]}</a
 				>
 				<!-- eslint-enable svelte/no-navigation-without-resolve -->

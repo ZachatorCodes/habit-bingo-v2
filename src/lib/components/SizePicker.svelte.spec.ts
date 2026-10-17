@@ -23,6 +23,15 @@ describe('SizePicker', () => {
 		await expect.element(page.getByRole('radio', { name: /5×5/ })).toHaveAttribute('value', '5');
 	});
 
+	it('puts a check icon in each option, shown when checked', async () => {
+		render(SizePicker, { selected: 5, habitCount: 30 });
+		for (const radio of page.getByRole('radio').elements()) {
+			const icon = radio.closest('label')?.querySelector('svg');
+			expect(icon).not.toBeNull();
+			expect(icon?.getAttribute('class')).toContain('group-has-[:checked]:block');
+		}
+	});
+
 	it('links an error to the size group', async () => {
 		render(SizePicker, { selected: null, habitCount: 9, errorId: 'problem' });
 		const group = page.getByRole('radiogroup', { name: 'Card size' });

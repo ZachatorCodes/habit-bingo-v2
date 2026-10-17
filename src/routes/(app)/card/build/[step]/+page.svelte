@@ -83,7 +83,7 @@
 <section class="relative -mt-[18px] flex flex-col rounded-[24px] bg-surface shadow-sheet">
 	<div class="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6">
 		{#if message}
-			<p id="step-error" role="alert" class="rounded-xl bg-risk px-4 py-3 font-bold text-ink">
+			<p id="step-error" role="alert" class="rounded-xl bg-risk-tile px-4 py-3 font-bold text-ink">
 				<span aria-hidden="true">⚠</span>
 				{message}
 			</p>
