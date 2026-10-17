@@ -7,7 +7,7 @@ import {
 	waitForHydration
 } from './fixtures.ts';
 
-// The first 8 Quick start habits: Finish a book, Go biking, Call an old friend (anytime this
+// The first 8 Quick start habits: Finish a book, Finish a book, Call an old friend (anytime this
 // month); Meditate, Power clean (2 days a week, this week); Scoop the litter box (every day); Drink water
 // (8 a day); Eat out (a slip). The card starts on Thursday Oct 15; "today" is Tuesday Oct 20.
 const OCT_15 = '2026-10-15T12:00:00Z';
@@ -310,9 +310,24 @@ test('the card header reflects check-ins', async ({ page }) => {
 	await expect(page.getByText(/\d+% counting/)).toBeVisible();
 	await page.goto('/today');
 	await waitForHydration(page);
-	await page.getByRole('button', { name: 'Log Go biking' }).click();
-	await expect(section(page, 'Anytime this month').filter({ hasText: 'Go biking' })).toContainText(
-		'1 more · 12 days left'
-	);
+	await page.getByRole('button', { name: 'Log Finish a book' }).click();
+	await expect(
+		section(page, 'Anytime this month').filter({ hasText: 'Finish a book' })
+	).toContainText('1 more · 12 days left');
 	expect(await pointsOf()).toBeGreaterThan(before);
+});
+
+test('focus follows the main button when a row meets its target and is undone', async ({
+	page
+}) => {
+	await onToday(page);
+	// The first completion earns a reward, and its dialog takes focus; clear it first.
+	await page.getByRole('button', { name: 'Log Finish a book' }).click();
+	await page.getByRole('button', { name: 'Nice!' }).click();
+	// An "anytime this month" row stays in its section when met, so the check can take focus.
+	await page.getByRole('button', { name: 'Log Call an old friend' }).focus();
+	await page.keyboard.press('Enter');
+	await expect(page.getByRole('button', { name: 'Undo one Call an old friend' })).toBeFocused();
+	await page.keyboard.press('Enter');
+	await expect(page.getByRole('button', { name: 'Log Call an old friend' })).toBeFocused();
 });

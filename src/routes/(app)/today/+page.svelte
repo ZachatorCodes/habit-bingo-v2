@@ -50,7 +50,7 @@
 </script>
 
 <Hero
-	title="{greeting(data.hour)}, {data.name}"
+	title={data.name ? `${greeting(data.hour)}, ${data.name}` : greeting(data.hour)}
 	summary={data.card ? todaySummary(data.card.sections.doToday.length) : 'No card yet'}
 >
 	{#if !data.buildCard}
@@ -64,7 +64,7 @@
 	{/if}
 </Hero>
 
-<section class="relative -mt-[18px] rounded-t-[18px] bg-page">
+<section class="relative -mt-[18px] rounded-[24px] bg-surface shadow-sheet">
 	<div class="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-6">
 		{#if data.recap}
 			<div
