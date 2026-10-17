@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Check from 'phosphor-svelte/lib/Check';
+	import ProgressRing from './ProgressRing.svelte';
 	import Icon from './Icon.svelte';
 	import { CATEGORIES } from '#lib/game/categories.ts';
 	import { describeRule } from '#lib/game/habit-rules.ts';
@@ -19,26 +21,32 @@
 	<p aria-live="polite" class="font-extrabold">{selected.length} of {need} picked</p>
 	{#each groups as group (group.category.id)}
 		<fieldset class="flex flex-col gap-2">
-			<legend class="mb-1.5 text-lg font-black">
+			<legend class="mb-1.5 text-lg font-extrabold">
 				<Icon name={group.category.icon} />
 				{group.category.label}
 			</legend>
 			{#each group.habits as habit (habit.id)}
 				<label
-					class="flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-line bg-white p-3 shadow-[0_3px_0_var(--color-line)] has-[:checked]:border-ink has-[:checked]:bg-cream has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink"
+					class="group flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl border border-line bg-surface p-3 has-[:checked]:border-2 has-[:checked]:border-forest has-[:checked]:bg-earned-tile has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-forest"
 				>
 					<input
 						type="checkbox"
 						name="habitIds"
 						value={habit.id}
 						bind:group={selected}
-						class="size-5 accent-ink"
+						class="sr-only"
 					/>
-					<span aria-hidden="true" class="text-2xl leading-none"><Icon name={habit.icon} /></span>
+					<ProgressRing icon={habit.icon} variant="open" size="sm" />
 					<span class="min-w-0 flex-1">
 						<span class="block font-extrabold">{habit.name}</span>
 						<span class="block text-sm text-ink/75">{describeRule(habit)}</span>
 					</span>
+					<Check
+						weight="bold"
+						size={20}
+						aria-hidden="true"
+						class="hidden shrink-0 text-forest group-has-[:checked]:block"
+					/>
 				</label>
 			{/each}
 		</fieldset>

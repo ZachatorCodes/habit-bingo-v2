@@ -23,17 +23,6 @@ describe('SizePicker', () => {
 		await expect.element(page.getByRole('radio', { name: /5×5/ })).toHaveAttribute('value', '5');
 	});
 
-	it('carries a text cue in each option, revealed by the checked state', async () => {
-		// The component tests load no stylesheet, so visibility is asserted in the E2E suite.
-		render(SizePicker, { selected: 5, habitCount: 30 });
-		const cues = page.getByText('Selected').elements();
-		expect(cues).toHaveLength(2);
-		for (const cue of cues) {
-			expect(cue.className).toContain('group-has-[:checked]:inline');
-			expect(cue.closest('label')?.querySelector('input[type="radio"]')).not.toBeNull();
-		}
-	});
-
 	it('links an error to the size group', async () => {
 		render(SizePicker, { selected: null, habitCount: 9, errorId: 'problem' });
 		const group = page.getByRole('radiogroup', { name: 'Card size' });
