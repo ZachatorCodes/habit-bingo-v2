@@ -132,7 +132,7 @@
 	const action = (name: string) =>
 		`${base}?/${name}${data.day === data.today ? '' : `&day=${data.day}`}`;
 	const round =
-		'grid size-12 place-items-center rounded-full text-2xl font-black focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-40';
+		'grid size-12 place-items-center rounded-full text-2xl font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-40';
 </script>
 
 <div class="mt-4 flex flex-col gap-5" bind:this={root}>
@@ -182,7 +182,7 @@
 					class={[round, 'bg-page text-muted']}>−</button
 				>
 			</form>
-			<output aria-label="Count" class="min-w-10 text-center text-3xl font-black tabular-nums"
+			<output aria-label="Count" class="min-w-10 text-center text-3xl font-extrabold tabular-nums"
 				>{count}</output
 			>
 			<form

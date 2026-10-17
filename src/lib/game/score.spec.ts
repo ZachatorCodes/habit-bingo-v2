@@ -184,6 +184,18 @@ describe('squaresToLine', () => {
 		s[0] = 'complete';
 		expect(squaresToLine(3, s)).toBe(1); // diagonal 0-4-8 needs 1
 	});
+	it('works on a 5×5 board', () => {
+		const s = Array<SquareState>(25).fill('empty');
+		s[12] = 'free';
+		s[0] = 'complete';
+		expect(squaresToLine(5, s)).toBe(3); // diagonal 0-6-12-18-24: free center and one complete
+	});
+	it('counts held and at-risk squares', () => {
+		const s = board('empty');
+		s[3] = 'held';
+		s[5] = 'atRisk';
+		expect(squaresToLine(3, s)).toBe(0);
+	});
 	it('skips lines with a lost square', () => {
 		expect(squaresToLine(3, board('lost'))).toBeNull();
 	});

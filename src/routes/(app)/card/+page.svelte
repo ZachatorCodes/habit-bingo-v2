@@ -11,6 +11,8 @@
 	import { CARD_SIZES } from '#lib/game/card-layout.ts';
 	import { newlyCompleted } from '#lib/celebrate-lines.ts';
 	import type { CardScore, Tier } from '#lib/game/score.ts';
+	import Hero from '#lib/components/Hero.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import CardHeader from '#lib/components/CardHeader.svelte';
 	import type { PageProps } from './$types';
 
@@ -171,11 +173,11 @@
 		</div>
 	{/if}
 {:else}
-	<section class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
-		<div class="flex flex-col items-center gap-4 text-center">
-			<div class="text-5xl" aria-hidden="true">🎯</div>
-			<h1 class="text-3xl leading-tight font-black">Your card</h1>
-			<p class="text-lg text-ink/75">No card for {data.monthName} yet.</p>
+	<Hero title="Your card" summary="No card for {data.monthName} yet." />
+	<section class="relative -mt-[18px] rounded-[24px] bg-surface shadow-sheet">
+		<div class="mx-auto flex max-w-2xl flex-col items-center gap-4 px-4 py-10 text-center">
+			<Icon name="plant" size={48} class="text-forest" />
+			<p class="text-muted">Build this month's card to start checking in.</p>
 			<Button href={resolve('/(app)/card/build')}
 				>{data.hasDraft ? 'Continue building' : 'Build your card'}</Button
 			>
