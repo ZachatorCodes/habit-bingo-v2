@@ -1,5 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { monthName } from '#lib/game/calendar.ts';
+import { daysLeftInMonth, monthName } from '#lib/game/calendar.ts';
 import { requireUser } from '#lib/server/auth/guards.ts';
 import { draftFromCard, getDraft, saveDraft } from '#lib/server/card-drafts.ts';
 import { currentMonth, getCard, isEditable } from '#lib/server/cards.ts';
@@ -26,6 +26,7 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 	if (!card) {
 		return {
 			monthName: monthName(month),
+			daysLeft: 0,
 			card: null,
 			hasDraft: draft.size !== null,
 			editable: false,
@@ -37,6 +38,7 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 	const { squares, score, nextMonthName: next } = await cardView(db, user.id, card, today);
 	return {
 		monthName: monthName(month),
+		daysLeft: daysLeftInMonth(today),
 		nextMonthName: next,
 		card: {
 			size: card.size,

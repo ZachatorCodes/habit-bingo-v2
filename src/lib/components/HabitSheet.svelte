@@ -32,21 +32,34 @@
 	import { enhance, type SubmitFunction } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { tick } from 'svelte';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { burst, tap } from '#lib/celebrate.ts';
 	import { addDays, weekday } from '#lib/game/calendar.ts';
 	import Plus from 'phosphor-svelte/lib/Plus';
-	import BingoSquare from './BingoSquare.svelte';
+	import ProgressRing from './ProgressRing.svelte';
 	import Toast from './Toast.svelte';
 
 	type Props = {
 		data: SheetData;
+		/** Shows the habit's name as the page heading (the page; a dialog already has it as its title). */
+		titled?: boolean;
 		/** Shown over the card: day links and saves refresh the sheet in place through this. */
 		onnavigate?: (href: string) => Promise<void>;
 	};
 
-	let { data, onnavigate }: Props = $props();
+	let { data, titled = false, onnavigate }: Props = $props();
 
+	const RING = {
+		empty: 'open',
+		inProgress: 'progress',
+		complete: 'earned',
+		held: 'protected',
+		atRisk: 'risk',
+		lost: 'lost',
+		free: 'open',
+		buildNext: 'open'
+	} as const;
 	const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 	const base = $derived(resolve('/(app)/card/squares/[id]', { id: data.id }));
 	const dayQuery = (day: string) => (day === data.today ? '' : `?day=${day}`);
@@ -61,6 +74,7 @@
 	/** The count shown while a change is on its way; null shows the server's. */
 	let pending = $state<number | null>(null);
 	const count = $derived(pending ?? data.count);
+	let root = $state<HTMLElement>();
 	let toast = $state<{ id: number; text: string } | null>(null);
 
 	function follow(event: MouseEvent, href: string) {
@@ -72,6 +86,7 @@
 
 	function optimistic(next: () => number): SubmitFunction {
 		return ({ submitter }) => {
+			const hadFocus = submitter === document.activeElement;
 			const before = count;
 			pending = next();
 			if (pending > before) {
@@ -105,6 +120,11 @@
 					await update();
 				}
 				pending = null;
+				// A disabled − (at zero) drops focus: hand it to + so the keyboard stays in the stepper.
+				if (hadFocus && (submitter as HTMLButtonElement).disabled) {
+					await tick();
+					root?.querySelector<HTMLElement>('[data-primary]')?.focus();
+				}
 			};
 		};
 	}
@@ -112,25 +132,22 @@
 	const action = (name: string) =>
 		`${base}?/${name}${data.day === data.today ? '' : `&day=${data.day}`}`;
 	const round =
-		'grid size-12 place-items-center rounded-2xl border-2 text-2xl font-black focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-40';
+		'grid size-12 place-items-center rounded-full text-2xl font-black focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-40';
 </script>
 
-<div class="mt-4 flex flex-col gap-5">
+<div class="mt-4 flex flex-col gap-5" bind:this={root}>
 	<div class="flex items-center gap-4">
-		<div class="w-20 shrink-0">
-			<BingoSquare
-				icon={data.icon}
-				label={data.name}
-				state={data.state}
-				progress={data.progress}
-				showLabel={false}
-			/>
-		</div>
-		<div class="flex flex-col gap-0.5">
-			<p class="text-sm font-bold text-ink/75">{data.category}</p>
-			<p class="font-extrabold">{data.rule}</p>
-			<p>{data.stateText}</p>
-			<p class="text-sm text-ink/75">{data.progressText}</p>
+		<ProgressRing
+			icon={data.icon}
+			variant={RING[data.state]}
+			percent={Math.round(data.progress * 100)}
+			size="lg"
+		/>
+		<div class="flex min-w-0 flex-col gap-0.5">
+			{#if titled}<h1 class="text-xl leading-tight font-extrabold">{data.name}</h1>{/if}
+			<p class="text-[13px] font-semibold text-muted">{data.category} · {data.rule}</p>
+			<p class="font-bold">{data.stateText}</p>
+			<p class="text-[13px] font-semibold text-muted">{data.progressText}</p>
 		</div>
 	</div>
 
@@ -142,8 +159,8 @@
 				onclick={(event) => follow(event, `${base}${dayQuery(day)}`)}
 				aria-current={day === data.day ? 'date' : undefined}
 				class={[
-					'rounded-full border-2 px-3 py-1 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink',
-					day === data.day ? 'border-ink bg-ink text-cream' : 'border-line bg-white'
+					'rounded-full border px-3 py-1 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink',
+					day === data.day ? 'border-forest bg-forest text-surface' : 'border-line bg-surface'
 				]}>{label(day)}</a
 			>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
@@ -162,10 +179,12 @@
 					type="submit"
 					aria-label="Remove one"
 					disabled={count === 0}
-					class={[round, 'border-line bg-white']}>−</button
+					class={[round, 'bg-page text-muted']}>−</button
 				>
 			</form>
-			<output aria-label="Count" class="min-w-10 text-center text-3xl font-black">{count}</output>
+			<output aria-label="Count" class="min-w-10 text-center text-3xl font-black tabular-nums"
+				>{count}</output
+			>
 			<form
 				method="POST"
 				action={action('log')}
@@ -174,8 +193,9 @@
 				<input type="hidden" name="date" value={data.day} />
 				<button
 					type="submit"
+					data-primary
 					aria-label="Add one"
-					class={[round, 'border-terracotta bg-terracotta text-white']}
+					class={[round, 'bg-terracotta text-white']}
 					><Plus weight="bold" aria-hidden="true" /></button
 				>
 			</form>
@@ -188,19 +208,19 @@
 				type="submit"
 				aria-pressed={count > 0}
 				class={[
-					'rounded-2xl border-2 px-4 py-2.5 font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink',
-					count > 0 ? 'border-ink bg-earn' : 'border-line bg-white'
+					'rounded-2xl px-4 py-2.5 font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink',
+					count > 0 ? 'bg-earned-tile text-forest' : 'bg-terracotta text-white'
 				]}><span aria-hidden="true">{count > 0 ? '✓' : '○'}</span> Done that day</button
 			>
 		</form>
 	{/if}
 
 	<div>
-		<h3 class="font-extrabold">History</h3>
-		<ul aria-label="History" class="mt-2 grid grid-cols-2 gap-1 text-sm sm:grid-cols-3">
+		<h3 class="text-xs font-extrabold tracking-[0.02em]">History</h3>
+		<ul aria-label="History" class="mt-1 flex flex-col divide-y divide-line text-sm">
 			{#each data.history as entry (entry.date)}
-				<li class={entry.count > 0 ? 'font-extrabold' : 'text-ink/60'}>
-					{#if entry.count > 0}<span aria-hidden="true">✓ </span>{/if}{short(entry.date)} — {entry.count}
+				<li class="flex justify-between py-2 {entry.count > 0 ? 'font-bold' : 'text-muted'}">
+					<span>{short(entry.date)}</span><span class="tabular-nums">{entry.count}</span>
 				</li>
 			{/each}
 		</ul>

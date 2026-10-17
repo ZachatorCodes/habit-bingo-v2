@@ -5,9 +5,11 @@ import {
 	completeLines,
 	counts,
 	lineIndexes,
+	nextTier,
 	reachedTiers,
 	scoreCard,
-	squarePoints
+	squarePoints,
+	squaresToLine
 } from './score.ts';
 import type { SquareState } from './square-state.ts';
 
@@ -168,5 +170,35 @@ describe('scoreCard', () => {
 			...[...Array(5)].map(() => square('empty', 0))
 		];
 		expect(scoreCard(3, card).percent).toBe(44);
+	});
+});
+
+describe('squaresToLine', () => {
+	const board = (fill: SquareState): SquareState[] => {
+		const s = Array<SquareState>(9).fill(fill);
+		s[4] = 'free';
+		return s;
+	};
+	it('counts the closest line', () => {
+		const s = board('empty');
+		s[0] = 'complete';
+		expect(squaresToLine(3, s)).toBe(1); // diagonal 0-4-8 needs 1
+	});
+	it('skips lines with a lost square', () => {
+		expect(squaresToLine(3, board('lost'))).toBeNull();
+	});
+	it('is 0 when a line is complete', () => {
+		const s = board('empty');
+		s[3] = 'held';
+		s[5] = 'complete';
+		expect(squaresToLine(3, s)).toBe(0);
+	});
+});
+
+describe('nextTier', () => {
+	it('returns the first unreached tier', () => {
+		expect(nextTier([])).toBe('bingo');
+		expect(nextTier(['bingo'])).toBe('sixtyPercent');
+		expect(nextTier(['bingo', 'sixtyPercent', 'blackout'])).toBeNull();
 	});
 });

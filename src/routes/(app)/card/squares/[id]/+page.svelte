@@ -13,6 +13,5 @@
 		class="self-start font-bold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 		>Back to card</a
 	>
-	<h1 class="text-3xl leading-tight font-black">{data.sheet.name}</h1>
-	<HabitSheet data={data.sheet} />
+	<HabitSheet data={data.sheet} titled />
 </section>

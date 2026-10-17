@@ -56,10 +56,11 @@ test('a new member builds and starts a 3×3 card', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: /\w+ card$/ })).toBeVisible();
 	await expect(page.getByText('Card started!')).toBeVisible();
 	expect(await squareNames(page)).toHaveLength(9);
-	await expect(page.getByText('Ice cream')).toBeVisible();
-	await expect(page.getByText('5 squares')).toBeVisible();
-	await expect(page.getByText('Movie night')).toBeVisible();
-	await expect(page.getByText('A weekend away')).toBeVisible();
+	const rewards = page.getByRole('list', { name: 'Rewards' });
+	await expect(rewards.getByText('Ice cream')).toBeVisible();
+	await expect(rewards.getByText('5 squares')).toBeVisible();
+	await expect(rewards.getByText('Movie night')).toBeVisible();
+	await expect(rewards.getByText('A weekend away')).toBeVisible();
 	await expect(page.getByText(/Edits close/)).toBeVisible();
 
 	// The draft is gone: building again goes to the card.
@@ -93,7 +94,7 @@ test('shuffle changes the board but keeps the habits', async ({ page }) => {
 test('Today and the nav lead to the card', async ({ page }) => {
 	await newMemberWithHabits(page, 8);
 	await page.goto('/today');
-	await expect(page.getByText('No card yet.')).toBeVisible();
+	await expect(page.getByText('No card yet')).toBeVisible();
 	await page.getByRole('link', { name: 'Build one' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/size$/);
 
@@ -298,7 +299,7 @@ test('cancel editing leaves the card unchanged', async ({ page }) => {
 	await waitForHydration(page);
 	await page.getByRole('button', { name: 'Cancel editing' }).click();
 	await expect(page).toHaveURL(/\/card$/);
-	await expect(page.getByText('Ice cream')).toBeVisible();
+	await expect(page.getByRole('list', { name: 'Rewards' }).getByText('Ice cream')).toBeVisible();
 	await expect(page.getByText('Changed my mind')).toHaveCount(0);
 	expect(await squareNames(page)).toEqual(before);
 

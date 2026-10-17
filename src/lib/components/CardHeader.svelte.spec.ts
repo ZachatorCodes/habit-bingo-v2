@@ -13,35 +13,67 @@ const score = (overrides = {}) => ({
 	...overrides
 });
 
+const base = {
+	monthName: 'October',
+	daysLeft: 14,
+	size: 3 as const,
+	rewards,
+	states: ['empty', 'empty', 'empty', 'empty', 'free', 'empty', 'empty', 'empty', 'empty'] as const
+};
+const props = (overrides = {}) => ({
+	...base,
+	states: [...base.states],
+	score: score(),
+	...overrides
+});
+
 describe('CardHeader', () => {
-	it('shows the month, percent counting, bingos and points', async () => {
-		render(CardHeader, { monthName: 'October', score: score(), size: 3, rewards });
+	it('shows the month, days left, points and percent counting', async () => {
+		render(CardHeader, props());
 		await expect
 			.element(page.getByRole('heading', { level: 1, name: 'October card' }))
 			.toBeVisible();
+		await expect.element(page.getByText('14 days left')).toBeVisible();
+		await expect.element(page.getByText('120pts')).toBeVisible();
 		await expect.element(page.getByText('44% counting')).toBeVisible();
-		await expect.element(page.getByText('0 bingos')).toBeVisible();
-		await expect.element(page.getByText('120 points')).toBeVisible();
 	});
 
-	it('uses singulars', async () => {
-		render(CardHeader, {
-			monthName: 'October',
-			score: score({ lines: [[0, 1, 2]], points: 1 }),
-			size: 3,
-			rewards
-		});
-		await expect.element(page.getByText('1 bingo', { exact: true })).toBeVisible();
-		await expect.element(page.getByText('1 point', { exact: true })).toBeVisible();
+	it('uses the singular day', async () => {
+		render(CardHeader, props({ daysLeft: 1 }));
+		await expect.element(page.getByText('1 day left')).toBeVisible();
+	});
+
+	it('says how far the closest line is, and the next reward', async () => {
+		render(CardHeader, props());
+		await expect.element(page.getByText('2 squares from a line')).toBeVisible();
+		await expect.element(page.getByText('Next reward: Ice cream')).toBeVisible();
+	});
+
+	it('celebrates a line, and says when none are left', async () => {
+		const done = render(
+			CardHeader,
+			props({ states: ['complete', 'complete', 'complete', ...base.states.slice(3)] })
+		);
+		await expect.element(page.getByText('Bingo!')).toBeVisible();
+		await done.unmount();
+		render(CardHeader, props({ states: base.states.map((s) => (s === 'free' ? s : 'lost')) }));
+		await expect.element(page.getByText('No lines left this month')).toBeVisible();
+	});
+
+	it('uses a singular square and hides the next reward once all are reached', async () => {
+		render(
+			CardHeader,
+			props({
+				score: score({ tiers: ['bingo', 'sixtyPercent', 'blackout'] }),
+				states: ['complete', 'complete', 'empty', ...base.states.slice(3)]
+			})
+		);
+		await expect.element(page.getByText('1 square from a line')).toBeVisible();
+		expect(page.getByText(/Next reward/).elements()).toHaveLength(0);
 	});
 
 	it('lists the three tiers with their rewards and marks reached ones in text', async () => {
-		render(CardHeader, {
-			monthName: 'October',
-			score: score({ tiers: ['bingo'] }),
-			size: 5,
-			rewards
-		});
+		render(CardHeader, props({ size: 5, score: score({ tiers: ['bingo'] }) }));
 		const tiers = page.getByRole('list', { name: 'Rewards' }).getByRole('listitem');
 		expect(tiers.elements().map((li) => li.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
 			'Bingo Ice cream ✓ Reached',
