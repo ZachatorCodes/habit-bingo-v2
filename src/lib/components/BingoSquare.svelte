@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import ProgressRing from './ProgressRing.svelte';
 	import type { SquareState } from '#lib/game/square-state.ts';
 
@@ -46,7 +47,7 @@
 
 	// Soft pop when a square becomes complete, not on first render.
 	let popped = $state(false);
-	let previous: SquareState | undefined;
+	let previous = untrack(() => sq);
 	$effect(() => {
 		if (sq === 'complete' && previous !== 'complete') popped = true;
 		previous = sq;
@@ -59,8 +60,8 @@
 	data-state={sq}
 	onanimationend={() => (popped = false)}
 	class={[
-		'relative flex aspect-square flex-col items-center justify-center gap-0.5 overflow-hidden rounded-square p-1 text-center font-bold text-ink',
-		sq === 'free' && 'bg-forest text-white',
+		'relative flex aspect-square flex-col items-center justify-center gap-0.5 overflow-hidden rounded-square p-1 text-center font-bold',
+		sq === 'free' ? 'bg-forest text-white' : 'text-ink',
 		sq === 'buildNext' && 'border-2 border-dashed border-forest bg-surface',
 		sq !== 'free' && sq !== 'buildNext' && looks[sq].tile,
 		popped && 'pop'

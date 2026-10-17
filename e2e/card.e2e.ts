@@ -381,6 +381,9 @@ test('a 5×5 card with long names fits a phone', async ({ page, baseURL }) => {
 	const name = page.locator('main [data-label]').first();
 	// Compact squares hide the name below sm (the ring icon carries it); it returns from sm.
 	await expect(name).toBeHidden();
+	await page.setViewportSize({ width: 360, height: 800 });
+	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+	await expect(name).toBeHidden();
 	await page.setViewportSize({ width: 640, height: 844 });
 	await expect(name).toBeVisible();
 	expect(await name.evaluate((el) => getComputedStyle(el).webkitLineClamp)).toBe('2');

@@ -62,4 +62,13 @@ describe('BingoSquare', () => {
 		});
 		expect(page.getByText(/A very long habit name/).element().className).toContain('line-clamp-2');
 	});
+
+	it('pops only on a real change to complete, not on first render', async () => {
+		const first = render(BingoSquare, { icon: 'drop', label: 'Water', state: 'complete' });
+		await new Promise((r) => setTimeout(r, 20));
+		expect(first.container.querySelector('[data-state]')!.classList.contains('pop')).toBe(false);
+		const c = render(BingoSquare, { icon: 'drop', label: 'Tea', state: 'inProgress' });
+		await c.rerender({ state: 'complete' });
+		await expect.poll(() => c.container.querySelector('.pop')).not.toBeNull();
+	});
 });
