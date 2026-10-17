@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from './Icon.svelte';
+	import ProgressRing from './ProgressRing.svelte';
 	import type { SquareState } from '#lib/game/square-state.ts';
 
 	type Props = {
@@ -14,7 +14,7 @@
 		compact?: boolean;
 	};
 
-	let { icon, label, state, progress = 0, showLabel = true, compact = false }: Props = $props();
+	let { icon, label, state: sq, progress = 0, showLabel = true, compact = false }: Props = $props();
 
 	const percent = $derived(Math.round(Math.min(Math.max(progress, 0), 1) * 100));
 
@@ -28,39 +28,52 @@
 			lost: 'lost',
 			free: 'free',
 			buildNext: "build next month's card"
-		}[state]
+		}[sq]
 	);
 
-	// States never rely on colour alone (spec §4): each has its own border style too.
-	const styles: Record<SquareState, string> = {
-		empty: 'border-2 border-solid border-line bg-white shadow-[0_3px_0_var(--color-line)]',
-		inProgress: 'border-2 border-solid border-line bg-white shadow-[0_3px_0_var(--color-line)]',
-		complete:
-			'border-[3px] border-solid border-earn-edge bg-earn shadow-[0_3px_0_var(--color-earn-shadow)]',
-		held: 'border-2 border-solid border-protect-edge bg-protect shadow-[0_3px_0_var(--color-protect-shadow)]',
-		atRisk:
-			'border-2 border-dashed border-risk-edge bg-risk shadow-[0_3px_0_var(--color-risk-shadow)]',
-		lost: 'border-2 border-solid border-line bg-lost opacity-70',
-		free: 'border-2 border-solid border-ink bg-ink text-risk shadow-[0_3px_0_#000]',
-		buildNext: 'border-2 border-dotted border-ink bg-white shadow-[0_3px_0_var(--color-line)]'
+	// Tile tint and ring per state; ring shape (solid/dashed/muted) keeps states off colour alone.
+	const looks: Record<
+		'empty' | 'inProgress' | 'complete' | 'held' | 'atRisk' | 'lost',
+		{ tile: string; ring: 'open' | 'progress' | 'earned' | 'protected' | 'risk' | 'lost' }
+	> = {
+		empty: { tile: 'bg-page', ring: 'open' },
+		inProgress: { tile: 'bg-page', ring: 'progress' },
+		complete: { tile: 'bg-earned-tile', ring: 'earned' },
+		held: { tile: 'bg-protected-tile', ring: 'protected' },
+		atRisk: { tile: 'bg-risk-tile', ring: 'risk' },
+		lost: { tile: 'bg-page', ring: 'lost' }
 	};
+
+	// Soft pop when a square becomes complete, not on first render.
+	let popped = $state(false);
+	let previous: SquareState | undefined;
+	$effect(() => {
+		if (sq === 'complete' && previous !== 'complete') popped = true;
+		previous = sq;
+	});
 </script>
 
 <div
 	role="img"
 	aria-label="{label}: {stateText}"
-	data-state={state}
+	data-state={sq}
+	onanimationend={() => (popped = false)}
 	class={[
 		'relative flex aspect-square flex-col items-center justify-center gap-0.5 overflow-hidden rounded-square p-1 text-center font-bold text-ink',
-		styles[state]
+		sq === 'free' && 'bg-forest text-white',
+		sq === 'buildNext' && 'border-2 border-dashed border-forest bg-surface',
+		sq !== 'free' && sq !== 'buildNext' && looks[sq].tile,
+		popped && 'pop'
 	]}
 >
-	{#if state === 'free'}
-		<span aria-hidden="true" class="text-sm font-black tracking-wide">FREE</span>
+	{#if sq === 'free'}
+		<span aria-hidden="true" class="text-sm font-extrabold">Free</span>
 	{:else}
-		<span aria-hidden="true" class={[compact ? 'text-lg sm:text-2xl' : 'text-2xl', 'leading-none']}
-			><Icon name={icon} /></span
-		>
+		{#if sq === 'buildNext'}
+			<ProgressRing icon="rocket" variant="open" size={compact ? 'sm' : 'md'} />
+		{:else}
+			<ProgressRing {icon} variant={looks[sq].ring} {percent} size={compact ? 'sm' : 'md'} />
+		{/if}
 		{#if showLabel}
 			<span
 				data-label
@@ -68,24 +81,11 @@
 				class={[
 					'line-clamp-2 w-full font-extrabold break-words',
 					compact
-						? 'text-[10px] leading-[1.1] sm:text-xs sm:leading-tight'
+						? 'hidden text-[10px] leading-[1.1] sm:block sm:text-xs sm:leading-tight'
 						: 'text-xs leading-tight',
-					state === 'lost' && 'line-through'
-				]}>{label}</span
+					sq === 'lost' && 'line-through'
+				]}>{sq === 'buildNext' ? 'Next month' : label}</span
 			>
 		{/if}
-	{/if}
-
-	{#if state === 'inProgress'}
-		<div
-			role="progressbar"
-			aria-valuenow={percent}
-			aria-valuemin={0}
-			aria-valuemax={100}
-			aria-hidden="true"
-			class="absolute right-1.5 bottom-1.5 left-1.5 h-1 overflow-hidden rounded-full bg-line"
-		>
-			<div class="h-full rounded-full bg-accent" style:width="{percent}%"></div>
-		</div>
 	{/if}
 </div>
