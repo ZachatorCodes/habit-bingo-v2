@@ -50,7 +50,7 @@ test('logging another day from the sheet', async ({ page }) => {
 	await expect(sheet.getByRole('status', { name: 'Count' })).toHaveText('1');
 	await sheet.getByRole('button', { name: 'Add one' }).click();
 	await expect(sheet.getByRole('status', { name: 'Count' })).toHaveText('2');
-	await expect(sheet.getByRole('list', { name: 'History' })).toContainText('Mon 19 — 2');
+	await expect(sheet.getByRole('list', { name: 'History' })).toContainText(/Mon 19\s*2/);
 	await sheet.getByRole('button', { name: 'Remove one' }).click();
 	await expect(sheet.getByRole('status', { name: 'Count' })).toHaveText('1');
 });
@@ -132,7 +132,7 @@ test('tapping Card again keeps the latest board', async ({ page }) => {
 	await onCard(page);
 	const points = () =>
 		page
-			.getByText(/^\d+ points?$/)
+			.getByText(/^\d+\s*pts$/)
 			.first()
 			.innerText();
 	const before = await points();

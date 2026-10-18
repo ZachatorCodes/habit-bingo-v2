@@ -38,6 +38,22 @@ export function reachedTiers(counting: boolean[], size: CardSize): Tier[] {
 	return tiers;
 }
 
+/** Squares still needed for the closest line with no lost square; null when every line is blocked. */
+export function squaresToLine(size: CardSize, states: SquareState[]): number | null {
+	let best: number | null = null;
+	for (const line of lineIndexes(size)) {
+		if (line.some((i) => states[i] === 'lost')) continue;
+		const need = line.filter((i) => !counts(states[i]) && states[i] !== 'free').length;
+		if (best === null || need < best) best = need;
+	}
+	return best;
+}
+
+/** The first reward tier not yet reached. */
+export function nextTier(reached: Tier[]): Tier | null {
+	return (['bingo', 'sixtyPercent', 'blackout'] as const).find((t) => !reached.includes(t)) ?? null;
+}
+
 /**
  * A habit square's points out of 10 (spec §3.7), unrounded. Earn squares and `atLeast` day/week
  * squares score their progress (and keep it when lost); limits score 10 until lost.

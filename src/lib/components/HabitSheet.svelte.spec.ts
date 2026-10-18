@@ -27,14 +27,14 @@ const data: SheetData = {
 describe('HabitSheet', () => {
 	it('shows a stepper for times habits', async () => {
 		render(HabitSheet, { data });
-		await expect.element(page.getByText('8 times a day')).toBeVisible();
+		await expect.element(page.getByText('Health · 8 times a day')).toBeVisible();
 		await expect.element(page.getByText('At risk: log a missed day')).toBeVisible();
 		await expect.element(page.getByRole('button', { name: 'Add one' })).toBeVisible();
 		await expect.element(page.getByRole('status', { name: 'Count' })).toHaveTextContent('3');
 		expect(page.getByRole('button', { name: 'Done that day' }).elements()).toHaveLength(0);
 		await expect
 			.element(page.getByRole('list', { name: 'History' }))
-			.toHaveTextContent(/Tue 20 — 3\s*Mon 19 — 0/);
+			.toHaveTextContent(/Tue 203\s*Mon 190/);
 	});
 
 	it('shows a toggle for days habits', async () => {

@@ -79,3 +79,12 @@ export function requestNow(cookies: Cookies, testClock: boolean): Date {
 	}
 	return new Date();
 }
+
+/** The local hour (0-23) in `timezone` at `now`. */
+export function localHour(now: Date, timezone: string): number {
+	return Number(
+		new Intl.DateTimeFormat('en-US', { timeZone: timezone, hour: 'numeric', hourCycle: 'h23' })
+			.formatToParts(now)
+			.find((p) => p.type === 'hour')?.value
+	);
+}

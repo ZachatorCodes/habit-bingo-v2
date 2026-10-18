@@ -41,14 +41,15 @@ test('the builder starts at Size and moves to Habits', async ({ page }) => {
 		/Pick a size\./
 	);
 
-	await expect(page.getByText('Selected')).toHaveCount(2);
-	await expect(page.getByText('Selected').first()).toBeHidden();
+	const checkIcons = page
+		.locator('label')
+		.filter({ has: page.getByRole('radio') })
+		.locator('svg');
+	await expect(checkIcons.first()).toBeHidden();
 	await chooseSize(page, /3×3/);
-	// The chosen size says so in words, not only in colour.
-	await expect(page.getByText('Selected').filter({ visible: true })).toHaveCount(1);
-	await expect(
-		page.locator('label').filter({ hasText: '3×3' }).getByText('Selected')
-	).toBeVisible();
+	// The chosen size shows a check, not only a colour.
+	await expect(checkIcons.filter({ visible: true })).toHaveCount(1);
+	await expect(page.locator('label').filter({ hasText: '3×3' }).locator('svg')).toBeVisible();
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/habits$/);
 	await expect(page.getByRole('heading', { name: 'Pick your habits' })).toBeVisible();

@@ -75,3 +75,17 @@
 		box-shadow: 0 0 0 3px var(--color-forest);
 	}
 }
+
+@keyframes pop {
+	50% {
+		transform: scale(1.06);
+	}
+}
+.pop {
+	animation: pop 0.3s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+	.pop {
+		animation: none;
+	}
+}

@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
-import { formatEditDeadline, localDate, requestNow, startOfLocalDay } from './clock';
+import { formatEditDeadline, localDate, localHour, requestNow, startOfLocalDay } from './clock';
+
+describe('localHour', () => {
+	it("uses the person's timezone", () => {
+		const now = new Date('2026-10-31T00:30:00Z');
+		expect(localHour(now, 'UTC')).toBe(0);
+		expect(localHour(now, 'America/New_York')).toBe(20);
+	});
+});
 
 describe('localDate', () => {
 	it("uses the person's timezone", () => {

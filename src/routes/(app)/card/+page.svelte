@@ -11,6 +11,8 @@
 	import { CARD_SIZES } from '#lib/game/card-layout.ts';
 	import { newlyCompleted } from '#lib/celebrate-lines.ts';
 	import type { CardScore, Tier } from '#lib/game/score.ts';
+	import Hero from '#lib/components/Hero.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import CardHeader from '#lib/components/CardHeader.svelte';
 	import type { PageProps } from './$types';
 
@@ -103,32 +105,33 @@
 	}
 </script>
 
-<section class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
-	{#if card}
-		<CardHeader
-			monthName={data.monthName}
-			score={card.score}
-			size={card.size}
-			rewards={card.rewards}
-		/>
+{#if card}
+	<CardHeader
+		monthName={data.monthName}
+		daysLeft={data.daysLeft}
+		score={card.score}
+		size={card.size}
+		rewards={card.rewards}
+		states={card.squares.map((square) => square.state)}
+	>
 		{#if started}
-			<p role="status" class="rounded-xl bg-earn px-4 py-3 font-bold text-ink">
+			<p role="status" class="rounded-2xl bg-earned-tile px-4 py-3 font-bold text-ink">
 				<span aria-hidden="true">✓</span> Card started!
 			</p>
 		{/if}
 		{#if planned}
-			<p role="status" class="rounded-xl bg-earn px-4 py-3 font-bold text-ink">
+			<p role="status" class="rounded-2xl bg-earned-tile px-4 py-3 font-bold text-ink">
 				<span aria-hidden="true">✓</span>
 				{data.nextMonthName} card saved. It starts {data.nextMonthName} 1.
 			</p>
 		{/if}
 		{#if saved}
-			<p role="status" class="rounded-xl bg-earn px-4 py-3 font-bold text-ink">
+			<p role="status" class="rounded-2xl bg-earned-tile px-4 py-3 font-bold text-ink">
 				<span aria-hidden="true">✓</span> Changes saved.
 			</p>
 		{/if}
 		{#if message}
-			<p role="alert" class="rounded-xl bg-risk px-4 py-3 font-bold text-ink">
+			<p role="alert" class="rounded-2xl bg-risk-tile px-4 py-3 font-bold text-ink">
 				<span aria-hidden="true">⚠</span>
 				{message}
 			</p>
@@ -140,40 +143,44 @@
 			onopen={openSheet}
 			highlight={celebration?.lines}
 		/>
+	</CardHeader>
 
-		{#if celebration}
-			<!-- A new gain remounts it, so each celebration runs from the start. -->
-			{#key celebration}
-				<BingoCelebration
-					lines={celebration.lines}
-					tiers={celebration.tiers}
-					rewards={card.rewards}
-					sixtyThreshold={CARD_SIZES[card.size].sixtyThreshold}
-					ondone={() => (celebration = null)}
-				/>
-			{/key}
-		{/if}
+	{#if celebration}
+		<!-- A new gain remounts it, so each celebration runs from the start. -->
+		{#key celebration}
+			<BingoCelebration
+				lines={celebration.lines}
+				tiers={celebration.tiers}
+				rewards={card.rewards}
+				sixtyThreshold={CARD_SIZES[card.size].sixtyThreshold}
+				ondone={() => (celebration = null)}
+			/>
+		{/key}
+	{/if}
 
-		{#if page.state.sheet}
-			<Sheet title={page.state.sheet.name} onclose={closeSheet}>
-				<HabitSheet data={page.state.sheet} onnavigate={refreshSheet} />
-			</Sheet>
-		{/if}
+	{#if page.state.sheet}
+		<Sheet title={page.state.sheet.name} onclose={closeSheet}>
+			<HabitSheet data={page.state.sheet} onnavigate={refreshSheet} />
+		</Sheet>
+	{/if}
 
-		{#if data.editable && data.deadline}
-			<p class="text-ink/75">{data.deadline}.</p>
+	{#if data.editable && data.deadline}
+		<div class="mx-auto flex max-w-2xl flex-col gap-3 px-4 py-6">
+			<p class="text-muted">{data.deadline}.</p>
 			<form method="POST" action="?/edit" use:enhance>
 				<Button type="submit" variant="secondary">Edit card</Button>
 			</form>
-		{/if}
-	{:else}
-		<div class="flex flex-col items-center gap-4 text-center">
-			<div class="text-5xl" aria-hidden="true">🎯</div>
-			<h1 class="text-3xl leading-tight font-black">Your card</h1>
-			<p class="text-lg text-ink/75">No card for {data.monthName} yet.</p>
+		</div>
+	{/if}
+{:else}
+	<Hero title="Your card" summary="No card for {data.monthName} yet." />
+	<section class="relative -mt-[18px] rounded-[24px] bg-surface shadow-sheet">
+		<div class="mx-auto flex max-w-2xl flex-col items-center gap-4 px-4 py-10 text-center">
+			<Icon name="plant" size={48} class="text-forest" />
+			<p class="text-muted">Build this month's card to start checking in.</p>
 			<Button href={resolve('/(app)/card/build')}
 				>{data.hasDraft ? 'Continue building' : 'Build your card'}</Button
 			>
 		</div>
-	{/if}
-</section>
+	</section>
+{/if}

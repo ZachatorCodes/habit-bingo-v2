@@ -11,7 +11,7 @@ import { requireUser } from '#lib/server/auth/guards.ts';
 import { getCard, type Card } from '#lib/server/cards.ts';
 import { cardView } from '#lib/server/card-view.ts';
 import { getCheckIns, logCheckIn, MAX_COUNT } from '#lib/server/check-ins.ts';
-import { localDate, requestNow } from '#lib/server/clock.ts';
+import { localDate, localHour, requestNow } from '#lib/server/clock.ts';
 import { getDb } from '#lib/server/db/client.ts';
 import { finalizeMonths, markSeen, newestUnseen } from '#lib/server/month-results.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -29,6 +29,8 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 	const now = requestNow(cookies, TEST_CLOCK);
 	const today = localDate(now, timezone);
 	const month = monthOf(today);
+	const name = user.name;
+	const hour = localHour(now, timezone);
 	// This month's card, and on the 1st–3rd last month's too, for its last days (spec §3.8).
 	const cards = (
 		await Promise.all(backfillMonths(today).map((m) => getCard(db, user.id, m)))
@@ -39,7 +41,8 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 	const unseen = await newestUnseen(db, user.id);
 	const recap = unseen && { month: unseen.month, monthName: monthName(unseen.month) };
 	const days = cards.flatMap((c) => backfillDates(today, c.startDate));
-	if (days.length === 0) return { monthName: monthName(month), buildCard, recap, card: null };
+	if (days.length === 0)
+		return { name, hour, monthName: monthName(month), buildCard, recap, card: null };
 
 	const asked = url.searchParams.get('day');
 	// Only the backfill window can be logged; anything else shows the newest day.
@@ -99,6 +102,8 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 				})
 			: [];
 	return {
+		name,
+		hour,
 		monthName: monthName(month),
 		buildCard,
 		recap,

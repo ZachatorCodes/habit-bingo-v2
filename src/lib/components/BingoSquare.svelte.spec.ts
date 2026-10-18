@@ -19,27 +19,32 @@ describe('BingoSquare', () => {
 	});
 
 	it.each([
-		['complete', 'border-[3px]'],
-		['held', 'border-solid'],
-		['atRisk', 'border-dashed'],
-		['lost', 'opacity-70'],
-		['buildNext', 'border-dotted']
-	] as const)('shows %s by its border style, with no corner icon', async (state, style) => {
-		render(BingoSquare, { icon: 'bicycle', label: 'Bike', state });
-		const square = page.getByRole('img').element();
-		expect(square.getAttribute('data-state')).toBe(state);
-		expect(square.className).toContain(style);
-		expect(square.textContent).not.toMatch(/[✓🛡⚠✗✏]/u);
+		['empty', 'open'],
+		['inProgress', 'progress'],
+		['complete', 'earned'],
+		['held', 'protected'],
+		['atRisk', 'risk'],
+		['lost', 'lost']
+	] as const)('%s renders the %s ring', (state, variant) => {
+		const c = render(BingoSquare, { icon: 'drop', label: 'Water', state }).container;
+		expect(c.querySelector('[data-variant]')!.getAttribute('data-variant')).toBe(variant);
 	});
 
-	it('renders a progress bar at the given percent when in progress', async () => {
-		render(BingoSquare, { icon: 'bicycle', label: 'Bike', state: 'inProgress', progress: 0.66 });
-		await expect
-			.element(page.getByRole('progressbar', { includeHidden: true }))
-			.toHaveAttribute('aria-valuenow', '66');
-		await expect
-			.element(page.getByRole('img', { name: 'Bike: in progress, 66%' }))
-			.toBeInTheDocument();
+	it('announces name and state, ring hidden', async () => {
+		render(BingoSquare, { icon: 'drop', label: 'Water', state: 'held' });
+		await expect.element(page.getByRole('img', { name: 'Water: protected' })).toBeInTheDocument();
+	});
+
+	it('free shows "Free" and no ring', () => {
+		const c = render(BingoSquare, { icon: 'drop', label: 'Free', state: 'free' }).container;
+		expect(c.textContent).toContain('Free');
+		expect(c.querySelector('[data-variant]')).toBeNull();
+	});
+
+	it('buildNext shows the rocket and "Next month"', () => {
+		const c = render(BingoSquare, { icon: 'x', label: 'Build', state: 'buildNext' }).container;
+		expect(c.textContent).toContain('Next month');
+		expect(c.querySelector('svg')).not.toBeNull();
 	});
 
 	it('always shows the name, struck through when lost', async () => {
@@ -56,5 +61,14 @@ describe('BingoSquare', () => {
 			compact: true
 		});
 		expect(page.getByText(/A very long habit name/).element().className).toContain('line-clamp-2');
+	});
+
+	it('pops only on a real change to complete, not on first render', async () => {
+		const first = render(BingoSquare, { icon: 'drop', label: 'Water', state: 'complete' });
+		await new Promise((r) => setTimeout(r, 20));
+		expect(first.container.querySelector('[data-state]')!.classList.contains('pop')).toBe(false);
+		const c = render(BingoSquare, { icon: 'drop', label: 'Tea', state: 'inProgress' });
+		await c.rerender({ state: 'complete' });
+		await expect.poll(() => c.container.querySelector('.pop')).not.toBeNull();
 	});
 });

@@ -36,10 +36,10 @@
 
 <div class="flex flex-col gap-4">
 	{#if daysLeft === null}
-		<h2 class="text-2xl font-black">Targets for {monthName}</h2>
+		<h2 class="text-2xl font-extrabold">Targets for {monthName}</h2>
 		<p class="text-ink/75">Change any of them to what feels right.</p>
 	{:else}
-		<h2 class="text-2xl font-black">
+		<h2 class="text-2xl font-extrabold">
 			{daysLeft}
 			{daysLeft === 1 ? 'day' : 'days'} left in {monthName}
 		</h2>

@@ -21,27 +21,31 @@
 	const position = $derived(steps.indexOf(current) + 1);
 </script>
 
-<ol aria-label="Card builder steps" class="flex flex-wrap gap-2">
-	{#each steps as step, index (step)}
-		{@const done = completed.includes(step)}
-		<li
-			aria-current={step === current ? 'step' : undefined}
-			class={[
-				'rounded-full border-2 px-3 py-1 text-sm font-bold',
-				step === current ? 'border-ink bg-ink text-cream' : 'border-line bg-white'
-			]}
-		>
-			<span aria-hidden="true">{done && step !== current ? '✓' : index + 1}</span>
-			{#if done && step !== current}
+<!-- A slim bar on the hero: one segment per step, names below. -->
+<ol aria-label="Card builder steps" class="mt-4 grid grid-cols-5 gap-1.5 text-[12px] font-semibold">
+	{#each steps as step (step)}
+		{@const done = completed.includes(step) && step !== current}
+		<li aria-current={step === current ? 'step' : undefined} class="relative flex flex-col gap-1.5">
+			<span
+				aria-hidden="true"
+				class={[
+					'h-1.5 rounded-full',
+					step === current || done ? 'bg-surface' : 'bg-leaf-2',
+					step === current && 'ring-2 ring-surface/40'
+				]}
+			></span>
+			{#if done}
 				<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve() can't carry the ?for=next query -->
 				<a
 					href={resolve('/(app)/card/build/[step]', { step }) + (forNext ? '?for=next' : '')}
-					class="underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+					class="truncate underline underline-offset-4 after:absolute after:inset-x-0 after:-inset-y-2 after:content-[''] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-surface"
 					>{LABELS[step]}</a
 				>
 				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			{:else}
-				<span>{LABELS[step]}</span>
+				<span class={['truncate', step === current ? 'font-extrabold' : 'opacity-80']}
+					>{LABELS[step]}</span
+				>
 			{/if}
 			{#if step === current}
 				<span class="sr-only">Step {position} of {steps.length}</span>

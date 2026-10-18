@@ -28,7 +28,9 @@ const section = (page: Page, name: string) =>
 
 test('a new card fills the Today sections', async ({ page }) => {
 	await onToday(page);
-	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await expect(
+		page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening), / })
+	).toBeVisible();
 	await expect(section(page, 'Do today')).toHaveCount(2);
 	await expect(section(page, 'This week')).toHaveCount(2);
 	await expect(section(page, 'Anytime this month')).toHaveCount(3);
@@ -113,7 +115,7 @@ test('all done today', async ({ page }) => {
 	await page.getByRole('button', { name: 'Log Power clean' }).click();
 	await expect(page.getByText(/Done \(2\)/)).toBeVisible();
 	await page.goto('/today');
-	await expect(page.getByText('All done today 🎉')).toBeVisible();
+	await expect(page.getByText('All done today', { exact: true })).toBeVisible();
 });
 
 test("on the 1st–3rd, last month's last days can still be logged", async ({ page }) => {
@@ -163,7 +165,7 @@ test('heads up points at what needs doing today', async ({ page }) => {
 test('no card yet', async ({ page }) => {
 	await newMember(page);
 	await page.goto('/today');
-	await expect(page.getByText('No card yet.')).toBeVisible();
+	await expect(page.getByText('No card yet', { exact: true })).toBeVisible();
 	await expect(page.getByRole('link', { name: 'Build one' })).toBeVisible();
 });
 
@@ -298,19 +300,31 @@ test('the card header reflects check-ins', async ({ page }) => {
 	await onToday(page);
 	const pointsOf = async () => {
 		await page.goto('/card');
-		const text = await page
-			.getByText(/\d+ points?$/)
-			.first()
-			.innerText();
+		const text = await page.getByText(/^\d+ points?$/).innerText();
 		return Number(text.split(' ')[0]);
 	};
 	const before = await pointsOf();
 	await expect(page.getByText(/\d+% counting/)).toBeVisible();
 	await page.goto('/today');
 	await waitForHydration(page);
-	await page.getByRole('button', { name: 'Log Go biking' }).click();
-	await expect(section(page, 'Anytime this month').filter({ hasText: 'Go biking' })).toContainText(
-		'1 more · 12 days left'
-	);
+	await page.getByRole('button', { name: 'Log Finish a book' }).click();
+	await expect(
+		section(page, 'Anytime this month').filter({ hasText: 'Finish a book' })
+	).toContainText('1 of 1 this month');
 	expect(await pointsOf()).toBeGreaterThan(before);
+});
+
+test('focus follows the main button when a row meets its target and is undone', async ({
+	page
+}) => {
+	await onToday(page);
+	// The first completion earns a reward, and its dialog takes focus; clear it first.
+	await page.getByRole('button', { name: 'Log Finish a book' }).click();
+	await page.getByRole('button', { name: 'Nice!' }).click();
+	// An "anytime this month" row stays in its section when met, so the check can take focus.
+	await page.getByRole('button', { name: 'Log Call an old friend' }).focus();
+	await page.keyboard.press('Enter');
+	await expect(page.getByRole('button', { name: 'Undo one Call an old friend' })).toBeFocused();
+	await page.keyboard.press('Enter');
+	await expect(page.getByRole('button', { name: 'Log Call an old friend' })).toBeFocused();
 });

@@ -23,14 +23,12 @@ describe('SizePicker', () => {
 		await expect.element(page.getByRole('radio', { name: /5×5/ })).toHaveAttribute('value', '5');
 	});
 
-	it('carries a text cue in each option, revealed by the checked state', async () => {
-		// The component tests load no stylesheet, so visibility is asserted in the E2E suite.
+	it('puts a check icon in each option, shown when checked', async () => {
 		render(SizePicker, { selected: 5, habitCount: 30 });
-		const cues = page.getByText('Selected').elements();
-		expect(cues).toHaveLength(2);
-		for (const cue of cues) {
-			expect(cue.className).toContain('group-has-[:checked]:inline');
-			expect(cue.closest('label')?.querySelector('input[type="radio"]')).not.toBeNull();
+		for (const radio of page.getByRole('radio').elements()) {
+			const icon = radio.closest('label')?.querySelector('svg');
+			expect(icon).not.toBeNull();
+			expect(icon?.getAttribute('class')).toContain('group-has-[:checked]:block');
 		}
 	});
 

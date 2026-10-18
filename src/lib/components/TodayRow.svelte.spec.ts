@@ -34,4 +34,17 @@ describe('TodayRow', () => {
 		const form = page.getByRole('button', { name: 'Log Drink water' }).element().closest('form')!;
 		expect(form.getAttribute('action')).toBe('?/log&day=2026-10-19');
 	});
+	it('replaces + with the check when the target is met', async () => {
+		const done = { ...row, state: 'complete' as const, count: 8 };
+		render(TodayRow, { row: done, day: '2026-10-20', keep: '' });
+		await expect.element(page.getByRole('button', { name: 'Undo one Drink water' })).toBeVisible();
+		expect(page.getByRole('button', { name: 'Log Drink water' }).elements()).toHaveLength(0);
+		expect(page.getByRole('button', { name: /Undo one/ }).elements()).toHaveLength(1);
+	});
+
+	it('shows − only with a count, and + while the target is open', async () => {
+		render(TodayRow, { row, day: '2026-10-20', keep: '' });
+		await expect.element(page.getByRole('button', { name: 'Log Drink water' })).toBeVisible();
+		await expect.element(page.getByRole('button', { name: 'Undo one Drink water' })).toBeVisible();
+	});
 });
