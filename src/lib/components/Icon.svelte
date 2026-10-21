@@ -72,6 +72,10 @@
 	import GridNine from 'phosphor-svelte/lib/GridNine';
 	import UserCircle from 'phosphor-svelte/lib/UserCircle';
 	import ShieldCheck from 'phosphor-svelte/lib/ShieldCheck';
+	import CheckCircle from 'phosphor-svelte/lib/CheckCircle';
+	import Prohibit from 'phosphor-svelte/lib/Prohibit';
+	import Archive from 'phosphor-svelte/lib/Archive';
+	import ArrowCounterClockwise from 'phosphor-svelte/lib/ArrowCounterClockwise';
 
 	type IconProps = {
 		weight?: Props['weight'];
@@ -160,7 +164,11 @@
 		'grid-nine': GridNine,
 		'user-circle': UserCircle,
 		'shield-check': ShieldCheck,
-		lock: Lock
+		lock: Lock,
+		'check-circle': CheckCircle,
+		prohibit: Prohibit,
+		archive: Archive,
+		'arrow-counter-clockwise': ArrowCounterClockwise
 	};
 
 	const Glyph = $derived(COMPONENTS[isIconName(name) ? name : FALLBACK_ICON]);

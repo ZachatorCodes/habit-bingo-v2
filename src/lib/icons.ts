@@ -71,7 +71,11 @@ export const ICONS = [
 	{ name: 'grid-nine', label: 'Grid', group: 'other' },
 	{ name: 'user-circle', label: 'Person', group: 'other' },
 	{ name: 'shield-check', label: 'Shield', group: 'other' },
-	{ name: 'lock', label: 'Private', group: 'other' }
+	{ name: 'lock', label: 'Private', group: 'other' },
+	{ name: 'check-circle', label: 'Check', group: 'other' },
+	{ name: 'prohibit', label: 'Prohibited', group: 'other' },
+	{ name: 'archive', label: 'Archive', group: 'other' },
+	{ name: 'arrow-counter-clockwise', label: 'Undo', group: 'other' }
 ] as const satisfies readonly { name: string; label: string; group: CategoryId }[];
 
 export type IconName = (typeof ICONS)[number]['name'];

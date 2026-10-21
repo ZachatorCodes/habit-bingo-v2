@@ -19,7 +19,7 @@ describe('StarterHabits', () => {
 		render(StarterHabits, { addedIds: ['bike'] });
 		const bike = page.getByRole('button', { name: 'Go biking added' });
 		await expect.element(bike).toBeDisabled();
-		await expect.element(bike).toHaveTextContent('Added ✓');
+		await expect.element(bike).toHaveTextContent('Added');
 		await expect.element(page.getByRole('button', { name: 'Add Meditate' })).toBeEnabled();
 	});
 

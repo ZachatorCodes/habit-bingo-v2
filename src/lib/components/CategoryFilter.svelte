@@ -21,7 +21,7 @@
 	}
 
 	const chip =
-		'inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
+		'inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-forest';
 </script>
 
 <!-- Links are resolve()d paths plus a query string, which the lint rule cannot follow. -->
@@ -31,23 +31,27 @@
 		<li>
 			<a
 				href={resolve('/(app)/me/habits') + query(null)}
-				aria-current={selected === null ? 'true' : undefined}
-				class={[chip, selected === null ? 'border-ink bg-ink text-cream' : 'border-line bg-white']}
-				>All <span class="opacity-75">{total}</span></a
+				aria-current={selected === null ? 'page' : undefined}
+				class={[
+					chip,
+					selected === null ? 'border-forest bg-forest text-white' : 'border-line bg-surface'
+				]}>All <span class="font-semibold">{total}</span></a
 			>
 		</li>
 		{#each CATEGORIES as category (category.id)}
 			<li>
 				<a
 					href={resolve('/(app)/me/habits') + query(category.id)}
-					aria-current={selected === category.id ? 'true' : undefined}
+					aria-current={selected === category.id ? 'page' : undefined}
 					class={[
 						chip,
-						selected === category.id ? 'border-ink bg-ink text-cream' : 'border-line bg-white'
+						selected === category.id
+							? 'border-forest bg-forest text-white'
+							: 'border-line bg-surface'
 					]}
 					><Icon name={category.icon} />
 					{category.label}
-					<span class="opacity-75">{counts[category.id]}</span></a
+					<span class="font-semibold">{counts[category.id]}</span></a
 				>
 			</li>
 		{/each}

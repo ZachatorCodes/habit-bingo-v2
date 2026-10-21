@@ -16,7 +16,7 @@ test('an empty category filter says so', async ({ page }) => {
 	await newMember(page);
 	await page.goto('/me/habits?category=mind');
 	await expect(page.getByText('No habits in Mind yet.')).toBeVisible();
-	await expect(page.getByRole('link', { name: /Mind/ })).toHaveAttribute('aria-current', 'true');
+	await expect(page.getByRole('link', { name: /Mind/ })).toHaveAttribute('aria-current', 'page');
 });
 
 test('Me links to the habit library', async ({ page }) => {
@@ -265,7 +265,7 @@ test('archiving while filtered keeps the filter', async ({ page }) => {
 	await waitForHydration(page);
 	await page.getByRole('button', { name: 'Archive Go biking' }).click();
 	await expect(page.getByText('No habits in Fitness yet.')).toBeVisible();
-	await expect(page.getByRole('link', { name: /Fitness/ })).toHaveAttribute('aria-current', 'true');
+	await expect(page.getByRole('link', { name: /Fitness/ })).toHaveAttribute('aria-current', 'page');
 });
 
 test('the habit form shows the name, then the icon picker, after the category', async ({
@@ -322,7 +322,7 @@ test('deleting works without JavaScript', async ({ page, browser }) => {
 	const noJs = await context.newPage();
 	await noJs.goto('/me/habits?archived=1');
 	await noJs.getByRole('link', { name: 'Delete Go biking' }).click();
-	await expect(noJs.getByRole('heading', { name: 'Delete Go biking forever?' })).toBeVisible();
+	await expect(noJs.getByRole('heading', { name: 'Delete Go biking?' })).toBeVisible();
 	await noJs.getByRole('button', { name: 'Delete forever' }).click();
 	await expect(noJs.getByText('Habit deleted.')).toBeVisible();
 	await context.close();
@@ -346,4 +346,15 @@ test('only your own archived habits can be deleted', async ({ page, browser, bas
 	expect((await other.goto(deleteUrl))?.status()).toBe(404);
 	const foreign = await other.request.post(deleteUrl, { headers: { origin: baseURL! }, form: {} });
 	expect(foreign.status()).toBe(404);
+});
+
+test('a long habit name fits a phone', async ({ page }) => {
+	const name = 'Supercalifragilisticexpialidocious-habit';
+	expect(name).toHaveLength(40);
+	await newMember(page);
+	await addHabit(page, { icon: 'Book', name, category: /Learning/, howMany: '1', per: 'week' });
+	await page.setViewportSize({ width: 360, height: 800 });
+	await page.goto('/me/habits');
+	await expect(page.getByText(name)).toBeVisible();
+	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 });
