@@ -1,42 +1,57 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
+	import Hero from '#lib/components/Hero.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+
+	const summary = $derived(
+		data.groups.length === 0
+			? 'No groups yet'
+			: `${data.groups.length} ${data.groups.length === 1 ? 'group' : 'groups'}`
+	);
 </script>
 
 <Seo title="Groups" description="Your Habit Bingo groups." path="/groups" noindex />
 
-<section class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<h1 class="text-3xl leading-tight font-black">Groups</h1>
-		<Button href={resolve('/(app)/groups/new')}>Create a group</Button>
-	</div>
+<Hero title="Groups" {summary} />
 
-	{#if data.groups.length === 0}
-		<p class="text-lg text-ink/75">
-			No groups yet. Create one, or ask a friend for their invite link.
-		</p>
-	{:else}
-		<ul class="flex flex-col gap-3">
-			{#each data.groups as group (group.id)}
-				<li>
-					<a
-						href={resolve('/(app)/groups/[id]', { id: group.id })}
-						class="flex items-center gap-3 rounded-2xl border-2 border-line bg-white p-4 shadow-[0_3px_0_var(--color-line)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
-					>
-						<span class="text-3xl" aria-hidden="true"><Icon name={group.icon} /></span>
-						<span class="min-w-0 flex-1 truncate font-extrabold">{group.name}</span>
-						<span class="text-ink/75"
-							>{group.memberCount}
-							{group.memberCount === 1 ? 'member' : 'members'}</span
+<section class="relative -mt-[18px] rounded-[24px] bg-surface shadow-sheet">
+	<div class="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5">
+		{#if data.groups.length === 0}
+			<div class="flex flex-col items-start gap-3 rounded-row border border-dashed border-line p-5">
+				<p class="font-bold">
+					<Icon name="users-three" class="text-forest" /> No groups yet. Create one, or ask a friend for
+					their invite link.
+				</p>
+			</div>
+		{:else}
+			<ul class="flex flex-col gap-2">
+				{#each data.groups as group (group.id)}
+					<li>
+						<a
+							href={resolve('/(app)/groups/[id]', { id: group.id })}
+							class="flex min-h-14 items-center gap-3 rounded-row bg-page p-3 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 						>
-					</a>
-				</li>
-			{/each}
-		</ul>
-	{/if}
+							<span
+								aria-hidden="true"
+								class="grid size-10 shrink-0 place-items-center rounded-full bg-earned-tile text-2xl text-forest"
+								><Icon name={group.icon} /></span
+							>
+							<span class="min-w-0 flex-1 truncate font-bold">{group.name}</span>
+							<span class="text-sm text-muted"
+								>{group.memberCount}
+								{group.memberCount === 1 ? 'member' : 'members'}</span
+							>
+							<span aria-hidden="true" class="text-muted">›</span>
+						</a>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+		<Button href={resolve('/(app)/groups/new')} class="w-full">Create a group</Button>
+	</div>
 </section>

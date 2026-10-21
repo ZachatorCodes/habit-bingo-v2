@@ -50,12 +50,12 @@ test('a group gets a member through its link', async ({ page, browser }) => {
 		'aria-current',
 		'page'
 	);
-	await expect(pageB.getByText(`@${b.username} (you)`)).toBeVisible();
+	await expect(pageB.getByRole('link', { name: `@${b.username} (you)` })).toBeVisible();
 	await expect(pageB.getByText(`@${a.username}`)).toBeVisible();
 
 	await page.goto(groupPath);
 	await expect(page.getByText(`@${b.username}`)).toBeVisible();
-	await expect(page.getByText(`@${a.username} (you)`)).toBeVisible();
+	await expect(page.getByRole('link', { name: `@${a.username} (you)` })).toBeVisible();
 	await pageB.context().close();
 });
 
@@ -156,4 +156,18 @@ test('strangers get a 404', async ({ page, browser }) => {
 	expect((await pageC.goto(cardPath))?.status()).toBe(404);
 	await pageB.context().close();
 	await pageC.context().close();
+});
+
+test('tabs mark the current board', async ({ page }) => {
+	await newMember(page);
+	const { groupPath } = await createClimbers(page);
+	await page.goto(groupPath);
+	const tab = page.getByRole('link', { name: 'Leaderboard' });
+	const month = page.getByRole('link', { name: 'This month' });
+	const all = page.getByRole('link', { name: 'All-time' });
+	await expect(tab).toHaveAttribute('aria-current', 'page');
+	await expect(month).toHaveAttribute('aria-current', 'page');
+	await all.click();
+	await expect(all).toHaveAttribute('aria-current', 'page');
+	await expect(month).not.toHaveAttribute('aria-current', 'page');
 });
