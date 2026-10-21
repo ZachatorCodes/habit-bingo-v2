@@ -82,9 +82,18 @@ export type IconName = (typeof ICONS)[number]['name'];
 
 const NAMES: ReadonlySet<string> = new Set(ICONS.map((icon) => icon.name));
 
-/** Icons a user may choose for a habit or group; `lock` is reserved for private squares. */
+// UI-only icons: `lock` marks private squares, the rest label kinds and row actions.
+const RESERVED: ReadonlySet<string> = new Set([
+	'lock',
+	'check-circle',
+	'prohibit',
+	'archive',
+	'arrow-counter-clockwise'
+]);
+
+/** Icons a user may choose for a habit or group. */
 export function isPickableIcon(value: string): value is IconName {
-	return value !== 'lock' && isIconName(value);
+	return !RESERVED.has(value) && isIconName(value);
 }
 
 export function isIconName(value: string): value is IconName {

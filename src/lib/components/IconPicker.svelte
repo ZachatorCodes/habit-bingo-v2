@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from '#lib/components/Icon.svelte';
 	import { CATEGORIES } from '#lib/game/categories.ts';
-	import { ICONS, type IconName } from '#lib/icons.ts';
+	import { ICONS, isPickableIcon, type IconName } from '#lib/icons.ts';
 
 	type Props = {
 		name: string;
@@ -18,8 +18,7 @@
 	let {
 		name,
 		value = $bindable(),
-		// `lock` is reserved for private squares on member cards.
-		options = ICONS.map((icon) => icon.name).filter((n) => n !== 'lock'),
+		options = ICONS.map((icon) => icon.name).filter(isPickableIcon),
 		label = 'Icon',
 		error,
 		groups = false

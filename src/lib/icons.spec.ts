@@ -6,7 +6,8 @@ import {
 	DEFAULT_AVATAR_ICON,
 	FALLBACK_ICON,
 	ICONS,
-	isIconName
+	isIconName,
+	isPickableIcon
 } from '#lib/icons.ts';
 
 describe('icon registry', () => {
@@ -23,6 +24,11 @@ describe('icon registry', () => {
 		expect(isIconName('BookOpen')).toBe(false);
 		expect(isIconName('')).toBe(false);
 		expect(isIconName('<svg>')).toBe(false);
+	});
+	it('isPickableIcon rejects UI-only icons', () => {
+		expect(isPickableIcon('book-open')).toBe(true);
+		for (const n of ['lock', 'check-circle', 'prohibit', 'archive', 'arrow-counter-clockwise'])
+			expect(isPickableIcon(n)).toBe(false);
 	});
 	it('category, avatar, fallback and default icons are all curated', () => {
 		expect(AVATAR_ICONS).toHaveLength(24);
