@@ -80,7 +80,7 @@
 					>
 					<button
 						type="submit"
-						class="min-h-11 rounded-full border-2 border-terracotta bg-surface px-5 font-extrabold text-terracotta focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+						class="min-h-11 rounded-full border-2 border-terracotta bg-surface px-5 font-extrabold text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 						>Delete forever</button
 					>
 				</form>

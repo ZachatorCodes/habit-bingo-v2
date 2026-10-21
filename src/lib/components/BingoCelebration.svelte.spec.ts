@@ -48,6 +48,17 @@ describe('BingoCelebration', () => {
 		await expect.element(page.getByText('Blackout — A weekend away')).toBeVisible();
 	});
 
+	it('does not claim BINGO! for a 60% reward without a line', async () => {
+		render(BingoCelebration, {
+			lines: [],
+			tiers: ['sixtyPercent'],
+			rewards,
+			sixtyThreshold: 5,
+			ondone: () => {}
+		});
+		await expect.element(page.getByRole('heading', { name: 'Reward earned' })).toBeVisible();
+		expect(page.getByRole('heading', { name: 'BINGO!' }).elements()).toHaveLength(0);
+	});
 	it('uses the Garden confetti palette', () => {
 		expect(CONFETTI_COLORS).toEqual(['#2F5D46', '#4E7E62', '#E3ECDD', '#D9693F', '#5B8AA6']);
 	});

@@ -32,6 +32,9 @@
 		)
 	);
 
+	// A 60% reward can arrive without a line, so only a line earns the BINGO! title.
+	const title = $derived(lines.length > 0 || tiers.includes('bingo') ? 'BINGO!' : 'Reward earned');
+
 	// The live region is in the page before its text, so screen readers announce "BINGO!".
 	let announced = $state(false);
 	// Focus returns here when the reward reveal closes.
@@ -89,7 +92,7 @@
 		class="m-auto w-[calc(100%-2rem)] max-w-sm rounded-3xl bg-surface p-6 text-center text-ink shadow-sheet backdrop:bg-ink/50"
 	>
 		<div class="flex justify-center"><ProgressRing icon="trophy" variant="earned" size="lg" /></div>
-		<h2 id={revealId} class="mt-3 text-4xl font-extrabold text-forest">BINGO!</h2>
+		<h2 id={revealId} class="mt-3 text-4xl font-extrabold text-forest">{title}</h2>
 		<ul class="mt-3 flex flex-col gap-2">
 			{#each earned as { label, reward } (label)}
 				<li>{label} — {reward}</li>

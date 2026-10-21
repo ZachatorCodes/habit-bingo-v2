@@ -22,7 +22,7 @@
 		<form method="POST" class="flex flex-wrap items-center gap-3">
 			<button
 				type="submit"
-				class="inline-flex min-h-11 items-center justify-center rounded-full border-2 border-terracotta bg-surface px-5 font-extrabold text-terracotta focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+				class="inline-flex min-h-11 items-center justify-center rounded-full border-2 border-terracotta bg-surface px-5 font-extrabold text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 				>Delete forever</button
 			>
 			<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve() can't carry the ?archived=1 query -->
