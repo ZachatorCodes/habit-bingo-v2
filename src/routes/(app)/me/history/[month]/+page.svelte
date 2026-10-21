@@ -2,68 +2,92 @@
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
 	import CardBoard from '#lib/components/CardBoard.svelte';
+	import Hero from '#lib/components/Hero.svelte';
 	import Icon from '#lib/components/Icon.svelte';
+	import ProgressRing from '#lib/components/ProgressRing.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 
 	const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+	const sheet = 'relative rounded-[24px] bg-surface shadow-sheet';
+	const inner = 'mx-auto flex max-w-2xl flex-col gap-3 px-4 py-5';
+	const heading = 'text-xs font-extrabold tracking-wide text-muted uppercase';
+	const row = 'flex min-h-14 items-center gap-3 rounded-row bg-page p-3';
 </script>
 
-<section class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
-	<div class="flex flex-col gap-2">
+<Hero
+	title={`${data.monthName} recap`}
+	summary={`${plural(data.result.points, 'point')} · ${plural(data.result.lines, 'line')} · ${data.percent}% counting`}
+/>
+
+<section class="{sheet} -mt-[18px]">
+	<div class={inner}>
 		<a
 			href={resolve('/(app)/me/history')}
-			class="font-bold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
-			>← History</a
+			class="inline-flex min-h-11 items-center gap-1 font-bold text-forest underline-offset-4 hover:underline"
+			><span aria-hidden="true">←</span> History</a
 		>
-		<h1 class="text-3xl leading-tight font-black">{data.monthName} recap</h1>
-		<p class="font-extrabold tabular-nums">
-			{plural(data.result.points, 'point')} · {plural(data.result.lines, 'line')} · {data.percent}%
-			counting
-		</p>
+		<CardBoard size={data.size} squares={data.board} />
 	</div>
+</section>
 
-	<CardBoard size={data.size} squares={data.board} />
-
-	{#if data.rewards.length > 0}
-		<section aria-labelledby="rewards" class="flex flex-col gap-2">
-			<h2 id="rewards" class="text-xl font-black">Rewards earned</h2>
-			<ul class="flex flex-col gap-1">
+{#if data.rewards.length > 0}
+	<section aria-labelledby="rewards" class="{sheet} mt-4">
+		<div class={inner}>
+			<h2 id="rewards" class={heading}>Rewards earned</h2>
+			<ul class="flex flex-col gap-2">
 				{#each data.rewards as { label, reward } (label)}
-					<li><span class="font-extrabold">{label}:</span> {reward}</li>
+					<li class={row}>
+						<span
+							aria-hidden="true"
+							class="grid size-10 shrink-0 place-items-center rounded-full bg-earned-tile text-2xl text-forest"
+							><Icon name="trophy" /></span
+						>
+						<span class="min-w-0 flex-1 break-words"
+							><span class="font-extrabold">{label}:</span> {reward}</span
+						>
+					</li>
 				{/each}
 			</ul>
-		</section>
-	{/if}
+		</div>
+	</section>
+{/if}
 
-	{#if data.highlight}
-		<section aria-labelledby="highlight" class="flex flex-col gap-2">
-			<h2 id="highlight" class="text-xl font-black">Most logged</h2>
-			<p>
-				<span aria-hidden="true"><Icon name={data.highlight.icon} /></span>
-				<span class="font-extrabold">{data.highlight.name}:</span>
-				{plural(data.highlight.total, 'check-in')}
+{#if data.highlight}
+	<section aria-labelledby="highlight" class="{sheet} mt-4">
+		<div class={inner}>
+			<h2 id="highlight" class={heading}>Most logged</h2>
+			<p class={row}>
+				<ProgressRing icon={data.highlight.icon} variant="earned" />
+				<span class="min-w-0 flex-1 break-words"
+					><span class="font-extrabold">{data.highlight.name}:</span>
+					{plural(data.highlight.total, 'check-in')}</span
+				>
 			</p>
-		</section>
-	{/if}
+		</div>
+	</section>
+{/if}
 
-	<section aria-labelledby="categories" class="flex flex-col gap-2">
-		<h2 id="categories" class="text-xl font-black">By category</h2>
-		<ul class="flex flex-col gap-1">
+<section aria-labelledby="categories" class="{sheet} mt-4">
+	<div class={inner}>
+		<h2 id="categories" class={heading}>By category</h2>
+		<ul class="flex flex-col gap-2">
 			{#each data.categories as category (category.id)}
-				<li class="tabular-nums">
-					<span aria-hidden="true"><Icon name={category.icon} /></span>
-					{category.label}
-					{category.counting} of {category.total}
+				<li class="{row} tabular-nums">
+					<span aria-hidden="true" class="text-2xl text-forest"><Icon name={category.icon} /></span>
+					<span class="min-w-0 flex-1 font-bold">{category.label}</span>
+					<span>{category.counting} of {category.total}</span>
 				</li>
 			{/each}
 		</ul>
-	</section>
-
-	{#if data.buildCard}
-		<div>
-			<Button href={resolve('/(app)/card/build')}>Build {data.buildMonthName}'s card</Button>
-		</div>
-	{/if}
+	</div>
 </section>
+
+{#if data.buildCard}
+	<div class="mx-auto mt-4 max-w-2xl px-4 pb-4">
+		<Button href={resolve('/(app)/card/build')} class="w-full"
+			>Build {data.buildMonthName}'s card</Button
+		>
+	</div>
+{/if}

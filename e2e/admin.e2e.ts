@@ -82,17 +82,18 @@ test('an admin creates an invite that a new person can use', async ({ page, brow
 	await expect(page.getByText('Copied.')).toBeVisible();
 	expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(inviteUrl);
 
-	const invites = page.getByRole('table', { name: 'Invites' });
-	await expect(invites.getByRole('row', { name: new RegExp(code) })).toContainText('Active');
-	await expect(invites.getByRole('row', { name: new RegExp(code) })).toContainText('0 of 1');
+	const invites = page.getByRole('list', { name: 'Invites' });
+	await expect(invites.getByRole('listitem').filter({ hasText: code })).toContainText('Active');
+	await expect(invites.getByRole('listitem').filter({ hasText: code })).toContainText('0 of 1');
 
 	const newcomer = await newPage(browser);
 	await join(newcomer, inviteUrl, uniqueUsername());
 
 	await page.reload();
 	const row = page
-		.getByRole('table', { name: 'Invites' })
-		.getByRole('row', { name: new RegExp(code) });
+		.getByRole('list', { name: 'Invites' })
+		.getByRole('listitem')
+		.filter({ hasText: code });
 	await expect(row).toContainText('Used up');
 	await expect(row).toContainText('1 of 1');
 });
