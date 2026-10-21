@@ -44,8 +44,8 @@ describe('BingoCelebration', () => {
 		});
 		await expect.element(page.getByRole('heading', { name: 'BINGO!' })).toBeVisible();
 		expect(page.getByRole('listitem').elements()).toHaveLength(2);
-		await expect.element(page.getByText('First bingo � Ice cream')).toBeVisible();
-		await expect.element(page.getByText('Blackout � A weekend away')).toBeVisible();
+		await expect.element(page.getByText('First bingo — Ice cream')).toBeVisible();
+		await expect.element(page.getByText('Blackout — A weekend away')).toBeVisible();
 	});
 
 	it('uses the Garden confetti palette', () => {

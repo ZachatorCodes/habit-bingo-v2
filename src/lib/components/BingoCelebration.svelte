@@ -92,7 +92,7 @@
 		<h2 id={revealId} class="mt-3 text-4xl font-extrabold text-forest">BINGO!</h2>
 		<ul class="mt-3 flex flex-col gap-2">
 			{#each earned as { label, reward } (label)}
-				<li>{label} � {reward}</li>
+				<li>{label} — {reward}</li>
 			{/each}
 		</ul>
 		<button

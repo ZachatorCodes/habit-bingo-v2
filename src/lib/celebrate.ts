@@ -41,6 +41,7 @@ export async function fullScreenConfetti(reducedMotion: boolean, fire?: Fire): P
 	for (const x of [0.2, 0.5, 0.8]) {
 		confetti({
 			origin: { x, y: 0.3 },
+			colors: CONFETTI_COLORS,
 			particleCount: 80,
 			spread: 100,
 			startVelocity: 40,

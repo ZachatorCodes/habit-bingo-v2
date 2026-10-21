@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { burst, fullScreenConfetti, tap } from './celebrate.ts';
+import { CONFETTI_COLORS, burst, fullScreenConfetti, tap } from './celebrate.ts';
 
 afterEach(() => {
 	vi.unstubAllGlobals();
@@ -41,5 +41,6 @@ describe('fullScreenConfetti', () => {
 		expect(fire).not.toHaveBeenCalled();
 		await fullScreenConfetti(false, fire);
 		expect(fire.mock.calls.length).toBeGreaterThanOrEqual(2);
+		expect(fire.mock.calls[0][0].colors).toBe(CONFETTI_COLORS);
 	});
 });
