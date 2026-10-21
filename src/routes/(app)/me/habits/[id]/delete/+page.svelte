@@ -15,7 +15,7 @@
 		<p class="text-muted">Your cards keep their copy of it. This can't be undone.</p>
 		{#if form?.message}
 			<p role="alert" class="rounded-row bg-risk-tile px-4 py-3 font-bold">
-				<span aria-hidden="true">⚠</span>
+				<Icon name="warning" />
 				{form.message}
 			</p>
 		{/if}

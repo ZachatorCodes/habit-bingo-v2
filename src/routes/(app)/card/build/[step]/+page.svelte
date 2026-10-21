@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from '#lib/components/Icon.svelte';
 	import { enhance } from '$app/forms';
 	import BuilderSteps from '#lib/components/BuilderSteps.svelte';
 	import Button from '#lib/components/Button.svelte';
@@ -84,7 +85,7 @@
 	<div class="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6">
 		{#if message}
 			<p id="step-error" role="alert" class="rounded-xl bg-risk-tile px-4 py-3 font-bold text-ink">
-				<span aria-hidden="true">⚠</span>
+				<Icon name="warning" />
 				{message}
 			</p>
 		{/if}
@@ -101,7 +102,7 @@
 		{:else if data.step === 'habits'}
 			<div>
 				<h2 class="text-2xl font-extrabold">Pick your habits</h2>
-				<p class="mt-1 text-ink/75">
+				<p class="mt-1 text-muted">
 					Choose {data.need} for {data.monthName}. You can change their targets next.
 				</p>
 			</div>
@@ -172,7 +173,7 @@
 		{:else if data.step === 'rewards'}
 			<div>
 				<h2 class="text-2xl font-extrabold">Pick your rewards</h2>
-				<p class="mt-1 text-ink/75">Three treats to work toward.</p>
+				<p class="mt-1 text-muted">Three treats to work toward.</p>
 			</div>
 			<form
 				method="POST"
@@ -207,7 +208,7 @@
 		{:else if data.step === 'board' && data.board}
 			<div>
 				<h2 class="text-2xl font-extrabold">Your board</h2>
-				<p class="mt-1 text-ink/75">
+				<p class="mt-1 text-muted">
 					You can change habits, targets, rewards and the board for 48 hours after you start.
 				</p>
 			</div>

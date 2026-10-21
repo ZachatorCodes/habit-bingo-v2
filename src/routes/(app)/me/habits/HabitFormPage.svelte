@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from '#lib/components/Icon.svelte';
 	import type { Snippet } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
@@ -29,12 +30,12 @@
 		<a
 			href={resolve('/(app)/me/habits')}
 			class="inline-flex min-h-11 items-center gap-1 font-bold text-forest underline-offset-4 hover:underline"
-			><span aria-hidden="true">←</span> Habit library</a
+			><Icon name="arrow-left" /> Habit library</a
 		>
 
 		{#if errors.form}
 			<p role="alert" class="rounded-row bg-risk-tile px-4 py-3 font-bold">
-				<span aria-hidden="true">⚠</span>
+				<Icon name="warning" />
 				{errors.form}
 			</p>
 		{/if}

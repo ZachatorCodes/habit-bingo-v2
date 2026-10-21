@@ -110,7 +110,7 @@
 	<div class={inner}>
 		<h2 id="list-heading" class={heading}>Invites</h2>
 		{#if data.invites.length > 0}
-			<ul aria-label="Invites" class="flex flex-col gap-2">
+			<ul aria-labelledby="list-heading" class="flex flex-col gap-2">
 				{#each data.invites as invite (invite.code)}
 					<li class="flex flex-col gap-1 rounded-row bg-page p-3">
 						<span class="font-mono font-bold break-all">{invite.code}</span>

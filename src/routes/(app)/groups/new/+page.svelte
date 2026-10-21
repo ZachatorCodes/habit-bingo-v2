@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from '#lib/components/Icon.svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
@@ -23,7 +24,7 @@
 		<a
 			href={resolve('/(app)/groups')}
 			class="inline-flex min-h-11 items-center gap-1 font-bold text-forest underline-offset-4 hover:underline"
-			><span aria-hidden="true">←</span> Groups</a
+			><Icon name="arrow-left" /> Groups</a
 		>
 
 		<form

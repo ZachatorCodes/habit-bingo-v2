@@ -39,7 +39,7 @@
 					<ProgressRing icon={habit.icon} variant="open" size="sm" />
 					<span class="min-w-0 flex-1">
 						<span class="block font-extrabold">{habit.name}</span>
-						<span class="block text-sm text-ink/75">{describeRule(habit)}</span>
+						<span class="block text-sm text-muted">{describeRule(habit)}</span>
 					</span>
 					<Check
 						weight="bold"

@@ -75,7 +75,7 @@
 {#snippet fieldError(key: string)}
 	{#if errors[key]}
 		<p id={`${ids}-${key}-error`} class="text-sm font-bold">
-			<span aria-hidden="true">⚠</span>
+			<Icon name="warning" />
 			{errors[key]}
 		</p>
 	{/if}

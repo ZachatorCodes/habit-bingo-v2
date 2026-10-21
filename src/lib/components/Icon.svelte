@@ -76,6 +76,9 @@
 	import Prohibit from 'phosphor-svelte/lib/Prohibit';
 	import Archive from 'phosphor-svelte/lib/Archive';
 	import ArrowCounterClockwise from 'phosphor-svelte/lib/ArrowCounterClockwise';
+	import Warning from 'phosphor-svelte/lib/Warning';
+	import CaretRight from 'phosphor-svelte/lib/CaretRight';
+	import ArrowLeft from 'phosphor-svelte/lib/ArrowLeft';
 
 	type IconProps = {
 		weight?: Props['weight'];
@@ -168,7 +171,10 @@
 		'check-circle': CheckCircle,
 		prohibit: Prohibit,
 		archive: Archive,
-		'arrow-counter-clockwise': ArrowCounterClockwise
+		'arrow-counter-clockwise': ArrowCounterClockwise,
+		warning: Warning,
+		'caret-right': CaretRight,
+		'arrow-left': ArrowLeft
 	};
 
 	const Glyph = $derived(COMPONENTS[isIconName(name) ? name : FALLBACK_ICON]);

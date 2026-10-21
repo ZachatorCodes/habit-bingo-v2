@@ -76,7 +76,7 @@
 {#snippet problem(message: string | undefined)}
 	{#if message}
 		<p role="alert" tabindex="-1" class="rounded-row bg-risk-tile px-4 py-3 font-bold text-ink">
-			<span aria-hidden="true">⚠</span>
+			<Icon name="warning" />
 			{message}
 		</p>
 	{/if}
@@ -111,7 +111,7 @@
 							<span class="block font-bold">{row.title}</span>
 							<span class="block text-sm text-muted">{row.text}</span>
 						</span>
-						<span aria-hidden="true" class="text-muted">›</span>
+						<Icon name="caret-right" class="text-muted" />
 					</a>
 				</li>
 			{/each}
@@ -166,7 +166,7 @@
 				</select>
 				{#if settingsErrors.timezone}
 					<p id="timezone-error" class="text-sm font-bold text-ink">
-						<span aria-hidden="true">⚠</span>
+						<Icon name="warning" />
 						{settingsErrors.timezone}
 					</p>
 				{/if}
@@ -200,7 +200,7 @@
 				</div>
 				{#if settingsErrors.weekStartsOn}
 					<p id="week-start-error" class="text-sm font-bold text-ink">
-						<span aria-hidden="true">⚠</span>
+						<Icon name="warning" />
 						{settingsErrors.weekStartsOn}
 					</p>
 				{/if}

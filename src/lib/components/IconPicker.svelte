@@ -57,7 +57,7 @@
 		<!-- Selection is shown by a mark as well as the ring. -->
 		<span
 			aria-hidden="true"
-			class="pointer-events-none absolute -top-1 -right-1 hidden size-5 items-center justify-center rounded-full bg-forest text-xs font-black text-surface peer-checked:flex"
+			class="pointer-events-none absolute -top-1 -right-1 hidden size-5 items-center justify-center rounded-full bg-forest text-xs font-bold text-surface peer-checked:flex"
 			>✓</span
 		>
 	</label>
@@ -88,7 +88,7 @@
 	</div>
 	{#if error}
 		<p id={errorId} class="text-sm font-bold text-ink">
-			<span aria-hidden="true">⚠</span>
+			<Icon name="warning" />
 			{error}
 		</p>
 	{/if}

@@ -48,7 +48,9 @@
 		{/if}
 	</div>
 	<p role="status" class="text-sm font-bold text-ink empty:hidden">
-		{#if message}<span aria-hidden="true">{message === 'Copied.' ? '✓' : '⚠'}</span>
+		{#if message}<span aria-hidden="true"
+				>{#if message === 'Copied.'}✓{:else}<Icon name="warning" />{/if}</span
+			>
 			{message}{/if}
 	</p>
 </div>

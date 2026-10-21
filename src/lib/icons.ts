@@ -75,7 +75,10 @@ export const ICONS = [
 	{ name: 'check-circle', label: 'Check', group: 'other' },
 	{ name: 'prohibit', label: 'Prohibited', group: 'other' },
 	{ name: 'archive', label: 'Archive', group: 'other' },
-	{ name: 'arrow-counter-clockwise', label: 'Undo', group: 'other' }
+	{ name: 'arrow-counter-clockwise', label: 'Undo', group: 'other' },
+	{ name: 'warning', label: 'Warning', group: 'other' },
+	{ name: 'caret-right', label: 'Next', group: 'other' },
+	{ name: 'arrow-left', label: 'Back', group: 'other' }
 ] as const satisfies readonly { name: string; label: string; group: CategoryId }[];
 
 export type IconName = (typeof ICONS)[number]['name'];
@@ -88,7 +91,10 @@ const RESERVED: ReadonlySet<string> = new Set([
 	'check-circle',
 	'prohibit',
 	'archive',
-	'arrow-counter-clockwise'
+	'arrow-counter-clockwise',
+	'warning',
+	'caret-right',
+	'arrow-left'
 ]);
 
 /** Icons a user may choose for a habit or group. */

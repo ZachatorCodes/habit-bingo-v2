@@ -33,7 +33,7 @@
 							{#if tiers.length > 0}
 								<span aria-hidden="true" class="text-xl text-forest"><Icon name="trophy" /></span>
 							{/if}
-							<span aria-hidden="true" class="text-muted">›</span>
+							<Icon name="caret-right" class="text-muted" />
 						</a>
 					</li>
 				{/each}

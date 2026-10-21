@@ -46,7 +46,7 @@
 								>{group.memberCount}
 								{group.memberCount === 1 ? 'member' : 'members'}</span
 							>
-							<span aria-hidden="true" class="text-muted">›</span>
+							<Icon name="caret-right" class="text-muted" />
 						</a>
 					</li>
 				{/each}

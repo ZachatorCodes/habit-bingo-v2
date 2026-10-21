@@ -37,7 +37,7 @@
 		<a
 			href={resolve('/(app)/groups/[id]', { id: data.groupId })}
 			class="inline-flex min-h-11 items-center gap-1 font-bold text-forest underline-offset-4 hover:underline"
-			><span aria-hidden="true">←</span> Group</a
+			><Icon name="arrow-left" /> Group</a
 		>
 
 		{#if data.card}

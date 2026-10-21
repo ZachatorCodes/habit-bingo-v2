@@ -102,7 +102,7 @@
 	// The day's target is met: the check is the undo action.
 	const met = $derived(view.count > 0 && view.state === 'complete');
 	const button =
-		'grid size-11 shrink-0 place-items-center rounded-full text-xl font-black focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
+		'grid size-11 shrink-0 place-items-center rounded-full text-xl font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
 </script>
 
 <li bind:this={li} class="flex items-center gap-3 py-3">

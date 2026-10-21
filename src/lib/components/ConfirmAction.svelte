@@ -43,8 +43,8 @@
 		aria-labelledby={dialogTitle}
 		class="m-auto max-w-sm rounded-[24px] bg-surface p-5 text-ink shadow-sheet backdrop:bg-ink/40"
 	>
-		<h2 id={dialogTitle} class="text-xl font-black">{title}</h2>
-		<p class="mt-2 text-ink/75">{text}</p>
+		<h2 id={dialogTitle} class="text-xl font-bold">{title}</h2>
+		<p class="mt-2 text-muted">{text}</p>
 		<form method="POST" {action} class="mt-5 flex flex-wrap justify-end gap-3">
 			{@render hidden()}
 			<button

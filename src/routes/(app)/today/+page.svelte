@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from '#lib/components/Icon.svelte';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -137,7 +138,7 @@
 			<DaySwitcher {days} selected={day} {today} />
 			{#if message}
 				<p role="alert" class="rounded-2xl bg-risk-tile px-4 py-3 font-bold text-ink">
-					<span aria-hidden="true">⚠</span>
+					<Icon name="warning" />
 					{message}
 				</p>
 			{/if}
