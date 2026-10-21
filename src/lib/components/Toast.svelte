@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from '#lib/components/Icon.svelte';
 	type Props = {
 		/** A new `id` shows the message (again, even with the same text); it hides after `duration` ms. */
 		message: { id: number; text: string } | null;
@@ -27,7 +28,7 @@
 			<p
 				class="pointer-events-auto rounded-2xl border border-line bg-surface px-4 py-3 font-bold text-ink shadow-sheet"
 			>
-				<span aria-hidden="true">⚠</span>
+				<Icon name="warning" />
 				{shown.text}
 			</p>
 		{/key}

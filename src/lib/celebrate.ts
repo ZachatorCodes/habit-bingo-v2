@@ -1,6 +1,9 @@
 // Pop & burst (spec §4.7): a small confetti burst and a haptic tap when a habit is logged.
 import type { Options } from 'canvas-confetti';
 
+/** The Garden palette: forest, leaf, sage tint, terracotta, sky. */
+export const CONFETTI_COLORS = ['#2F5D46', '#4E7E62', '#E3ECDD', '#D9693F', '#5B8AA6'];
+
 type Fire = (options: Options) => unknown;
 
 /**
@@ -16,6 +19,7 @@ export async function burst(
 	const confetti = fire ?? (await import('canvas-confetti')).default;
 	confetti({
 		origin,
+		colors: CONFETTI_COLORS,
 		particleCount: 24,
 		spread: 70,
 		startVelocity: 24,
@@ -37,6 +41,7 @@ export async function fullScreenConfetti(reducedMotion: boolean, fire?: Fire): P
 	for (const x of [0.2, 0.5, 0.8]) {
 		confetti({
 			origin: { x, y: 0.3 },
+			colors: CONFETTI_COLORS,
 			particleCount: 80,
 			spread: 100,
 			startVelocity: 40,

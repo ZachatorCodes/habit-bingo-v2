@@ -2,6 +2,8 @@
 	import { enhance, type SubmitFunction } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
+	import Hero from '#lib/components/Hero.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import IconPicker from '#lib/components/IconPicker.svelte';
 	import TextField from '#lib/components/TextField.svelte';
 	import type { PageProps } from './$types';
@@ -43,66 +45,87 @@
 				?.focus();
 		};
 
-	const card =
-		'flex flex-col gap-4 rounded-2xl border-2 border-line bg-white p-5 shadow-[0_3px_0_var(--color-line)]';
+	const sheet = 'rounded-[24px] bg-surface shadow-sheet';
+	const inner = 'mx-auto flex max-w-xl flex-col gap-4 px-4 py-5';
+	const heading = 'text-xs font-extrabold tracking-wide text-muted uppercase';
 	const select =
-		'w-full rounded-2xl border-2 border-line bg-white px-4 py-2.5 text-ink shadow-[0_3px_0_var(--color-line)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
+		'w-full rounded-[14px] border border-line bg-surface px-4 py-2.5 text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-forest';
+	const links = [
+		{
+			href: resolve('/(app)/me/habits'),
+			icon: 'notebook',
+			title: 'Habit library',
+			text: 'Create and organize the habits you put on cards.'
+		},
+		{
+			href: resolve('/(app)/me/history'),
+			icon: 'target',
+			title: 'History',
+			text: 'Your finished months and their recaps.'
+		}
+	];
 </script>
 
 {#snippet saved(message: string)}
-	<p role="status" tabindex="-1" class="rounded-xl bg-earn px-4 py-3 font-bold text-ink">
-		<span aria-hidden="true">✓</span>
+	<p role="status" tabindex="-1" class="rounded-row bg-earned-tile px-4 py-3 font-bold text-ink">
+		<Icon name="check-circle" class="text-forest" />
 		{message}
 	</p>
 {/snippet}
 
 {#snippet problem(message: string | undefined)}
 	{#if message}
-		<p role="alert" tabindex="-1" class="rounded-xl bg-risk px-4 py-3 font-bold text-ink">
-			<span aria-hidden="true">⚠</span>
+		<p role="alert" tabindex="-1" class="rounded-row bg-risk-tile px-4 py-3 font-bold text-ink">
+			<Icon name="warning" />
 			{message}
 		</p>
 	{/if}
 {/snippet}
 
-<section class="mx-auto flex max-w-xl flex-col gap-8 px-4 py-10">
-	<div>
-		<h1 class="text-3xl leading-tight font-black">Me</h1>
-		<p class="mt-2 text-lg text-ink/75">Your profile, settings and sign-in.</p>
+<Hero title={data.profile.name}>
+	<div class="mt-3 flex items-center gap-3">
+		<span
+			aria-hidden="true"
+			class="grid size-12 shrink-0 place-items-center rounded-full bg-earned-tile text-3xl text-forest"
+			><Icon name={data.profile.avatarIcon} /></span
+		>
+		<p class="min-w-0 font-bold break-words">@{data.profile.displayUsername}</p>
 	</div>
+</Hero>
 
-	<a
-		href={resolve('/(app)/me/habits')}
-		class="flex items-center gap-4 rounded-2xl border-2 border-line bg-white p-5 shadow-[0_3px_0_var(--color-line)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
-	>
-		<span aria-hidden="true" class="text-3xl">📚</span>
-		<span class="flex-1">
-			<span class="block text-lg font-black">Habit library</span>
-			<span class="block text-ink/75">Create and organize the habits you put on cards.</span>
-		</span>
-		<span aria-hidden="true" class="text-xl">→</span>
-	</a>
+<div class="relative -mt-[18px] flex flex-col gap-4 pb-4">
+	<section class={sheet}>
+		<ul class="{inner} gap-2">
+			{#each links as row (row.title)}
+				<li>
+					<a
+						href={row.href}
+						class="flex min-h-14 items-center gap-3 rounded-row bg-page p-3 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+					>
+						<span
+							aria-hidden="true"
+							class="grid size-10 shrink-0 place-items-center rounded-full bg-earned-tile text-2xl text-forest"
+							><Icon name={row.icon} /></span
+						>
+						<span class="min-w-0 flex-1">
+							<span class="block font-bold">{row.title}</span>
+							<span class="block text-sm text-muted">{row.text}</span>
+						</span>
+						<Icon name="caret-right" class="text-muted" />
+					</a>
+				</li>
+			{/each}
+		</ul>
+	</section>
 
-	<a
-		href={resolve('/(app)/me/history')}
-		class="flex items-center gap-4 rounded-2xl border-2 border-line bg-white p-5 shadow-[0_3px_0_var(--color-line)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
-	>
-		<span aria-hidden="true" class="text-3xl">🗓️</span>
-		<span class="flex-1">
-			<span class="block text-lg font-black">History</span>
-			<span class="block text-ink/75">Your finished months and their recaps.</span>
-		</span>
-		<span aria-hidden="true" class="text-xl">→</span>
-	</a>
-
-	<section aria-labelledby="profile-heading" class="flex flex-col gap-3">
-		<h2 id="profile-heading" class="text-xl font-black">Profile</h2>
-		<form method="POST" action="?/profile" class={card} use:enhance={focusResult(false)}>
+	<section aria-labelledby="profile-heading" class={sheet}>
+		<form method="POST" action="?/profile" class={inner} use:enhance={focusResult(false)}>
+			<h2 id="profile-heading" class={heading}>Profile</h2>
 			{#if savedIn('profile')}{@render saved('Profile saved.')}{/if}
 			<div class="flex flex-col gap-1.5">
 				<span class="font-extrabold">Username</span>
-				<p class="text-lg font-bold">@{data.profile.displayUsername}</p>
-				<p class="text-sm text-ink/75">Your username can't be changed.</p>
+				<p class="text-lg font-bold break-words">@{data.profile.displayUsername}</p>
+				<p class="text-sm text-muted">Your username can't be changed.</p>
 			</div>
 			<TextField
 				label="Display name"
@@ -123,9 +146,9 @@
 		</form>
 	</section>
 
-	<section aria-labelledby="settings-heading" class="flex flex-col gap-3">
-		<h2 id="settings-heading" class="text-xl font-black">Settings</h2>
-		<form method="POST" action="?/settings" class={card} use:enhance={focusResult(false)}>
+	<section aria-labelledby="settings-heading" class={sheet}>
+		<form method="POST" action="?/settings" class={inner} use:enhance={focusResult(false)}>
+			<h2 id="settings-heading" class={heading}>Settings</h2>
 			{#if savedIn('settings')}{@render saved('Settings saved.')}{/if}
 			<div class="flex flex-col gap-1.5">
 				<label for="timezone" class="font-extrabold">Timezone</label>
@@ -143,7 +166,7 @@
 				</select>
 				{#if settingsErrors.timezone}
 					<p id="timezone-error" class="text-sm font-bold text-ink">
-						<span aria-hidden="true">⚠</span>
+						<Icon name="warning" />
 						{settingsErrors.timezone}
 					</p>
 				{/if}
@@ -158,18 +181,18 @@
 				class="flex flex-col gap-1.5"
 			>
 				<span id="week-start-label" class="font-extrabold">Week starts on</span>
-				<p id="week-start-hint" class="text-sm text-ink/75">Applies from your next card.</p>
-				<div class="flex gap-3">
+				<p id="week-start-hint" class="text-sm text-muted">Applies from your next card.</p>
+				<div class="flex flex-wrap gap-3">
 					{#each [{ value: 'monday', label: 'Monday' }, { value: 'sunday', label: 'Sunday' }] as option (option.value)}
 						<label
-							class="flex cursor-pointer items-center gap-2 rounded-2xl border-2 border-line bg-white px-4 py-2 font-bold has-checked:border-ink has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-ink"
+							class="flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 font-bold has-checked:border-forest has-checked:bg-earned-tile has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-forest"
 						>
 							<input
 								type="radio"
 								name="weekStartsOn"
 								value={option.value}
 								bind:group={weekStartsOn}
-								class="size-4 accent-ink"
+								class="size-4 accent-forest"
 							/>
 							{option.label}
 						</label>
@@ -177,7 +200,7 @@
 				</div>
 				{#if settingsErrors.weekStartsOn}
 					<p id="week-start-error" class="text-sm font-bold text-ink">
-						<span aria-hidden="true">⚠</span>
+						<Icon name="warning" />
 						{settingsErrors.weekStartsOn}
 					</p>
 				{/if}
@@ -186,10 +209,10 @@
 		</form>
 	</section>
 
-	<section aria-labelledby="password-heading" class="flex flex-col gap-3">
-		<h2 id="password-heading" class="text-xl font-black">Password</h2>
+	<section aria-labelledby="password-heading" class={sheet}>
 		{#if data.methods.password}
-			<form method="POST" action="?/changePassword" class={card} use:enhance={focusResult(true)}>
+			<form method="POST" action="?/changePassword" class={inner} use:enhance={focusResult(true)}>
+				<h2 id="password-heading" class={heading}>Password</h2>
 				{#if savedIn('password')}
 					{@render saved('Password changed. Other devices are signed out.')}
 				{/if}
@@ -212,11 +235,12 @@
 				<Button type="submit" class="self-start">Change password</Button>
 			</form>
 		{:else}
-			<form method="POST" action="?/setPassword" class={card} use:enhance={focusResult(true)}>
+			<form method="POST" action="?/setPassword" class={inner} use:enhance={focusResult(true)}>
+				<h2 id="password-heading" class={heading}>Password</h2>
 				{#if savedIn('password')}
 					{@render saved('Password set. You can now sign in with your username.')}
 				{/if}
-				<p class="text-ink/75">Add a password so you can sign in with your username too.</p>
+				<p class="text-muted">Add a password so you can sign in with your username too.</p>
 				<TextField
 					label="New password"
 					name="newPassword"
@@ -231,17 +255,15 @@
 	</section>
 
 	{#if data.googleEnabled}
-		<section aria-labelledby="methods-heading" class="flex flex-col gap-3">
-			<h2 id="methods-heading" class="text-xl font-black">Sign-in methods</h2>
-			<div class={card}>
+		<section aria-labelledby="methods-heading" class={sheet}>
+			<div class={inner}>
+				<h2 id="methods-heading" class={heading}>Google</h2>
 				{#if savedIn('methods')}{@render saved('Google is unlinked.')}{/if}
 				{@render problem(methodErrors.google ?? data.googleLinkError ?? undefined)}
-				<div class="flex flex-wrap items-center justify-between gap-3">
-					<p>
-						<span class="font-extrabold">Password:</span>
-						{data.methods.password ? 'set' : 'not set'}
-					</p>
-				</div>
+				<p>
+					<span class="font-extrabold">Password:</span>
+					{data.methods.password ? 'set' : 'not set'}
+				</p>
 				<div class="flex flex-wrap items-center justify-between gap-3">
 					<p>
 						<span class="font-extrabold">Google:</span>
@@ -262,10 +284,10 @@
 		</section>
 	{/if}
 
-	<section aria-labelledby="everywhere-heading" class="flex flex-col gap-3">
-		<h2 id="everywhere-heading" class="text-xl font-black">Sign out everywhere</h2>
-		<form method="POST" action="?/signOutEverywhere" class={card} use:enhance>
-			<p class="text-ink/75">
+	<section aria-labelledby="everywhere-heading" class={sheet}>
+		<form method="POST" action="?/signOutEverywhere" class={inner} use:enhance>
+			<h2 id="everywhere-heading" class={heading}>Sessions</h2>
+			<p class="text-muted">
 				Lost a phone or used a shared computer? This signs you out on every device, including this
 				one.
 			</p>
@@ -273,10 +295,10 @@
 		</form>
 	</section>
 
-	<section aria-labelledby="delete-heading" class="flex flex-col gap-3">
-		<h2 id="delete-heading" class="text-xl font-black">Delete account</h2>
-		<form method="POST" action="?/deleteAccount" class={card} use:enhance={focusResult(true)}>
-			<p class="text-ink/75">
+	<section aria-labelledby="delete-heading" class={sheet}>
+		<form method="POST" action="?/deleteAccount" class={inner} use:enhance={focusResult(true)}>
+			<h2 id="delete-heading" class={heading}>Danger zone</h2>
+			<p class="text-muted">
 				This deletes your account and everything in it, for good. It can't be undone.
 			</p>
 			<TextField
@@ -286,7 +308,9 @@
 				hint={`Your username is @${data.profile.displayUsername}.`}
 				error={deleteErrors.confirmUsername}
 			/>
-			<Button type="submit" class="self-start">Delete my account</Button>
+			<Button type="submit" variant="secondary" class="self-start border-terracotta! bg-risk-tile!"
+				>Delete my account</Button
+			>
 		</form>
 	</section>
-</section>
+</div>

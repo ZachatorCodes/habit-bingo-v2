@@ -48,12 +48,12 @@
 		class="max-h-[85dvh] overflow-y-auto rounded-t-[24px] bg-surface p-5 shadow-sheet sm:rounded-[24px]"
 	>
 		<div class="flex items-start justify-between gap-3">
-			<h2 id={titleId} class="text-xl font-black">{title}</h2>
+			<h2 id={titleId} class="text-xl font-bold">{title}</h2>
 			<button
 				type="button"
 				onclick={onclose}
 				aria-label="Close"
-				class="grid size-11 shrink-0 place-items-center rounded-full border border-line bg-surface text-lg font-black focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+				class="grid size-11 shrink-0 place-items-center rounded-full border border-line bg-surface text-lg font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 				><span aria-hidden="true">✕</span></button
 			>
 		</div>

@@ -30,7 +30,7 @@
 				/>
 				<span class="text-xl font-extrabold">{size}×{size}</span>
 				<span class="font-bold">{need} habits · ×{CARD_SIZES[size].multiplier}</span>
-				<span class="text-sm text-ink/75">You have {habitCount} habits / need {need}</span>
+				<span class="text-sm text-muted">You have {habitCount} habits / need {need}</span>
 				{#if habitCount < need}
 					<span class="text-sm font-bold">Add {need - habitCount} more in the next step.</span>
 				{/if}

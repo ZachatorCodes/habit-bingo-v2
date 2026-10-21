@@ -132,7 +132,7 @@
 		{/if}
 		{#if message}
 			<p role="alert" class="rounded-2xl bg-risk-tile px-4 py-3 font-bold text-ink">
-				<span aria-hidden="true">⚠</span>
+				<Icon name="warning" />
 				{message}
 			</p>
 		{/if}

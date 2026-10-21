@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Icon from '#lib/components/Icon.svelte';
 
 	/**
 	 * A value to hand on, such as a link. Without JavaScript it is read-only, selectable text; with a
@@ -34,20 +35,22 @@
 			{value}
 			readonly
 			onfocus={(event) => event.currentTarget.select()}
-			class="min-w-0 flex-1 rounded-2xl border-2 border-line bg-white px-4 py-2.5 font-mono text-sm text-ink shadow-[0_3px_0_var(--color-line)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+			class="min-w-0 flex-1 rounded-full border border-line bg-surface px-4 py-2.5 font-mono text-sm text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 		/>
 		{#if canCopy}
 			<button
 				type="button"
 				aria-label={copyLabel}
 				onclick={copy}
-				class="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-line bg-white px-4 py-2.5 font-extrabold text-ink shadow-[0_3px_0_var(--color-line)] transition-transform focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink active:translate-y-[3px] active:shadow-none"
-				>Copy</button
+				class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-forest bg-forest px-4 py-2.5 font-extrabold text-white transition-transform focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink motion-safe:active:scale-[0.97]"
+				><Icon name="notebook" /> Copy</button
 			>
 		{/if}
 	</div>
 	<p role="status" class="text-sm font-bold text-ink empty:hidden">
-		{#if message}<span aria-hidden="true">{message === 'Copied.' ? '✓' : '⚠'}</span>
+		{#if message}<span aria-hidden="true"
+				>{#if message === 'Copied.'}✓{:else}<Icon name="warning" />{/if}</span
+			>
 			{message}{/if}
 	</p>
 </div>

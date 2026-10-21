@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import CardBoard from '#lib/components/CardBoard.svelte';
+	import Hero from '#lib/components/Hero.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import type { CardSize } from '#lib/game/card-layout.ts';
@@ -18,33 +19,31 @@
 	noindex
 />
 
-<section class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
-	<div class="flex flex-col gap-2">
+<Hero
+	title={`@${data.member.displayUsername}'s card`}
+	summary={data.card
+		? `${data.monthName} · ${plural(data.card.score.points, 'point')} · ${plural(data.card.score.lines.length, 'line')} · ${data.card.score.percent}% counting`
+		: data.monthName}
+>
+	<span
+		aria-hidden="true"
+		class="mt-3 grid size-12 place-items-center rounded-full bg-earned-tile text-3xl text-forest"
+		><Icon name={data.member.avatarIcon} /></span
+	>
+</Hero>
+
+<section class="relative -mt-[18px] rounded-[24px] bg-surface shadow-sheet">
+	<div class="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-5">
 		<a
 			href={resolve('/(app)/groups/[id]', { id: data.groupId })}
-			class="font-bold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
-			>← Group</a
+			class="inline-flex min-h-11 items-center gap-1 font-bold text-forest underline-offset-4 hover:underline"
+			><Icon name="arrow-left" /> Group</a
 		>
-		<h1 class="text-3xl leading-tight font-black">
-			<span
-				aria-hidden="true"
-				class="inline-grid size-9 place-items-center rounded-full bg-earned-tile text-forest"
-				><Icon name={data.member.avatarIcon} /></span
-			>
-			@{data.member.displayUsername}
-		</h1>
-		<h2 class="text-xl font-black">{data.monthName}</h2>
+
 		{#if data.card}
-			<p class="font-extrabold tabular-nums">
-				{plural(data.card.score.points, 'point')} · {plural(data.card.score.lines.length, 'line')} ·
-				{data.card.score.percent}% counting
-			</p>
+			<CardBoard size={data.card.size as CardSize} squares={data.card.squares} />
+		{:else}
+			<p class="text-lg text-muted">No {data.monthName} card yet.</p>
 		{/if}
 	</div>
-
-	{#if data.card}
-		<CardBoard size={data.card.size as CardSize} squares={data.card.squares} />
-	{:else}
-		<p class="text-lg text-ink/75">No {data.monthName} card yet.</p>
-	{/if}
 </section>

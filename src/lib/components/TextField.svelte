@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from '#lib/components/Icon.svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
 	type Props = {
@@ -39,7 +40,7 @@
 <div class="flex flex-col gap-1.5">
 	<label for={id} class="font-extrabold">{label}</label>
 	{#if hint}
-		<p id={hintId} class="text-sm text-ink/75">{hint}</p>
+		<p id={hintId} class="text-sm text-muted">{hint}</p>
 	{/if}
 	<input
 		{id}
@@ -59,7 +60,7 @@
 	/>
 	{#if error}
 		<p id={errorId} class="text-sm font-bold text-ink">
-			<span aria-hidden="true">⚠</span>
+			<Icon name="warning" />
 			{error}
 		</p>
 	{/if}

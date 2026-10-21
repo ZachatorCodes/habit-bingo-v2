@@ -27,7 +27,7 @@
 			</legend>
 			{#each group.habits as habit (habit.id)}
 				<label
-					class="group flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl border border-line bg-surface p-3 has-[:checked]:border-2 has-[:checked]:border-forest has-[:checked]:bg-earned-tile has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-forest"
+					class="group flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl border-2 border-line bg-surface p-3 has-[:checked]:border-forest has-[:checked]:bg-earned-tile has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-forest"
 				>
 					<input
 						type="checkbox"
@@ -39,7 +39,7 @@
 					<ProgressRing icon={habit.icon} variant="open" size="sm" />
 					<span class="min-w-0 flex-1">
 						<span class="block font-extrabold">{habit.name}</span>
-						<span class="block text-sm text-ink/75">{describeRule(habit)}</span>
+						<span class="block text-sm text-muted">{describeRule(habit)}</span>
 					</span>
 					<Check
 						weight="bold"

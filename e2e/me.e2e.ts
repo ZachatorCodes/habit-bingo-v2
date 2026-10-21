@@ -34,7 +34,7 @@ async function copyDevice(browser: Browser, a: BrowserContext): Promise<Page> {
 
 test('the Me page shows the profile and no Google rows when Google is off', async ({ page }) => {
 	const { username } = await newUser(page);
-	await expect(page.getByRole('heading', { level: 1, name: 'Me' })).toBeVisible();
+	await expect(page.getByRole('heading', { level: 1, name: 'Me Tester' })).toBeVisible();
 	await expect(page.getByText(`@${username}`).first()).toBeVisible();
 	await expect(page.getByLabel('Display name')).toHaveValue('Me Tester');
 	await expect(page.getByRole('button', { name: /Google/ })).toHaveCount(0);

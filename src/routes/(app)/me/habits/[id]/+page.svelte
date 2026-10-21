@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from '#lib/components/Icon.svelte';
 	import HabitFormPage from '../HabitFormPage.svelte';
 	import type { PageProps } from './$types';
 
@@ -14,19 +15,21 @@
 	action="?/save"
 >
 	{#snippet footer()}
-		<form
-			method="POST"
-			action="?/archive"
-			class="flex flex-col items-start gap-2 rounded-2xl border-2 border-dashed border-line p-5"
-		>
-			<p class="text-ink/75">
-				Archiving hides it from new cards. You can restore it from the archived view.
-			</p>
-			<button
-				type="submit"
-				class="rounded-xl border-2 border-line bg-white px-4 py-2 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
-				>Archive</button
+		<section class="relative mt-4 rounded-[24px] bg-surface shadow-sheet">
+			<form
+				method="POST"
+				action="?/archive"
+				class="mx-auto flex max-w-2xl flex-col items-start gap-3 px-4 py-5"
 			>
-		</form>
+				<p class="text-muted">
+					Archiving hides it from new cards. You can restore it from the archived view.
+				</p>
+				<button
+					type="submit"
+					class="inline-flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface px-5 font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-forest"
+					><Icon name="archive" /> Archive</button
+				>
+			</form>
+		</section>
 	{/snippet}
 </HabitFormPage>

@@ -24,7 +24,7 @@ describe('CategoryFilter', () => {
 			.toHaveAttribute('href', '/me/habits');
 		const fitness = page.getByRole('link', { name: /Fitness/ });
 		await expect.element(fitness).toHaveAttribute('href', '/me/habits?category=fitness');
-		await expect.element(fitness).toHaveAttribute('aria-current', 'true');
+		await expect.element(fitness).toHaveAttribute('aria-current', 'page');
 		await expect.element(fitness).toHaveTextContent('2');
 		await expect
 			.element(page.getByRole('link', { name: /Mind/ }))
@@ -42,6 +42,6 @@ describe('CategoryFilter', () => {
 			.toHaveAttribute('href', '/me/habits?archived=1');
 		await expect
 			.element(page.getByRole('link', { name: /All/ }))
-			.toHaveAttribute('aria-current', 'true');
+			.toHaveAttribute('aria-current', 'page');
 	});
 });

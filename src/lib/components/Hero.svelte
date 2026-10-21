@@ -22,7 +22,7 @@
 		<path d="M70 70C70 36 46 14 14 14c0 34 18 56 56 56Z" fill="currentColor" />
 	</svg>
 	<div class="relative">
-		<h1 class="text-[28px] leading-tight font-extrabold">{title}</h1>
+		<h1 class="text-[28px] leading-tight font-extrabold break-words">{title}</h1>
 		{#if summary}
 			<p class="mt-1 text-[13px] font-semibold">{summary}</p>
 		{/if}

@@ -2,6 +2,7 @@ import { page } from 'vitest/browser';
 import { describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import BingoCelebration from './BingoCelebration.svelte';
+import { CONFETTI_COLORS } from '#lib/celebrate.ts';
 
 const rewards = { bingo: 'Ice cream', sixty: 'Movie night', blackout: 'A weekend away' };
 
@@ -26,11 +27,40 @@ describe('BingoCelebration', () => {
 			sixtyThreshold: 5,
 			ondone
 		});
-		const reveal = page.getByRole('dialog', { name: 'You earned a reward' });
+		const reveal = page.getByRole('dialog', { name: 'BINGO!' });
 		await expect.element(reveal).toHaveTextContent('Ice cream');
 		await expect.element(reveal).toHaveTextContent('A weekend away');
 		await page.getByRole('button', { name: 'Nice!' }).click();
 		expect(ondone).toHaveBeenCalled();
+	});
+
+	it('shows BINGO! and each earned reward', async () => {
+		render(BingoCelebration, {
+			lines: [[0, 1, 2]],
+			tiers: ['bingo', 'blackout'],
+			rewards,
+			sixtyThreshold: 5,
+			ondone: () => {}
+		});
+		await expect.element(page.getByRole('heading', { name: 'BINGO!' })).toBeVisible();
+		expect(page.getByRole('listitem').elements()).toHaveLength(2);
+		await expect.element(page.getByText('First bingo — Ice cream')).toBeVisible();
+		await expect.element(page.getByText('Blackout — A weekend away')).toBeVisible();
+	});
+
+	it('does not claim BINGO! for a 60% reward without a line', async () => {
+		render(BingoCelebration, {
+			lines: [],
+			tiers: ['sixtyPercent'],
+			rewards,
+			sixtyThreshold: 5,
+			ondone: () => {}
+		});
+		await expect.element(page.getByRole('heading', { name: 'Reward earned' })).toBeVisible();
+		expect(page.getByRole('heading', { name: 'BINGO!' }).elements()).toHaveLength(0);
+	});
+	it('uses the Garden confetti palette', () => {
+		expect(CONFETTI_COLORS).toEqual(['#2F5D46', '#4E7E62', '#E3ECDD', '#D9693F', '#5B8AA6']);
 	});
 
 	it('finishes on its own when there is no reward to reveal', async () => {

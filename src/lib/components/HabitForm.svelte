@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import BingoSquare from './BingoSquare.svelte';
 	import Button from './Button.svelte';
 	import Icon from './Icon.svelte';
@@ -64,15 +65,17 @@
 	const ids = $props.id();
 	const field = 'flex flex-col gap-1.5';
 	const select =
-		'w-full rounded-2xl border-2 border-line bg-white px-4 py-2.5 text-ink shadow-[0_3px_0_var(--color-line)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink';
+		'w-full min-h-11 rounded-input border border-line bg-surface px-4 py-2.5 text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-forest';
 	const choice =
-		'flex cursor-pointer items-center gap-2 rounded-2xl border-2 border-line bg-white px-3 py-2 font-bold shadow-[0_3px_0_var(--color-line)] has-[:checked]:border-ink has-[:checked]:bg-cream has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink';
+		'group flex min-h-11 cursor-pointer items-center gap-2 rounded-row border border-line bg-surface px-3 py-2 font-bold has-[:checked]:border-forest has-[:checked]:bg-forest has-[:checked]:text-white has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-forest';
+	const tile =
+		'group flex min-h-11 cursor-pointer items-center gap-2 rounded-row border border-line bg-surface px-3 py-3 font-bold has-[:checked]:border-forest has-[:checked]:bg-earned-tile has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-forest';
 </script>
 
 {#snippet fieldError(key: string)}
 	{#if errors[key]}
-		<p id={`${ids}-${key}-error`} class="text-sm font-bold text-ink">
-			<span aria-hidden="true">⚠</span>
+		<p id={`${ids}-${key}-error`} class="text-sm font-bold">
+			<Icon name="warning" />
 			{errors[key]}
 		</p>
 	{/if}
@@ -94,6 +97,7 @@
 					/>
 					<Icon name={option.icon} />
 					{option.label}
+					<Icon name="check-circle" class="ml-auto hidden group-has-[:checked]:inline" />
 				</label>
 			{/each}
 		</div>
@@ -115,7 +119,7 @@
 	>
 		<legend class="mb-1.5 font-extrabold">Kind</legend>
 		<div class="grid grid-cols-2 gap-2">
-			<label class={choice}>
+			<label class={tile}>
 				<input
 					type="radio"
 					name="direction"
@@ -124,9 +128,10 @@
 					onchange={() => setDirection('atLeast')}
 					class="sr-only"
 				/>
+				<Icon name="check-circle" class="text-xl text-forest" />
 				Do it
 			</label>
-			<label class={choice}>
+			<label class={tile}>
 				<input
 					type="radio"
 					name="direction"
@@ -136,10 +141,11 @@
 					aria-describedby={`${ids}-limit-hint`}
 					class="sr-only"
 				/>
+				<Icon name="prohibit" class="text-xl text-terracotta" />
 				Limit it
 			</label>
 		</div>
-		<p id={`${ids}-limit-hint`} class="text-sm text-ink/75">
+		<p id={`${ids}-limit-hint`} class="text-sm text-muted">
 			Limit it counts slips, like eating out.
 		</p>
 		{@render fieldError('direction')}
@@ -191,19 +197,19 @@
 		</div>
 	</fieldset>
 
-	<label class="flex items-start gap-3 font-bold">
+	<label class="flex min-h-11 items-start gap-3 font-bold">
 		<input
 			type="checkbox"
 			name="isPrivate"
 			bind:checked={isPrivate}
-			class="mt-1 size-5 accent-ink"
+			class="mt-0.5 size-6 accent-forest"
 		/>
 		<span
 			>Private: friends see <Icon name="lock" /><span class="sr-only"> a lock</span> instead of the name</span
 		>
 	</label>
 
-	<section aria-label="Preview" class="flex items-center gap-4 rounded-2xl bg-cream p-4">
+	<section aria-label="Preview" class="flex items-center gap-4 rounded-row bg-page p-4">
 		<div class="w-24 shrink-0">
 			<BingoSquare {icon} label={name.trim() || 'Your habit'} state="empty" showLabel />
 		</div>
@@ -212,7 +218,12 @@
 		</p>
 	</section>
 
-	<div>
+	<div class="flex flex-wrap items-center gap-3">
 		<Button type="submit">{submitLabel}</Button>
+		<a
+			href={resolve('/(app)/me/habits')}
+			class="inline-flex min-h-11 items-center rounded-full px-4 font-extrabold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-forest"
+			>Cancel</a
+		>
 	</div>
 </div>
