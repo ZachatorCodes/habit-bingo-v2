@@ -22,9 +22,8 @@ test('completing the card from Today celebrates and reveals the reward', async (
 		const nice = page.getByRole('button', { name: 'Nice!' });
 		if (name !== GOALS.at(-1) && (await nice.isVisible())) await nice.click();
 	}
-	const reveal = page.getByRole('dialog', { name: 'You earned a reward' });
+	const reveal = page.getByRole('dialog', { name: 'BINGO!' });
 	await expect(reveal).toContainText('A weekend away');
-	await expect(page.getByRole('status').filter({ hasText: 'BINGO!' })).toBeVisible();
 	await reveal.getByRole('button', { name: 'Nice!' }).click();
 	await expect(reveal).toBeHidden();
 
@@ -32,7 +31,7 @@ test('completing the card from Today celebrates and reveals the reward', async (
 	await page.reload();
 	await waitForHydration(page);
 	await expect(page.getByText('BINGO!')).toHaveCount(0);
-	await expect(page.getByRole('dialog', { name: 'You earned a reward' })).toHaveCount(0);
+	await expect(page.getByRole('dialog', { name: 'BINGO!' })).toHaveCount(0);
 });
 
 test('completing a line from the sheet closes it and celebrates on the card', async ({ page }) => {
@@ -52,9 +51,7 @@ test('completing a line from the sheet closes it and celebrates on the card', as
 		if ((await sheet.count()) > 0) await page.keyboard.press('Escape');
 		await expect(sheet).toHaveCount(0);
 	}
-	await expect(page.getByRole('dialog', { name: 'You earned a reward' })).toContainText(
-		'A weekend away'
-	);
+	await expect(page.getByRole('dialog', { name: 'BINGO!' })).toContainText('A weekend away');
 	await expect(page.getByRole('dialog', { name: 'Call an old friend' })).toHaveCount(0);
 	await expect(page.locator('main .ripple').first()).toBeAttached();
 });

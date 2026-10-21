@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { prefersReducedMotion } from 'svelte/motion';
-	import Icon from './Icon.svelte';
+	import ProgressRing from './ProgressRing.svelte';
 	import { fullScreenConfetti } from '#lib/celebrate.ts';
 	import type { Tier } from '#lib/game/score.ts';
 	import type { Rewards } from '#lib/server/cards.ts';
@@ -64,9 +64,15 @@
 
 <div role="status" class="pointer-events-none fixed inset-x-0 top-1/3 z-50 flex justify-center">
 	{#if announced && lines.length > 0}
+		<!-- With a reward the dialog below is the visible sheet; this stays for screen readers. -->
 		<p
-			class="rounded-3xl border-4 border-ink bg-risk px-8 py-4 text-5xl font-black text-ink shadow-[0_6px_0_var(--color-ink)] motion-safe:animate-bounce"
+			class={earned.length > 0
+				? 'sr-only'
+				: 'flex flex-col items-center gap-2 rounded-3xl bg-surface px-10 py-6 text-4xl font-extrabold text-forest shadow-sheet motion-safe:animate-bounce'}
 		>
+			{#if earned.length === 0}
+				<ProgressRing icon="trophy" variant="earned" size="lg" />
+			{/if}
 			BINGO!
 		</p>
 	{/if}
@@ -80,19 +86,19 @@
 			event.preventDefault();
 			finish();
 		}}
-		class="m-auto max-w-sm rounded-3xl border-4 border-ink bg-cream p-6 text-center text-ink shadow-[0_6px_0_var(--color-ink)] backdrop:bg-ink/50"
+		class="m-auto w-[calc(100%-2rem)] max-w-sm rounded-3xl bg-surface p-6 text-center text-ink shadow-sheet backdrop:bg-ink/50"
 	>
-		<p class="text-5xl text-terracotta" aria-hidden="true"><Icon name="trophy" /></p>
-		<h2 id={revealId} class="mt-2 text-2xl font-black">You earned a reward</h2>
+		<div class="flex justify-center"><ProgressRing icon="trophy" variant="earned" size="lg" /></div>
+		<h2 id={revealId} class="mt-3 text-4xl font-extrabold text-forest">BINGO!</h2>
 		<ul class="mt-3 flex flex-col gap-2">
 			{#each earned as { label, reward } (label)}
-				<li><span class="font-extrabold">{label}:</span> {reward}</li>
+				<li>{label} � {reward}</li>
 			{/each}
 		</ul>
 		<button
 			type="button"
 			onclick={finish}
-			class="mt-5 rounded-2xl border-2 border-forest bg-forest px-5 py-2.5 font-extrabold text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+			class="mt-5 rounded-2xl border-2 border-forest bg-forest px-5 py-2.5 font-extrabold text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-forest"
 			>Nice!</button
 		>
 	</dialog>
