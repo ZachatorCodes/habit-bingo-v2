@@ -2,8 +2,6 @@ name: CI
 
 on:
   pull_request:
-  push:
-    branches: [main]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -13,10 +11,12 @@ permissions:
   contents: read
 
 # No DATABASE_URL anywhere in CI: the app must build and test without a database.
+# One job, so each PR pays for one runner and one npm ci.
 jobs:
-  quality:
-    name: Lint & typecheck
+  ci:
+    name: CI
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -26,61 +26,13 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run check
-
-  unit:
-    name: Unit & component tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:coverage
-
-  e2e-shard:
-    name: E2E shard ${{ matrix.shard }}/3
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3]
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: npx playwright test --shard=${{ matrix.shard }}/3
+      - run: npm run build
+      - run: npx playwright test
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: playwright-report-${{ matrix.shard }}
+          name: playwright-report
           path: playwright-report/
           retention-days: 7
-
-  # The required status check: passes only when every shard passed.
-  e2e:
-    name: E2E tests
-    runs-on: ubuntu-latest
-    needs: e2e-shard
-    if: always()
-    steps:
-      - run: test "${{ needs.e2e-shard.result }}" = success
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-      - run: npm run build

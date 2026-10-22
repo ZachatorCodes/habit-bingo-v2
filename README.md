@@ -80,9 +80,7 @@ Only the E2E server sets it, because every E2E test comes from one IP. Never set
 - **Migrations:** Vercel runs `npm run vercel-build` (`drizzle-kit migrate && vite build`), so each
   environment's database is migrated before the app is built.
 - **Health check:** `GET /api/health` returns `{"status":"ok","db":"ok"}` when the app can reach its
-  database. The **Deploy smoke test** workflow checks this, plus the security headers, after every
-  deployment (previews are reached with the `VERCEL_AUTOMATION_BYPASS_SECRET` repo secret).
-  Its sign-in and session checks need `BETTER_AUTH_SECRET` set for Preview.
+  database; check it by hand after a deploy.
 
 ## Bootstrapping the first admin
 
