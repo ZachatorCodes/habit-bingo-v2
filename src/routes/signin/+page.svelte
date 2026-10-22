@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import Button from '#lib/components/Button.svelte';
+	import Hero from '#lib/components/Hero.svelte';
+	import Notice from '#lib/components/Notice.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import TextField from '#lib/components/TextField.svelte';
 	import type { PageProps } from './$types';
@@ -19,60 +21,57 @@
 	noindex
 />
 
-<section class="mx-auto flex max-w-md flex-col gap-6 px-4 py-12">
-	<div>
-		<h1 class="text-3xl leading-tight font-black">Welcome back</h1>
-		<p class="mt-2 text-lg text-ink/75">Sign in to check in on today's habits.</p>
-	</div>
+<Hero title="Welcome back" summary="Sign in to check in on today's habits." />
 
-	{#if data.googleEnabled}
-		<form method="POST" action="?/google">
-			<input type="hidden" name="next" value={data.next} />
-			<Button type="submit" variant="secondary" class="w-full">Continue with Google</Button>
-		</form>
-		<p class="text-center font-bold text-ink/75">or</p>
-	{/if}
+<div class="relative -mt-[18px] pb-4">
+	<section class="rounded-[24px] bg-surface shadow-sheet">
+		<div class="mx-auto flex max-w-md flex-col gap-4 px-4 py-5">
+			{#if data.googleEnabled}
+				<form method="POST" action="?/google">
+					<input type="hidden" name="next" value={data.next} />
+					<Button type="submit" variant="secondary" class="w-full">Continue with Google</Button>
+				</form>
+				<p class="text-center font-bold text-muted">or</p>
+			{/if}
 
-	<form
-		method="POST"
-		action="?/signin"
-		class="flex flex-col gap-4 rounded-2xl border-2 border-line bg-white p-5 shadow-[0_3px_0_var(--color-line)]"
-		use:enhance={({ formElement }) =>
-			async ({ update }) => {
-				await update();
-				formElement.querySelector<HTMLElement>('[aria-invalid="true"], [role="alert"]')?.focus();
-			}}
-	>
-		<!-- The form action replaces the query string, so ?next= travels in the body. -->
-		<input type="hidden" name="next" value={data.next} />
-		{#if data.passwordUpdated && !formError}
-			<p role="status" class="rounded-xl bg-earn px-4 py-3 font-bold text-ink">
-				<span aria-hidden="true">✓</span>
-				Password updated. Sign in with your new password.
-			</p>
-		{/if}
-		{#if formError}
-			<p role="alert" tabindex="-1" class="rounded-xl bg-risk px-4 py-3 font-bold text-ink">
-				<span aria-hidden="true">⚠</span>
-				{formError}
-			</p>
-		{/if}
-		<TextField
-			label="Username"
-			name="username"
-			autocomplete="username"
-			value={form?.values?.username}
-			error={errors.username}
-		/>
-		<TextField
-			label="Password"
-			name="password"
-			type="password"
-			autocomplete="current-password"
-			error={errors.password}
-		/>
-		<Button type="submit" class="mt-2 w-full">Sign in</Button>
-	</form>
+			<form
+				method="POST"
+				action="?/signin"
+				class="flex flex-col gap-4"
+				use:enhance={({ formElement }) =>
+					async ({ update }) => {
+						await update();
+						formElement
+							.querySelector<HTMLElement>('[aria-invalid="true"], [role="alert"]')
+							?.focus();
+					}}
+			>
+				<!-- The form action replaces the query string, so ?next= travels in the body. -->
+				<input type="hidden" name="next" value={data.next} />
+				{#if data.passwordUpdated && !formError}
+					<Notice tone="success">Password updated. Sign in with your new password.</Notice>
+				{/if}
+				{#if formError}
+					<Notice tone="error">{formError}</Notice>
+				{/if}
+				<TextField
+					label="Username"
+					name="username"
+					autocomplete="username"
+					value={form?.values?.username}
+					error={errors.username}
+				/>
+				<TextField
+					label="Password"
+					name="password"
+					type="password"
+					autocomplete="current-password"
+					error={errors.password}
+				/>
+				<Button type="submit" class="mt-2 w-full">Sign in</Button>
+			</form>
 
-	<p class="text-center text-ink/75">Forgot your password? Ask an admin for a reset link.</p>
-</section>
+			<p class="text-center text-muted">Forgot your password? Ask an admin for a reset link.</p>
+		</div>
+	</section>
+</div>

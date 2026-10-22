@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
 	import Hero from '#lib/components/Hero.svelte';
+	import Notice from '#lib/components/Notice.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import IconPicker from '#lib/components/IconPicker.svelte';
 	import TextField from '#lib/components/TextField.svelte';
@@ -75,10 +76,7 @@
 
 {#snippet problem(message: string | undefined)}
 	{#if message}
-		<p role="alert" tabindex="-1" class="rounded-row bg-risk-tile px-4 py-3 font-bold text-ink">
-			<Icon name="warning" />
-			{message}
-		</p>
+		<Notice tone="error">{message}</Notice>
 	{/if}
 {/snippet}
 

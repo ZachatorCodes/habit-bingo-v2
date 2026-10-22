@@ -2,6 +2,8 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Button from '#lib/components/Button.svelte';
+	import Hero from '#lib/components/Hero.svelte';
+	import ProgressRing from '#lib/components/ProgressRing.svelte';
 
 	const notFound = $derived(page.status === 404);
 </script>
@@ -11,18 +13,21 @@
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
-<section class="mx-auto flex max-w-md flex-col items-center px-4 pt-20 text-center">
-	<div class="text-5xl" aria-hidden="true">{notFound ? '🧭' : '🙈'}</div>
-	<h1 class="mt-4 text-3xl font-black">{notFound ? 'Page not found' : 'Something went wrong'}</h1>
-	<p class="mt-3 text-ink/75">
-		{notFound
-			? "That square isn't on the board."
-			: 'Sorry about that. Please try again in a moment.'}
-	</p>
-	{#if page.error?.errorId}
-		<p class="mt-2 text-sm text-ink/60">Reference: {page.error.errorId}</p>
-	{/if}
-	<div class="mt-8">
-		<Button href={resolve('/')}>Go home</Button>
-	</div>
-</section>
+<Hero
+	title={notFound ? 'Page not found' : 'Something went wrong'}
+	summary={notFound
+		? "That square isn't on the board."
+		: 'Sorry about that. Please try again in a moment.'}
+/>
+
+<div class="relative -mt-[18px] pb-4">
+	<section class="rounded-[24px] bg-surface shadow-sheet">
+		<div class="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-6 text-center">
+			<ProgressRing icon={notFound ? 'map-trifold' : 'warning'} variant="open" size="lg" />
+			{#if page.error?.errorId}
+				<p class="text-[11px] text-muted">Reference: {page.error.errorId}</p>
+			{/if}
+			<Button href={resolve('/')}>Go home</Button>
+		</div>
+	</section>
+</div>
