@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import Button from '#lib/components/Button.svelte';
 	import SampleCard from '#lib/components/SampleCard.svelte';
-	import Icon from '#lib/components/Icon.svelte';
+	import ProgressRing from '#lib/components/ProgressRing.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 
 	const steps = [
@@ -30,32 +30,72 @@
 	path="/"
 />
 
-<section
-	class="mx-auto flex max-w-5xl flex-col items-center gap-10 px-4 pt-12 md:flex-row md:pt-20"
->
-	<div class="flex-1 text-center md:text-left">
-		<h1 class="text-4xl leading-tight font-black md:text-5xl">
+<!-- Band and content share one grid so the card sheet can overlap the band's bottom edge on phones. -->
+<div class="grid md:grid-cols-2 md:items-center">
+	<div
+		aria-hidden="true"
+		class="relative col-span-full row-start-1 overflow-hidden bg-forest md:row-span-2"
+	>
+		<svg viewBox="0 0 80 80" class="drift absolute -top-4 -right-3 size-28 text-leaf md:size-40">
+			<path d="M10 70C10 30 40 8 72 8c0 36-20 62-62 62Z" fill="currentColor" />
+		</svg>
+		<svg
+			viewBox="0 0 80 80"
+			class="drift-slow absolute right-16 -bottom-6 size-20 text-leaf-2 md:size-28"
+		>
+			<path d="M70 70C70 36 46 14 14 14c0 34 18 56 56 56Z" fill="currentColor" />
+		</svg>
+	</div>
+	<div
+		class="relative row-start-1 px-4 pt-12 pb-14 text-center text-surface md:col-start-1 md:py-20 md:pl-[max(1rem,calc((100vw-64rem)/2+1rem))] md:text-left"
+	>
+		<h1 class="text-4xl leading-tight font-extrabold md:text-5xl">
 			Turn your habits into a game of bingo.
 		</h1>
-		<p class="mt-4 text-lg text-ink/75">
+		<p class="mt-4 text-lg text-surface/90">
 			Build a monthly card, check off habits, and race your friends to a blackout.
 		</p>
 		<div class="mt-8 flex flex-col items-center gap-3 md:items-start">
-			<Button href={resolve('/signin')}>Sign in</Button>
-			<p class="text-ink/75">Invite-only beta.</p>
+			<Button href={resolve('/signin')} variant="secondary">Sign in</Button>
+			<p class="text-surface/90">Invite-only beta.</p>
 		</div>
 	</div>
-	<div class="flex w-full flex-1 justify-center">
+	<div
+		class="relative row-start-2 -mt-8 flex justify-center px-4 md:col-start-2 md:row-start-1 md:mt-0 md:pr-[max(1rem,calc((100vw-64rem)/2+1rem))]"
+	>
 		<SampleCard />
 	</div>
-</section>
+</div>
 
 <section class="mx-auto mt-16 grid max-w-5xl gap-4 px-4 sm:grid-cols-3">
 	{#each steps as step (step.title)}
-		<div class="rounded-2xl border-2 border-line bg-white p-5 shadow-[0_3px_0_var(--color-line)]">
-			<div class="text-3xl" aria-hidden="true"><Icon name={step.icon} /></div>
-			<h2 class="mt-2 text-lg font-extrabold">{step.title}</h2>
-			<p class="mt-1 text-ink/75">{step.text}</p>
+		<div class="rounded-tile bg-surface p-5 shadow-sheet">
+			<ProgressRing icon={step.icon} variant="earned" size="md" />
+			<h2 class="mt-3 text-lg font-extrabold">{step.title}</h2>
+			<p class="mt-1 text-muted">{step.text}</p>
 		</div>
 	{/each}
 </section>
+
+<style>
+	@keyframes drift {
+		from {
+			transform: translate(0, 0) rotate(0deg);
+		}
+		to {
+			transform: translate(-6px, 8px) rotate(6deg);
+		}
+	}
+	.drift {
+		animation: drift 9s ease-in-out infinite alternate;
+	}
+	.drift-slow {
+		animation: drift 13s ease-in-out infinite alternate-reverse;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.drift,
+		.drift-slow {
+			animation: none;
+		}
+	}
+</style>
