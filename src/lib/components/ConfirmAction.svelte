@@ -43,7 +43,7 @@
 		aria-labelledby={dialogTitle}
 		class="m-auto max-w-sm rounded-[24px] bg-surface p-5 text-ink shadow-sheet backdrop:bg-ink/40"
 	>
-		<h2 id={dialogTitle} class="text-xl font-bold">{title}</h2>
+		<h2 id={dialogTitle} class="text-xl font-bold break-words">{title}</h2>
 		<p class="mt-2 text-muted">{text}</p>
 		<form method="POST" {action} class="mt-5 flex flex-wrap justify-end gap-3">
 			{@render hidden()}
@@ -55,7 +55,7 @@
 			>
 			<button
 				type="submit"
-				class="min-h-11 rounded-full border border-terracotta bg-risk px-4 py-1.5 font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+				class="min-h-11 rounded-full border border-terracotta bg-risk-tile px-4 py-1.5 font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 				>{confirm}</button
 			>
 		</form>
