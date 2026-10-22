@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 // Text is WCAG AA 4.5:1 and state rings or icons are 3:1 (WCAG 1.4.11), so the state cues stand out
@@ -46,4 +47,15 @@ describe('garden colour tokens', () => {
 	);
 	it('white icon on terracotta meets 3:1', () =>
 		expect(contrast('#ffffff', token('terracotta'))).toBeGreaterThanOrEqual(3));
+});
+
+describe('alias tokens', () => {
+	const files = (readdirSync('src', { recursive: true, encoding: 'utf8' }) as string[])
+		.filter((f) => f.endsWith('.svelte'))
+		.map((f) => join('src', f));
+	const alias =
+		/\b(?:bg|text|border|ring|outline|fill|stroke|shadow|from|to)-(?:cream|accent(?:-edge)?|earn(?:-edge|-shadow)?|protect(?:-edge|-shadow)?|risk(?:-edge|-shadow)?|lost)\b(?!-)/;
+	it('no alias token classes remain', () =>
+		expect(files.filter((f) => alias.test(readFileSync(f, 'utf8')))).toEqual([]));
+	it('layout.css drops the alias colours', () => expect(css).not.toContain('--color-cream'));
 });

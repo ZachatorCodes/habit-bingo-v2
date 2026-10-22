@@ -47,7 +47,7 @@
 <div
 	data-testid="sample-card"
 	data-animating={String(animating)}
-	class="grid w-full max-w-xs grid-cols-3 gap-2.5 rounded-3xl border-2 border-line bg-white p-3 shadow-[0_4px_0_var(--color-line)]"
+	class="grid w-full max-w-xs grid-cols-3 gap-2.5 rounded-sheet bg-surface p-3 shadow-sheet"
 >
 	{#each squares as square (square.label)}
 		<BingoSquare {...square} />
