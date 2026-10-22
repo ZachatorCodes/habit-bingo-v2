@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { uniqueUsername, waitForHydration } from './fixtures.ts';
+import { newMember, uniqueUsername, waitForHydration } from './fixtures.ts';
 
 test('a valid invite lets a new person create an account and land on onboarding', async ({
 	page,
@@ -84,4 +84,30 @@ test('a valid invite offers people who already have an account a way to sign in'
 	await expect(page.getByText('Already have an account?')).toBeVisible();
 	await page.getByRole('link', { name: 'Sign in' }).click();
 	await expect(page).toHaveURL(/\/signin\?next=%2Fjoin%2FE2E-OPEN$/);
+});
+
+test('a long group name fits a phone', async ({ page, browser }) => {
+	const name = 'Z'.repeat(40);
+	await newMember(page);
+	await page.goto('/groups/new');
+	await waitForHydration(page);
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: 'Mountains', exact: true }) })
+		.click();
+	await page.getByRole('textbox', { name: 'Name' }).fill(name);
+	await page.getByRole('button', { name: 'Create group' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: new RegExp(name) })).toBeVisible();
+	await page.goto(`${new URL(page.url()).pathname}?tab=members`);
+	const link = await page.getByRole('textbox', { name: 'Invite link' }).inputValue();
+
+	const other = await (
+		await browser.newContext({ viewport: { width: 360, height: 740 } })
+	).newPage();
+	await newMember(other);
+	await other.goto(link);
+	await waitForHydration(other);
+	await expect(other.getByRole('heading', { level: 1, name: `Join ${name}` })).toBeVisible();
+	expect(await other.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+	await other.context().close();
 });
