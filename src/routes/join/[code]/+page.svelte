@@ -52,8 +52,9 @@
 			<ProgressRing icon={data.group.icon} variant="open" size="lg" />
 		</div>
 		{#if data.member}
-			<Button href={resolve('/(app)/groups/[id]', { id: data.group.id })} class="w-full"
-				>Open {data.group.name}</Button
+			<Button
+				href={resolve('/(app)/groups/[id]', { id: data.group.id })}
+				class="w-full wrap-anywhere">Open {data.group.name}</Button
 			>
 		{:else}
 			{#if form?.message}

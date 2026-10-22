@@ -56,7 +56,10 @@
 			Build a monthly card, check off habits, and race your friends to a blackout.
 		</p>
 		<div class="mt-8 flex flex-col items-center gap-3 md:items-start">
-			<Button href={resolve('/signin')} variant="secondary">Sign in</Button>
+			<!-- The default ink focus ring is too faint on forest. -->
+			<Button href={resolve('/signin')} variant="secondary" class="focus-visible:outline-surface!"
+				>Sign in</Button
+			>
 			<p class="text-surface/90">Invite-only beta.</p>
 		</div>
 	</div>

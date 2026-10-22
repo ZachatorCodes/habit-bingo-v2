@@ -110,4 +110,10 @@ test('a long group name fits a phone', async ({ page, browser }) => {
 	await expect(other.getByRole('heading', { level: 1, name: `Join ${name}` })).toBeVisible();
 	expect(await other.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 	await other.context().close();
+
+	// The owner is already a member, so the same link shows the "Open {name}" button.
+	await page.setViewportSize({ width: 360, height: 740 });
+	await page.goto(link);
+	await expect(page.getByRole('link', { name: `Open ${name}` })).toBeVisible();
+	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 });
