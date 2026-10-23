@@ -1,7 +1,16 @@
 <script lang="ts">
 	import Icon from '#lib/components/Icon.svelte';
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import {
+		afterNavigate,
+		goto,
+		invalidateAll,
+		preloadData,
+		pushState,
+		replaceState
+	} from '$app/navigation';
+	import HabitSheet from '#lib/components/HabitSheet.svelte';
+	import Sheet from '#lib/components/Sheet.svelte';
 	import { resolve } from '$app/paths';
 	import Confetti from 'phosphor-svelte/lib/Confetti';
 	import Warning from 'phosphor-svelte/lib/Warning';
@@ -43,6 +52,50 @@
 		lastScore = score;
 		lastCardId = data.card?.id ?? null;
 	});
+
+	// The board's squares open their habit sheet over Today, as on the card (shallow routing); without
+	// JavaScript the link opens the sheet's own page.
+	let opening = false;
+	async function openSheet(event: MouseEvent, href: string) {
+		if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+			return;
+		event.preventDefault();
+		if (page.state.sheet || opening) return;
+		opening = true;
+		const result = await preloadData(href).finally(() => (opening = false));
+		if (result.type === 'loaded' && result.status === 200) {
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- href was built with resolve()
+			pushState(href, { sheet: result.data.sheet as App.PageState['sheet'] });
+		} else {
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- href was built with resolve()
+			await goto(href);
+		}
+	}
+	let closing = false;
+	function closeSheet() {
+		if (!page.state.sheet || closing) return;
+		closing = true;
+		history.back();
+	}
+	// Once the sheet is gone, show what it changed.
+	let wasOpen = false;
+	$effect(() => {
+		const open = !!page.state.sheet;
+		closing = false;
+		if (wasOpen && !open) void invalidateAll();
+		wasOpen = open;
+	});
+	afterNavigate(() => (closing = false));
+	// After a change inside the sheet: reload the sheet itself; Today refreshes when it closes.
+	async function refreshSheet(href: string) {
+		const sheet = await preloadData(
+			`${href}${href.includes('?') ? '&' : '?'}refresh=${Date.now()}`
+		);
+		if (sheet.type === 'loaded' && sheet.status === 200) {
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- href was built with resolve()
+			replaceState(href, { sheet: sheet.data.sheet as App.PageState['sheet'] });
+		}
+	}
 
 	const heading = 'mb-1 text-xs font-extrabold tracking-[0.02em]';
 	const list = 'flex flex-col divide-y divide-line';
@@ -204,7 +257,7 @@
 				<p class="mb-3 text-[26px] leading-none font-extrabold text-forest tabular-nums">
 					{data.board.score.points}<span class="ml-1 text-xs font-semibold text-muted">pts</span>
 				</p>
-				<CardBoard size={data.board.size} squares={data.board.squares} />
+				<CardBoard size={data.board.size} squares={data.board.squares} onopen={openSheet} />
 			{/if}
 			{#if data.buildCard}
 				<div class="flex flex-col items-center gap-4 py-8 text-center">
@@ -217,6 +270,12 @@
 </section>
 
 <Toast message={toast} />
+
+{#if page.state.sheet}
+	<Sheet title={page.state.sheet.name} onclose={closeSheet}>
+		<HabitSheet data={page.state.sheet} onnavigate={refreshSheet} />
+	</Sheet>
+{/if}
 
 {#if celebration && data.card}
 	<!-- A new gain remounts it, so each celebration runs from the start. -->

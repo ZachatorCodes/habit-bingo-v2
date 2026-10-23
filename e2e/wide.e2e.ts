@@ -152,3 +152,21 @@ test('card names show on 5×5 at wide widths', async ({ page, baseURL }, info) =
 	const square = (await page.locator('main [role="img"][data-state]').first().boundingBox())!;
 	expect(square.width).toBeGreaterThanOrEqual(100);
 });
+
+test('today squares open the habit panel over Today', async ({ page }, info) => {
+	test.skip(info.project.name !== 'desktop');
+	await newMemberWithHabits(page, 8);
+	await buildAndStartCard(page);
+	await page.goto('/today');
+	await waitForHydration(page);
+	const square = page
+		.getByRole('region', { name: 'Your card' })
+		.getByRole('link', { name: /^Go biking: / });
+	await square.click();
+	await expect(page.getByRole('dialog', { name: 'Go biking' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Do today' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog')).toBeHidden();
+	await expect(page).toHaveURL(/\/today$/);
+	await expect(square).toBeFocused();
+});
