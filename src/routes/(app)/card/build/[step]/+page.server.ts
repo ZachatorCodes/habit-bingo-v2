@@ -227,7 +227,7 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 							name: habit.name,
 							state: evaluateSquare(habit, preview, new Map(), start).state
 						}
-					: { icon: 'star', name: 'Free', state: 'complete' as const };
+					: { icon: 'star', name: 'Free', state: 'free' as const };
 			})
 		};
 	}

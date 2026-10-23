@@ -96,7 +96,6 @@
 			class="grid size-12 shrink-0 place-items-center rounded-full bg-earned-tile text-3xl text-forest"
 			><Icon name={data.profile.avatarIcon} /></span
 		>
-		<p class="min-w-0 font-bold break-words">@{data.profile.displayUsername}</p>
 	</div>
 </Hero>
 

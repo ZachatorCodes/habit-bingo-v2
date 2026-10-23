@@ -5,6 +5,7 @@
 	import type { SquareState } from '#lib/game/square-state.ts';
 	import type { Rewards } from '#lib/server/cards.ts';
 	import Hero from './Hero.svelte';
+	import Icon from './Icon.svelte';
 
 	type Props = {
 		monthName: string;
@@ -69,8 +70,8 @@
 						<span class="font-bold">{label}</span>
 						<span class="text-muted">{reward}</span>
 						{#if score.tiers.includes(tier)}
-							<span class="font-extrabold text-forest"
-								><span aria-hidden="true">✓</span> Reached</span
+							<span class="inline-flex items-center gap-1 font-extrabold text-forest"
+								><Icon name="check-circle" /> Reached</span
 							>
 						{/if}
 					</li>

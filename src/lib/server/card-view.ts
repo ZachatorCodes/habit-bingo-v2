@@ -42,7 +42,7 @@ export async function cardView(
 	const state = centerState(card.month, today, builtInTime);
 	const center: ViewSquare =
 		today < nextMonthOpens(card.month)
-			? { icon: 'star', name: 'Free', state, points: 0 }
+			? { icon: 'star', name: 'Free', state: 'free', points: 0 }
 			: state === 'buildNext'
 				? { icon: 'rocket', name: `Build ${next}'s card`, state, link: true, points: 0 }
 				: { icon: 'rocket', name: `${next} ready`, state, link: true, points: 0 };

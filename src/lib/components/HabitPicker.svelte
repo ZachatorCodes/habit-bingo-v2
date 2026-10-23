@@ -21,7 +21,7 @@
 	<p aria-live="polite" class="font-extrabold">{selected.length} of {need} picked</p>
 	{#each groups as group (group.category.id)}
 		<fieldset class="flex flex-col gap-2">
-			<legend class="mb-1.5 text-lg font-extrabold">
+			<legend class="mb-1.5 flex items-center gap-2 text-lg font-extrabold">
 				<Icon name={group.category.icon} />
 				{group.category.label}
 			</legend>

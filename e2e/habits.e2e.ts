@@ -16,7 +16,6 @@ test('an empty category filter says so', async ({ page }) => {
 	await newMember(page);
 	await page.goto('/me/habits?category=mind');
 	await expect(page.getByText('No habits in Mind yet.')).toBeVisible();
-	await expect(page.getByRole('link', { name: /Mind/ })).toHaveAttribute('aria-current', 'page');
 });
 
 test('Me links to the habit library', async ({ page }) => {
@@ -110,8 +109,8 @@ test('edit a habit and see the change', async ({ page }) => {
 	await page.getByRole('textbox', { name: 'Name' }).fill('Finish a book');
 	await page.getByRole('button', { name: 'Save habit' }).click();
 	await expect(page.getByRole('status')).toHaveText(/Habit saved\./);
-	await expect(page.getByText('Finish a book')).toBeVisible();
-	await expect(page.getByText('Once a month')).toBeVisible();
+	await expect(page.getByText('Finish a book').first()).toBeVisible();
+	await expect(page.getByText('Once a month').first()).toBeVisible();
 });
 
 test('archive from the edit page, then restore from the archived view', async ({ page }) => {
@@ -132,7 +131,7 @@ test('archive from the edit page, then restore from the archived view', async ({
 	await waitForHydration(page);
 	await page.getByRole('button', { name: 'Restore Meditate' }).click();
 	await page.getByRole('link', { name: 'Show active habits' }).click();
-	await expect(page.getByText('Meditate')).toBeVisible();
+	await expect(page.getByText('Meditate').first()).toBeVisible();
 });
 
 test('a limit per day can be added without JS', async ({ browser }) => {
@@ -169,7 +168,7 @@ test('the form works without JavaScript', async ({ browser }) => {
 	await page.getByRole('combobox', { name: 'Per' }).selectOption('day');
 	await page.getByRole('button', { name: 'Add habit' }).click();
 	await expect(page).toHaveURL(/\/me\/habits\?category=health&created=1$/);
-	await expect(page.getByText('8 times a day')).toBeVisible();
+	await expect(page.getByText('8 times a day').first()).toBeVisible();
 	await context.close();
 });
 
@@ -227,7 +226,9 @@ test('after onboarding, new members land on Quick start and can add a starter', 
 	await expect(page.getByText('Welcome! Start your habit library.')).toBeVisible();
 	await page.getByRole('button', { name: 'Add Meditate' }).click();
 	await expect(page.getByRole('button', { name: 'Meditate added' })).toBeDisabled();
-	await expect(page.getByRole('region', { name: /Mind/ }).getByText('Meditate')).toBeVisible();
+	await expect(
+		page.getByRole('region', { name: /Mind/ }).getByText('Meditate').first()
+	).toBeVisible();
 	await page.getByRole('link', { name: /Build your first card/ }).click();
 	await expect(page).toHaveURL(/\/card\/build\/size$/);
 });
@@ -357,4 +358,23 @@ test('a long habit name fits a phone', async ({ page }) => {
 	await page.goto('/me/habits');
 	await expect(page.getByText(name)).toBeVisible();
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+});
+
+test("quick start stays until a 3×3 card's worth", async ({ page }) => {
+	await newMember(page);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Add Meditate' }).click();
+	await expect(page.getByRole('button', { name: 'Meditate added' })).toBeDisabled();
+	await page.getByRole('button', { name: 'Add Go biking' }).click();
+	await expect(page.getByRole('button', { name: 'Go biking added' })).toBeDisabled();
+	await page.goto('/me/habits');
+	await expect(page.getByRole('heading', { name: 'Quick start' })).toBeVisible();
+});
+
+test('an empty library shows one New habit and no chips', async ({ page }) => {
+	await newMember(page);
+	await page.goto('/me/habits');
+	await expect(page.getByText('No habits yet.')).toBeVisible();
+	await expect(page.getByRole('link', { name: 'New habit' })).toHaveCount(1);
+	await expect(page.getByRole('navigation', { name: 'Filter by category' })).toHaveCount(0);
 });

@@ -38,7 +38,7 @@
 				]}>All <span class="font-semibold">{total}</span></a
 			>
 		</li>
-		{#each CATEGORIES as category (category.id)}
+		{#each CATEGORIES.filter((c) => counts[c.id] > 0 || c.id === selected) as category (category.id)}
 			<li>
 				<a
 					href={resolve('/(app)/me/habits') + query(category.id)}
