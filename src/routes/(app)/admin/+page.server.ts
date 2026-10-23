@@ -1,6 +1,6 @@
 import { error, fail } from '@sveltejs/kit';
 import { requireUser } from '#lib/server/auth/guards.ts';
-import { createInvite, listInvites } from '#lib/server/auth/invites.ts';
+import { createInvite, deleteInvite, listInvites } from '#lib/server/auth/invites.ts';
 import { createResetLink } from '#lib/server/auth/password-reset.ts';
 import { getDb } from '#lib/server/db/client.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -90,6 +90,15 @@ export const actions: Actions = {
 			new Date()
 		);
 		return { section: 'invite' as const, inviteLink: `${url.origin}/join/${code}` };
+	},
+
+	deleteInvite: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const db = requireDb();
+		const code = (await readForm(request))('code');
+		if (!(await deleteInvite(db, code, new Date())))
+			return fail(404, { deleteError: 'That invite was already gone.' });
+		return { deleted: true };
 	},
 
 	resetLink: async ({ request, locals, url }) => {
