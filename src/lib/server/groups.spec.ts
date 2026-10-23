@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createInvite } from '#lib/server/auth/invites.ts';
+import { createInvite, deleteInvite } from '#lib/server/auth/invites.ts';
 import type { Db } from '#lib/server/db/client.ts';
 import { group, groupMember, invite, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
@@ -38,7 +38,7 @@ async function makeUser(id: string = crypto.randomUUID()): Promise<string> {
 async function makeGroup(ownerId: string) {
 	const result = await createGroup(db, ownerId, { name: 'Crew', icon: 'rocket' }, now);
 	if (!result.ok) throw new Error(result.message);
-	const membership = await getMembership(db, ownerId, result.groupId);
+	const membership = await getMembership(db, ownerId, result.groupId, now);
 	return { groupId: result.groupId, code: membership!.inviteCode };
 }
 
@@ -56,7 +56,7 @@ describe('createGroup', () => {
 		const owner = await makeUser();
 		const result = await createGroup(db, owner, { name: '  Crew  ', icon: 'rocket' }, now);
 		if (!result.ok) throw new Error('expected ok');
-		const membership = await getMembership(db, owner, result.groupId);
+		const membership = await getMembership(db, owner, result.groupId, now);
 		expect(membership).toMatchObject({
 			group: { id: result.groupId, name: 'Crew', icon: 'rocket' },
 			role: 'owner'
@@ -155,7 +155,7 @@ describe('leaveGroup', () => {
 		const { groupId, code } = await makeGroup(owner);
 		await joinGroup(db, friend, code, now);
 		expect(await leaveGroup(db, friend, groupId, now)).toBe('left');
-		expect(await getMembership(db, friend, groupId)).toBeNull();
+		expect(await getMembership(db, friend, groupId, now)).toBeNull();
 		expect(await leaveGroup(db, friend, groupId, now)).toBeNull();
 	});
 
@@ -167,8 +167,8 @@ describe('leaveGroup', () => {
 		await joinGroup(db, first, code, new Date(now.getTime() + 1000));
 		await joinGroup(db, second, code, new Date(now.getTime() + 2000));
 		expect(await leaveGroup(db, owner, groupId, now)).toBe('left');
-		expect((await getMembership(db, first, groupId))?.role).toBe('owner');
-		expect((await getMembership(db, second, groupId))?.role).toBe('member');
+		expect((await getMembership(db, first, groupId, now))?.role).toBe('owner');
+		expect((await getMembership(db, second, groupId, now))?.role).toBe('member');
 	});
 
 	it('breaks a same-instant tie by lowest userId', async () => {
@@ -181,8 +181,8 @@ describe('leaveGroup', () => {
 			{ groupId, userId: low, role: 'member', joinedAt }
 		]);
 		await leaveGroup(db, owner, groupId, now);
-		expect((await getMembership(db, low, groupId))?.role).toBe('owner');
-		expect((await getMembership(db, high, groupId))?.role).toBe('member');
+		expect((await getMembership(db, low, groupId, now))?.role).toBe('owner');
+		expect((await getMembership(db, high, groupId, now))?.role).toBe('member');
 	});
 
 	it('deletes the group and kills its invite when the last member leaves', async () => {
@@ -201,7 +201,7 @@ describe('removeMember', () => {
 		const { groupId, code } = await makeGroup(owner);
 		await joinGroup(db, friend, code, now);
 		expect(await removeMember(db, owner, groupId, friend)).toBe(true);
-		expect(await getMembership(db, friend, groupId)).toBeNull();
+		expect(await getMembership(db, friend, groupId, now)).toBeNull();
 	});
 
 	it('refuses a member, the owner removing themselves, and strangers', async () => {
@@ -228,10 +228,25 @@ describe('resetInvite', () => {
 		expect(await resetInvite(db, friend, groupId, now)).toBeNull();
 		const fresh = await resetInvite(db, owner, groupId, now);
 		expect(fresh).toEqual(expect.any(String));
-		expect((await getMembership(db, owner, groupId))?.inviteCode).toBe(fresh);
+		expect((await getMembership(db, owner, groupId, now))?.inviteCode).toBe(fresh);
 		expect(await joinGroup(db, late, code, now)).toEqual({ ok: false, message: DEAD_LINK_MESSAGE });
 		expect(await groupForInvite(db, code, now)).toBe('dead');
 		expect(await joinGroup(db, late, fresh!, now)).toEqual({ ok: true, groupId });
+	});
+});
+
+describe('deleting a group link', () => {
+	it('keeps members and clears the link until reset', async () => {
+		const owner = await makeUser();
+		const friend = await makeUser();
+		const { groupId, code } = await makeGroup(owner);
+		await joinGroup(db, friend, code, now);
+		expect(await deleteInvite(db, code, now)).toBe(true);
+		expect(await listMembers(db, groupId)).toHaveLength(2);
+		expect((await getMembership(db, owner, groupId, now))?.inviteCode).toBe('');
+		expect(await groupForInvite(db, code, now)).toBe('dead');
+		const fresh = await resetInvite(db, owner, groupId, now);
+		expect((await getMembership(db, owner, groupId, now))?.inviteCode).toBe(fresh);
 	});
 });
 
@@ -239,6 +254,6 @@ describe('getMembership', () => {
 	it('is null for a stranger', async () => {
 		const owner = await makeUser();
 		const { groupId } = await makeGroup(owner);
-		expect(await getMembership(db, await makeUser(), groupId)).toBeNull();
+		expect(await getMembership(db, await makeUser(), groupId, now)).toBeNull();
 	});
 });

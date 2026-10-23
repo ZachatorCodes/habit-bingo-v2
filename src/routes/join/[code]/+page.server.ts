@@ -59,10 +59,11 @@ export const load: PageServerLoad = async ({ params, cookies, locals }) => {
 	const db = getDb();
 	if (!db) error(503, 'Sign-up is not available right now.');
 	if (locals.user) {
-		const found = await groupForInvite(db, params.code, requestNow(cookies, TEST_CLOCK));
+		const now = requestNow(cookies, TEST_CLOCK);
+		const found = await groupForInvite(db, params.code, now);
 		if (!found) redirect(303, '/today');
 		if (found === 'dead') return { status: 'groupDead' as const, message: DEAD_LINK_MESSAGE };
-		const member = Boolean(await getMembership(db, locals.user.id, found.group.id));
+		const member = Boolean(await getMembership(db, locals.user.id, found.group.id, now));
 		return { status: 'group' as const, ...found, member };
 	}
 

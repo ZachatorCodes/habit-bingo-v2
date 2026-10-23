@@ -153,7 +153,11 @@
 	<section
 		class="mx-auto mt-4 flex max-w-2xl flex-col gap-4 rounded-[24px] bg-surface px-4 py-5 shadow-sheet"
 	>
-		<CopyField label="Invite link" value={data.inviteLink} copyLabel="Copy invite link" />
+		{#if data.inviteLink}
+			<CopyField label="Invite link" value={data.inviteLink} copyLabel="Copy invite link" />
+		{:else}
+			<p class="text-muted">No invite link.</p>
+		{/if}
 		<div class="flex flex-wrap gap-3">
 			{#if data.isOwner}
 				<ConfirmAction

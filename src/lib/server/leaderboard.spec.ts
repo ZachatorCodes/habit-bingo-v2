@@ -82,7 +82,7 @@ async function setup(...others: TestUser[]) {
 	const owner = await makeUser();
 	const created = await createGroup(db, owner.id, { name: 'Crew', icon: 'rocket' }, new Date());
 	if (!created.ok) throw new Error(created.message);
-	const code = (await getMembership(db, owner.id, created.groupId))!.inviteCode;
+	const code = (await getMembership(db, owner.id, created.groupId, new Date()))!.inviteCode;
 	for (const o of others) await joinGroup(db, o.id, code, new Date());
 	return { owner, groupId: created.groupId };
 }
@@ -228,7 +228,7 @@ describe('memberCard', () => {
 		const lone = await makeUser();
 		const shared = await createGroup(db, lone.id, { name: 'Other', icon: 'plant' }, now);
 		if (!shared.ok) throw new Error(shared.message);
-		const code = (await getMembership(db, lone.id, shared.groupId))!.inviteCode;
+		const code = (await getMembership(db, lone.id, shared.groupId, now))!.inviteCode;
 		await joinGroup(db, owner.id, code, now);
 		// lone shares a group with owner, but is not in `groupId`.
 		expect(await memberCard(db, owner.id, groupId, lone.id, now)).toBeNull();

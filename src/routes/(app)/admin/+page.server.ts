@@ -62,7 +62,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		limits: INVITE_LIMITS,
 		invites: invites.map((invite) => ({
 			code: invite.code,
-			status: invite.status,
+			group: invite.group,
 			uses: invite.uses,
 			maxUses: invite.maxUses,
 			expires: formatDate.format(invite.expiresAt)

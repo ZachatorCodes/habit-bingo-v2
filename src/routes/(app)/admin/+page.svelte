@@ -3,7 +3,6 @@
 	import Button from '#lib/components/Button.svelte';
 	import CopyField from '#lib/components/CopyField.svelte';
 	import Hero from '#lib/components/Hero.svelte';
-	import Icon from '#lib/components/Icon.svelte';
 	import TextField from '#lib/components/TextField.svelte';
 	import { page } from '$app/state';
 	import Seo from '#lib/components/Seo.svelte';
@@ -26,8 +25,6 @@
 			? { link: form.resetLink, username: form.resetUsername ?? '' }
 			: undefined
 	);
-
-	const statusLabels = { valid: 'Active', expired: 'Expired', usedUp: 'Used up' } as const;
 
 	/** Moves focus to the first problem or the new link, so it is announced. */
 	const focusResult: SubmitFunction =
@@ -124,13 +121,6 @@
 					<li class="flex flex-col gap-1 rounded-row bg-page p-3">
 						<span class="font-mono font-bold break-all">{invite.code}</span>
 						<span class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-							<span class="font-bold">
-								<Icon
-									name={invite.status === 'valid' ? 'check-circle' : 'prohibit'}
-									class={invite.status === 'valid' ? 'text-forest' : 'text-muted'}
-								/>
-								{statusLabels[invite.status]}
-							</span>
 							<span>{invite.uses} of {invite.maxUses}</span>
 							<span class="text-muted">Expires {invite.expires}</span>
 						</span>

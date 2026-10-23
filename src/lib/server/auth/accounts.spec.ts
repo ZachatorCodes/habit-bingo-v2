@@ -311,7 +311,7 @@ describe('deleteAccount and groups', () => {
 	async function groupOf(ownerId: string) {
 		const made = await createGroup(db, ownerId, { name: 'Crew', icon: 'rocket' }, NOW);
 		if (!made.ok) throw new Error(made.message);
-		const code = (await getMembership(db, ownerId, made.groupId))!.inviteCode;
+		const code = (await getMembership(db, ownerId, made.groupId, NOW))!.inviteCode;
 		return { groupId: made.groupId, code };
 	}
 
