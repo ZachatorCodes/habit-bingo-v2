@@ -293,6 +293,12 @@
 		</form>
 	</section>
 
+	<section class={sheet}>
+		<form method="POST" action="/signout" class={inner}>
+			<Button type="submit" variant="secondary" class="w-full">Sign out</Button>
+		</form>
+	</section>
+
 	<section aria-labelledby="delete-heading" class={sheet}>
 		<form method="POST" action="?/deleteAccount" class={inner} use:enhance={focusResult(true)}>
 			<h2 id="delete-heading" class={heading}>Danger zone</h2>

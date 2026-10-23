@@ -6,7 +6,9 @@
 </script>
 
 <!-- Bottom padding leaves room for the following sheet to overlap by 18px (-mt-[18px] on the sheet). -->
-<header class="relative overflow-hidden bg-forest px-5 pt-8 pb-12 text-surface">
+<header
+	class="relative overflow-hidden bg-forest px-5 pt-[calc(2rem+var(--safe-top))] pb-12 text-surface"
+>
 	<svg
 		aria-hidden="true"
 		viewBox="0 0 80 80"

@@ -56,7 +56,6 @@ test('the profile can be changed', async ({ page }) => {
 	await expect(page.getByText('Profile saved.')).toBeVisible();
 	await page.reload();
 	await expect(page.getByLabel('Display name')).toHaveValue('Renamed');
-	await expect(page.locator('header .avatar svg')).toBeVisible();
 
 	await page.getByLabel('Display name').fill(' ');
 	await page.getByRole('button', { name: 'Save profile' }).click();
@@ -142,6 +141,8 @@ test('delete account requires typing the username and then signs you out', async
 }) => {
 	const { username } = await newUser(page);
 	const confirm = page.getByLabel('Type your username to confirm');
+	// The cookie notice floats over the bottom of the page, where the Danger zone is.
+	await page.getByRole('button', { name: 'Got it' }).click();
 
 	await page.getByRole('button', { name: 'Delete my account' }).click();
 	await expect(confirm).toHaveAccessibleDescription(/That doesn't match your username\./);

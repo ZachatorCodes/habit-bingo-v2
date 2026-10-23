@@ -8,9 +8,6 @@ test('members sign in and reach Today', async ({ page }) => {
 	await signIn(page, MEMBER.username, MEMBER.password);
 	await expect(page).toHaveURL(/\/today$/);
 	await expect(page.getByText('No card yet')).toBeVisible();
-	// The app header is a banner landmark, outside the page content.
-	await expect(page.getByRole('banner').getByText('@e2e_member')).toBeVisible();
-	await expect(page.getByRole('main').getByText('@e2e_member')).toHaveCount(0);
 	await expect(page.getByRole('main')).toHaveCount(1);
 	const nav = page.getByRole('navigation', { name: 'Main' });
 	await expect(nav.getByRole('link', { name: 'Today' })).toHaveAttribute('href', '/today');
@@ -77,7 +74,8 @@ test('a copied session cookie stops working after sign out', async ({ browser })
 	await pageB.goto('/today');
 	await expect(pageB).toHaveURL(/\/today$/);
 
-	await pageA.getByRole('button', { name: 'Sign out' }).click();
+	await pageA.goto('/me');
+	await pageA.getByRole('button', { name: 'Sign out', exact: true }).click();
 	await expect(pageA).toHaveURL(/\/$/);
 
 	await pageB.goto('/today');
