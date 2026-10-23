@@ -77,23 +77,24 @@
 		background: var(--color-surface);
 		color: var(--color-ink);
 	}
-	/* --tab-bar also lifts the cookie notice above the tabs, and keeps scrolled-to controls clear of them. */
-	:global(html) {
+	/* --tab-bar also lifts the cookie notice above the tabs, and keeps scrolled-to controls clear of them.
+	   Scoped with :has() so the values never outlive this layout after client-side navigation. */
+	:global(html:has(nav[aria-label='Main'])) {
 		--tab-bar: calc(76px + var(--safe-bottom));
 		--sidebar: 0px;
 		scroll-padding-bottom: var(--tab-bar);
 	}
-	:global(body) {
+	:global(html:has(nav[aria-label='Main']) body) {
 		padding-bottom: var(--tab-bar);
 	}
 	@media (min-width: 768px) {
-		:global(html) {
+		:global(html:has(nav[aria-label='Main'])) {
 			--tab-bar: 0px;
 			--sidebar: 72px;
 		}
 	}
 	@media (min-width: 1024px) {
-		:global(html) {
+		:global(html:has(nav[aria-label='Main'])) {
 			--sidebar: 220px;
 		}
 	}

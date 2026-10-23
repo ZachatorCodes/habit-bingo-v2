@@ -52,7 +52,7 @@
 	aria-labelledby={titleId}
 	oncancel={cancel}
 	onclick={backdrop}
-	class="w-full max-w-lg overflow-visible bg-transparent p-0 text-ink backdrop:bg-ink/40 max-sm:mt-auto max-sm:mb-0 max-sm:max-w-none sm:m-auto md:fixed md:inset-y-0 md:right-0 md:left-auto md:m-0 md:h-dvh md:max-h-none md:w-[min(420px,calc(100vw-var(--sidebar)))] md:max-w-none md:backdrop:bg-ink/20 motion-safe:md:open:animate-[panel-in_220ms_ease-out]"
+	class="w-full max-w-lg overflow-visible bg-transparent p-0 text-ink backdrop:bg-ink/40 max-sm:mt-auto max-sm:mb-0 max-sm:max-w-none sm:m-auto md:fixed md:inset-y-0 md:right-0 md:left-auto md:m-0 md:h-dvh md:max-h-none md:w-[min(420px,calc(100vw-var(--sidebar,0px)))] md:max-w-none md:backdrop:bg-ink/20 motion-safe:md:open:animate-[panel-in_220ms_ease-out]"
 >
 	<div
 		style="padding-bottom: calc(1.25rem + var(--safe-bottom, 0px))"

@@ -273,6 +273,14 @@ test('sign-in is a centred card', async ({ page }, info) => {
 	expect(Math.abs(box.x + box.width / 2 - page.viewportSize()!.width / 2)).toBeLessThanOrEqual(4);
 });
 
+test('the cookie notice is centred on pages without the sidebar', async ({ page }, info) => {
+	test.skip(info.project.name === 'phone');
+	await page.goto('/signin');
+	const notice = page.getByRole('region', { name: 'Cookie notice' });
+	const box = (await notice.boundingBox())!;
+	expect(Math.abs(box.x + box.width / 2 - page.viewportSize()!.width / 2)).toBeLessThanOrEqual(4);
+});
+
 test('landing band pads for the notch', async ({ page }, info) => {
 	test.skip(info.project.name === 'phone');
 	await page.goto('/');
