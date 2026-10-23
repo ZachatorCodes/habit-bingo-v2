@@ -66,7 +66,7 @@ test('no horizontal scroll at wide widths', async ({ page }, info) => {
 	await newMember(page);
 	for (const width of [768, 1024, 1440]) {
 		await page.setViewportSize({ width, height: 900 });
-		for (const route of ['/today', '/card']) {
+		for (const route of ['/today', '/card', '/card/build/habits', '/me/habits']) {
 			await page.goto(route);
 			await waitForHydration(page);
 			await expectNoHorizontalScroll(page);
@@ -169,4 +169,44 @@ test('today squares open the habit panel over Today', async ({ page }, info) => 
 	await expect(page.getByRole('dialog')).toBeHidden();
 	await expect(page).toHaveURL(/\/today$/);
 	await expect(square).toBeFocused();
+});
+
+test('builder previews picks on the habits step', async ({ page }, info) => {
+	test.skip(info.project.name !== 'desktop');
+	await newMemberWithHabits(page, 8);
+	await page.goto('/card/build');
+	await waitForHydration(page);
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: /3×3/ }) })
+		.click();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+	await waitForHydration(page);
+	const labels = page.locator('label').filter({ has: page.getByRole('checkbox') });
+	const names = ['Drink water', 'Go biking'];
+	for (const name of names) await labels.filter({ hasText: name }).click();
+	const preview = page.getByRole('region', { name: 'Preview' });
+	await expect(preview).toBeVisible();
+	for (const name of names)
+		await expect(preview.getByRole('img', { name: new RegExp(`^${name}`) })).toBeVisible();
+	await expect(preview.getByRole('img', { name: /^Empty/ })).toHaveCount(6);
+});
+
+test('library filter is a side list', async ({ page }, info) => {
+	test.skip(info.project.name !== 'desktop');
+	await newMemberWithHabits(page, 8);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto('/me/habits');
+	await waitForHydration(page);
+	const links = page.getByRole('navigation', { name: 'Filter by category' }).getByRole('link');
+	const first = (await links.nth(0).boundingBox())!;
+	const second = (await links.nth(1).boundingBox())!;
+	expect(second.y).toBeGreaterThan(first.y);
+	const row = (await page
+		.locator('main ul li')
+		.filter({ hasText: 'Drink water' })
+		.first()
+		.boundingBox())!;
+	expect(first.x + first.width).toBeLessThanOrEqual(row.x + 1);
 });

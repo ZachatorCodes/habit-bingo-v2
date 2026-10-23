@@ -58,7 +58,7 @@
 />
 
 <section class="relative -mt-[18px] rounded-[24px] bg-surface shadow-sheet">
-	<div class="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-5">
+	<div class="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-5 lg:max-w-5xl">
 		{#if data.created}
 			<Notice tone="success">Habit added.</Notice>
 		{:else if data.saved}
@@ -77,41 +77,47 @@
 			</div>
 		{/if}
 
-		{#if data.activeCount > 0 || data.archived}
-			<CategoryFilter selected={data.category} counts={data.counts} archived={data.archived} />
-		{/if}
+		<div class="flex flex-col gap-5 lg:grid lg:grid-cols-[220px_1fr] lg:items-start lg:gap-6">
+			{#if data.activeCount > 0 || data.archived}
+				<CategoryFilter selected={data.category} counts={data.counts} archived={data.archived} />
+			{/if}
 
-		{#if groups.length === 0}
-			<div class="flex flex-col items-start gap-3 rounded-row border border-dashed border-line p-5">
-				{#if selectedLabel}
-					<p class="font-bold">No habits in {selectedLabel} yet.</p>
-				{:else if data.archived}
-					<p class="font-bold">Nothing archived.</p>
+			<div class="flex flex-col gap-5 lg:col-start-2">
+				{#if groups.length === 0}
+					<div
+						class="flex flex-col items-start gap-3 rounded-row border border-dashed border-line p-5"
+					>
+						{#if selectedLabel}
+							<p class="font-bold">No habits in {selectedLabel} yet.</p>
+						{:else if data.archived}
+							<p class="font-bold">Nothing archived.</p>
+						{:else}
+							<p class="font-bold">No habits yet.</p>
+						{/if}
+						{#if !data.archived}
+							<Button href="/me/habits/new" variant="secondary">New habit</Button>
+						{/if}
+					</div>
 				{:else}
-					<p class="font-bold">No habits yet.</p>
-				{/if}
-				{#if !data.archived}
-					<Button href="/me/habits/new" variant="secondary">New habit</Button>
+					{#each groups as group (group.category.id)}
+						<section aria-labelledby={`cat-${group.category.id}`} class="flex flex-col gap-2">
+							<h2
+								id={`cat-${group.category.id}`}
+								class="flex items-center gap-2 text-lg font-extrabold"
+							>
+								<Icon name={group.category.icon} class="text-forest" />
+								{group.category.label}
+							</h2>
+							<ul class="flex flex-col gap-2">
+								{#each group.habits as habit (habit.id)}
+									<HabitRow {habit} archived={data.archived} {keep} />
+								{/each}
+							</ul>
+						</section>
+					{/each}
 				{/if}
 			</div>
-		{:else}
-			{#each groups as group (group.category.id)}
-				<section aria-labelledby={`cat-${group.category.id}`} class="flex flex-col gap-2">
-					<h2
-						id={`cat-${group.category.id}`}
-						class="flex items-center gap-2 text-lg font-extrabold"
-					>
-						<Icon name={group.category.icon} class="text-forest" />
-						{group.category.label}
-					</h2>
-					<ul class="flex flex-col gap-2">
-						{#each group.habits as habit (habit.id)}
-							<HabitRow {habit} archived={data.archived} {keep} />
-						{/each}
-					</ul>
-				</section>
-			{/each}
-		{/if}
+		</div>
 
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			{#if groups.length > 0 || data.archived}

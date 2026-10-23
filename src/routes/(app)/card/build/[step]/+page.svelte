@@ -12,6 +12,7 @@
 	import SizePicker from '#lib/components/SizePicker.svelte';
 	import { page } from '$app/state';
 	import Seo from '#lib/components/Seo.svelte';
+	import type { SquareState } from '#lib/game/square-state.ts';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -25,6 +26,25 @@
 			data.draft.habitIds.filter((id) => data.habits.some((h) => h.id === id))
 	);
 	let creating = $state(false);
+
+	/** The wide preview: picks in pick order, then placeholders, with the free centre in place. */
+	const preview = $derived.by(() => {
+		const size = data.draft.size;
+		if (!size || data.need === null) return null;
+		const chosen = picked.flatMap((id) => data.habits.find((h) => h.id === id) ?? []);
+		const squares = Array.from<unknown, { icon: string; name: string; state: SquareState }>(
+			{ length: data.need },
+			(_, i) => {
+				const habit = chosen[i];
+				return habit
+					? { icon: habit.icon, name: habit.name, state: 'empty' as const }
+					: { icon: 'star', name: 'Empty', state: 'empty' as const };
+			}
+		);
+		const centre = Math.floor((size * size) / 2);
+		squares.splice(centre, 0, { icon: 'star', name: 'Free', state: 'free' });
+		return { size, squares };
+	});
 
 	const targetForm = $derived(form && 'targetValues' in form ? form : null);
 	const rewardForm = $derived(form && 'rewardValues' in form ? form : null);
@@ -91,7 +111,12 @@
 </Hero>
 
 <section class="relative -mt-[18px] flex flex-col rounded-[24px] bg-surface shadow-sheet">
-	<div class="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6">
+	<div
+		class={[
+			'mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6',
+			data.step === 'habits' ? 'lg:max-w-5xl' : 'md:max-w-[640px]'
+		]}
+	>
 		{#if message}
 			<p id="step-error" role="alert" class="rounded-xl bg-risk-tile px-4 py-3 font-bold text-ink">
 				<Icon name="warning" />
@@ -109,61 +134,71 @@
 				<div><Button type="submit">Continue</Button></div>
 			</form>
 		{:else if data.step === 'habits'}
-			<div>
-				<h2 class="text-2xl font-extrabold">Pick your habits</h2>
-				<p class="mt-1 text-muted">
-					Choose {data.need} for {data.monthName}. You can change their targets next.
-				</p>
-			</div>
+			<div class="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-8">
+				<div class="flex flex-col gap-6">
+					<div>
+						<h2 class="text-2xl font-extrabold">Pick your habits</h2>
+						<p class="mt-1 text-muted">
+							Choose {data.need} for {data.monthName}. You can change their targets next.
+						</p>
+					</div>
 
-			<details bind:open={creating} class="rounded-2xl border border-line bg-surface p-4">
-				<summary
-					class="group flex min-h-11 cursor-pointer list-none items-center gap-1 rounded-xl font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink [&::-webkit-details-marker]:hidden"
-					><Icon
-						name="caret-right"
-						class="group-open:rotate-90 motion-safe:transition-transform"
-					/>New habit</summary
-				>
-				<!-- novalidate: the server validates every field, as on the habit library's own form. -->
-				<form
-					method="POST"
-					action={`?/createHabit${data.keep}`}
-					novalidate
-					class="mt-4"
-					use:enhance={({ formElement }) => trackCreated(formElement)}
-				>
-					{#key createForm?.values ?? data.values}
-						<HabitForm
-							values={createForm?.values ?? data.values}
-							errors={createForm?.errors ?? {}}
-							submitLabel="Add habit"
-						/>
-					{/key}
-				</form>
-			</details>
+					<details bind:open={creating} class="rounded-2xl border border-line bg-surface p-4">
+						<summary
+							class="group flex min-h-11 cursor-pointer list-none items-center gap-1 rounded-xl font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink [&::-webkit-details-marker]:hidden"
+							><Icon
+								name="caret-right"
+								class="group-open:rotate-90 motion-safe:transition-transform"
+							/>New habit</summary
+						>
+						<!-- novalidate: the server validates every field, as on the habit library's own form. -->
+						<form
+							method="POST"
+							action={`?/createHabit${data.keep}`}
+							novalidate
+							class="mt-4"
+							use:enhance={({ formElement }) => trackCreated(formElement)}
+						>
+							{#key createForm?.values ?? data.values}
+								<HabitForm
+									values={createForm?.values ?? data.values}
+									errors={createForm?.errors ?? {}}
+									submitLabel="Add habit"
+								/>
+							{/key}
+						</form>
+					</details>
 
-			<form
-				method="POST"
-				action={`?/habits${data.keep}`}
-				use:enhance={() =>
-					async ({ update }) =>
-						update({ reset: false })}
-				class="flex flex-col gap-6"
-			>
-				{#if data.habits.length === 0}
-					<p class="rounded-2xl border border-dashed border-line bg-surface p-4 font-bold">
-						You have no habits yet. Add one above.
-					</p>
-				{:else if data.need !== null}
-					<HabitPicker
-						habits={data.habits}
-						bind:selected={picked}
-						need={data.need}
-						errorId={message ? 'step-error' : undefined}
-					/>
+					<form
+						method="POST"
+						action={`?/habits${data.keep}`}
+						use:enhance={() =>
+							async ({ update }) =>
+								update({ reset: false })}
+						class="flex flex-col gap-6"
+					>
+						{#if data.habits.length === 0}
+							<p class="rounded-2xl border border-dashed border-line bg-surface p-4 font-bold">
+								You have no habits yet. Add one above.
+							</p>
+						{:else if data.need !== null}
+							<HabitPicker
+								habits={data.habits}
+								bind:selected={picked}
+								need={data.need}
+								errorId={message ? 'step-error' : undefined}
+							/>
+						{/if}
+						<div><Button type="submit">Continue</Button></div>
+					</form>
+				</div>
+				<!-- The card taking shape beside the picker on wide screens. -->
+				{#if preview}
+					<section aria-label="Preview" class="hidden lg:sticky lg:top-4 lg:block">
+						<CardBoard size={preview.size} squares={preview.squares} />
+					</section>
 				{/if}
-				<div><Button type="submit">Continue</Button></div>
-			</form>
+			</div>
 		{:else if data.step === 'targets' && data.targets}
 			<!-- novalidate: the server explains every out-of-range number on its own row. -->
 			<form
