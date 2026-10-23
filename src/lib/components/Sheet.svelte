@@ -26,6 +26,14 @@
 		};
 	});
 
+	// Lock the page behind the sheet so a scroll gesture doesn't move it.
+	$effect(() => {
+		document.documentElement.style.overflow = 'hidden';
+		return () => {
+			document.documentElement.style.overflow = '';
+		};
+	});
+
 	function cancel(event: Event) {
 		// Escape: let the owner remove the sheet rather than closing the dialog underneath it.
 		event.preventDefault();

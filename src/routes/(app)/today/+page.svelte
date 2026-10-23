@@ -67,7 +67,7 @@
 		<div class="mt-2 text-right">
 			<a
 				href={resolve('/(app)/card')}
-				class="text-[13px] font-semibold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-surface"
+				class="inline-flex min-h-11 items-center text-[13px] font-semibold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-surface"
 				>See your {data.monthName} card</a
 			>
 		</div>
@@ -165,7 +165,13 @@
 				{/if}
 				{#if sections.done.length > 0}
 					<details aria-label="Done" class="mt-2">
-						<summary class="cursor-pointer {heading}">Done ({sections.done.length})</summary>
+						<summary
+							class="group flex min-h-11 cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden {heading}"
+							><Icon
+								name="caret-right"
+								class="group-open:rotate-90 motion-safe:transition-transform"
+							/>Done ({sections.done.length})</summary
+						>
 						<ul class={list}>
 							{#each sections.done as row (row.squareId)}
 								<TodayRow {row} {day} keep={data.keep} onerror={showError} />

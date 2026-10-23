@@ -26,7 +26,7 @@
 	<div class="relative">
 		<h1 class="text-[28px] leading-tight font-extrabold break-words">{title}</h1>
 		{#if summary}
-			<p class="mt-1 text-[13px] font-semibold">{summary}</p>
+			<p class="mt-1 text-[15px] font-semibold">{summary}</p>
 		{/if}
 		{@render children?.()}
 	</div>

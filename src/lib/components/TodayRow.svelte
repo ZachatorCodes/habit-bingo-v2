@@ -43,6 +43,8 @@
 
 	/** What the row shows while a check-in is on its way; null shows the server's row. */
 	let pending = $state<TodayRowView | null>(null);
+	/** True from submit until the server answers; stops a double tap logging twice. */
+	let busy = $state(false);
 	const view = $derived(pending ?? row);
 	const scale = new Spring(1, { stiffness: 0.3, damping: 0.4 });
 	// The row's main button: + normally, the check once the day's target is met.
@@ -53,7 +55,12 @@
 	// `next` is read when the form is submitted: enhance keeps the callback it was mounted with, so
 	// reading the row then (not at mount) keeps the view in step with the latest data.
 	function optimistic(next: () => TodayRowView | null, celebrate: boolean): SubmitFunction {
-		return ({ submitter }) => {
+		return ({ submitter, cancel }) => {
+			// Only + is guarded: an undo right after a log is legitimate.
+			if (celebrate) {
+				if (busy) return cancel();
+				busy = true;
+			}
 			// A button that goes away (− at zero, + once met, the check on undo) hands focus to the row's main button.
 			const hadFocus = submitter === document.activeElement;
 			const view = next();
@@ -78,6 +85,7 @@
 			return async ({ result, update }) => {
 				if (result.type === 'failure' || result.type === 'error') {
 					pending = null;
+					busy = false;
 					const message =
 						result.type === 'failure' && typeof result.data?.message === 'string'
 							? result.data.message
@@ -91,6 +99,7 @@
 				if (result.type === 'redirect') await invalidateAll();
 				else await update();
 				pending = null;
+				busy = false;
 				if (hadFocus && !submitter?.isConnected) {
 					await tick();
 					li?.querySelector<HTMLElement>('[data-primary]')?.focus();
@@ -157,7 +166,9 @@
 				type="submit"
 				data-primary
 				aria-label="Log {row.name}"
-				class={[button, 'bg-terracotta text-white']}
+				aria-busy={busy}
+				disabled={busy}
+				class={[button, 'bg-terracotta text-white', busy && 'opacity-70 motion-safe:scale-95']}
 				><Plus weight="bold" aria-hidden="true" /></button
 			>
 		</form>

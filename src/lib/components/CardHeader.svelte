@@ -50,7 +50,7 @@
 		<div class="flex items-end justify-between gap-4">
 			<p class="text-[26px] leading-none font-extrabold text-forest tabular-nums">
 				<span aria-hidden="true"
-					>{score.points}<span class="ml-1 text-[11px] font-semibold text-muted">pts</span></span
+					>{score.points}<span class="ml-1 text-xs font-semibold text-muted">pts</span></span
 				><span class="sr-only">{score.points} {score.points === 1 ? 'point' : 'points'}</span>
 			</p>
 			<div class="text-right text-[13px] font-semibold">

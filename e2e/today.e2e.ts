@@ -45,6 +45,14 @@ test('a new card fills the Today sections', async ({ page }) => {
 	await expect(page.getByRole('link', { name: 'See your October card' })).toBeVisible();
 });
 
+test('a double tap on + logs once', async ({ page }) => {
+	await onToday(page);
+	await page.getByRole('button', { name: 'Log Drink water' }).dblclick();
+	const row = section(page, 'Do today').filter({ hasText: 'Drink water' });
+	await expect(row).toContainText('1/8 today');
+	await expect(row).not.toContainText('2/8 today');
+});
+
 test('logging moves a day habit to Done and back with undo', async ({ page }) => {
 	await onToday(page);
 	await page.getByRole('button', { name: 'Log Scoop the litter box' }).click();

@@ -35,4 +35,12 @@ describe('Sheet', () => {
 		expect(document.activeElement).toBe(opener);
 		opener.remove();
 	});
+
+	it('locks page scroll while open', async () => {
+		const screen = render(Sheet, { title: 'Go biking', onclose: () => {}, children: body });
+		await expect.element(page.getByRole('dialog')).toBeVisible();
+		expect(getComputedStyle(document.documentElement).overflow).toBe('hidden');
+		screen.unmount();
+		expect(getComputedStyle(document.documentElement).overflow).toBe('visible');
+	});
 });

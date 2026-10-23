@@ -9,8 +9,14 @@
 			><Icon name="target" /> Habit Bingo</span
 		>
 		<div class="flex gap-5">
-			<a class="underline-offset-4 hover:underline" href={resolve('/privacy')}>Privacy</a>
-			<a class="underline-offset-4 hover:underline" href={resolve('/terms')}>Terms</a>
+			<a
+				class="inline-flex min-h-11 items-center underline-offset-4 hover:underline"
+				href={resolve('/privacy')}>Privacy</a
+			>
+			<a
+				class="inline-flex min-h-11 items-center underline-offset-4 hover:underline"
+				href={resolve('/terms')}>Terms</a
+			>
 		</div>
 	</nav>
 </footer>

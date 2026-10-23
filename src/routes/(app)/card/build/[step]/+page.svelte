@@ -118,8 +118,11 @@
 
 			<details bind:open={creating} class="rounded-2xl border border-line bg-surface p-4">
 				<summary
-					class="cursor-pointer rounded-xl font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
-					>New habit</summary
+					class="group flex min-h-11 cursor-pointer list-none items-center gap-1 rounded-xl font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink [&::-webkit-details-marker]:hidden"
+					><Icon
+						name="caret-right"
+						class="group-open:rotate-90 motion-safe:transition-transform"
+					/>New habit</summary
 				>
 				<!-- novalidate: the server validates every field, as on the habit library's own form. -->
 				<form
