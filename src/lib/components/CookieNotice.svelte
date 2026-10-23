@@ -31,7 +31,7 @@
 		role="region"
 		aria-label="Cookie notice"
 		transition:fly={flyOrFade(24, prefersReducedMotion.current)}
-		class="fixed inset-x-4 bottom-[calc(1rem+var(--tab-bar,0px))] z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-line bg-surface p-4 text-sm shadow-sheet"
+		class="fixed inset-x-4 bottom-[calc(1rem+var(--tab-bar,0px))] z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-line bg-surface p-4 text-sm shadow-sheet md:left-[calc(var(--sidebar)+1rem)] md:mx-0"
 	>
 		<p class="flex-1">We only use essential cookies to keep you signed in.</p>
 		<button

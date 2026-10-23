@@ -7,6 +7,14 @@ export default defineConfig({
 	use: { baseURL: 'http://localhost:4173' },
 	projects: [
 		{ name: 'phone', use: { ...devices['Pixel 7'] } },
+		{
+			name: 'tablet',
+			use: {
+				...devices['iPad (gen 7)'],
+				defaultBrowserType: 'chromium', // WebKit is not installed everywhere; width and touch are what matter
+				viewport: { width: 820, height: 1180 }
+			}
+		},
 		{ name: 'desktop', use: { ...devices['Desktop Chrome'] } }
 	]
 });

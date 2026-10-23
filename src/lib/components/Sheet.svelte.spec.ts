@@ -50,4 +50,18 @@ describe('Sheet', () => {
 		screen.unmount();
 		expect(getComputedStyle(document.documentElement).overflow).toBe('visible');
 	});
+
+	it('does not lock page scroll at md and up', async () => {
+		const original = window.matchMedia;
+		window.matchMedia = ((query: string) =>
+			({
+				matches: query.includes('min-width: 768px'),
+				media: query
+			}) as MediaQueryList) as typeof window.matchMedia;
+		const screen = render(Sheet, { title: 'Go biking', onclose: () => {}, children: body });
+		await expect.element(page.getByRole('dialog')).toBeVisible();
+		expect(document.documentElement.style.overflow).not.toBe('hidden');
+		screen.unmount();
+		window.matchMedia = original;
+	});
 });
