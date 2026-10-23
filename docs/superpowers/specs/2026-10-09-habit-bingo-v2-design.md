@@ -40,6 +40,7 @@ before it is built.
 | M6   | Heads up            | Nudges on Today (§4.8)                                                                                                                                                              |
 | M7   | Month lifecycle     | Closing window, finalization, recap, history                                                                                                                                        |
 | M8   | Groups              | Groups, invite links (also the signup path), leaderboards, viewing members' cards                                                                                                   |
+| M8.1 | Invite management   | Admins see and delete invite codes, including group links (§4.12)                                                                                                                   |
 | M9   | Feed                | Highlights feed with emoji reactions                                                                                                                                                |
 | M10  | Calendar            | Optional Google Calendar connection; month-milestone events on a dedicated calendar (§4.13)                                                                                         |
 
@@ -355,7 +356,8 @@ linking to where you act:
   invite link." Creating takes a name (1–40 characters) and an emoji; the creator is the owner.
 - **Group page** (`/groups/{id}`): **Leaderboard** (This month / All-time, §3.9) and **Members**
   (the Feed tab arrives in M9). The invite link sits in a copy field; the owner can **Reset link**
-  (confirm), which retires the old link. Members show an "Owner" tag; the owner can **Remove** others
+  (confirm), which retires the old link. If an admin deleted the link (§4.12), the copy field says
+  "No invite link." and Reset link makes a new one. Members show an "Owner" tag; the owner can **Remove** others
   (confirm). **Leave group** (confirm) says what happens: ownership passes to the earliest-joined
   member, or the group is deleted when its last member leaves.
 - **A member's card** (`/groups/{id}/members/{userId}`): their current card, read-only (no habit
@@ -414,6 +416,15 @@ Group rank is not part of the recap: with several groups it is ambiguous, and th
 Create invites (expiry, max uses) and generate one-time password-reset links for a user. The admin
 copies the link and sends it to the person however they like. The first admin account is created by
 a seed script.
+
+**Invite codes (M8.1):** the Admin page lists every live invite code: admin invites (uses / max
+uses, expiry) and group links (labelled with the group's icon and name). Each has a **Delete**
+button (confirm). Deleting retires the code at once, the same way Reset link retires a group's old
+link: it leaves the list, opening it shows the expired-invite page ("This invite has expired." or,
+for a group link, "This invite link no longer works."), and nobody new can sign up or join through
+it. It does not touch accounts or group memberships already made with it. A group whose link is
+deleted keeps its members and shows "No invite link." until its owner presses **Reset link**.
+Works without JavaScript like every other form.
 
 ### 4.13 Google Calendar (M10)
 
