@@ -1,6 +1,7 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import {
 	buildAndStartCard,
+	signIn,
 	expectNoHorizontalScroll,
 	newMember,
 	newMemberWithHabits,
@@ -64,14 +65,62 @@ test('habit panel holds and returns focus', async ({ page }, info) => {
 test('no horizontal scroll at wide widths', async ({ page }, info) => {
 	test.skip(info.project.name !== 'desktop');
 	await newMember(page);
+	const groupPath = await createGroup(page);
 	for (const width of [768, 1024, 1440]) {
 		await page.setViewportSize({ width, height: 900 });
-		for (const route of ['/today', '/card', '/card/build/habits', '/me/habits']) {
+		for (const route of [
+			'/today',
+			'/card',
+			'/card/build/habits',
+			'/me/habits',
+			'/groups',
+			groupPath,
+			'/me',
+			'/me/history'
+		]) {
 			await page.goto(route);
 			await waitForHydration(page);
 			await expectNoHorizontalScroll(page);
 		}
 	}
+	await page.context().clearCookies();
+	await signIn(page, 'e2e_admin', 'e2e admin password 1');
+	for (const width of [768, 1024, 1440]) {
+		await page.setViewportSize({ width, height: 900 });
+		await page.goto('/admin');
+		await waitForHydration(page);
+		await expectNoHorizontalScroll(page);
+	}
+});
+
+/** Creates a group through the form and returns its page path. */
+async function createGroup(page: Page): Promise<string> {
+	await page.goto('/groups/new');
+	await waitForHydration(page);
+	await page.getByRole('textbox', { name: 'Name' }).fill('Wide group');
+	await page.getByRole('button', { name: 'Create group' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: /Wide group/ })).toBeVisible();
+	return new URL(page.url()).pathname;
+}
+
+test('group page shows leaderboard and members side by side', async ({ page }, info) => {
+	test.skip(info.project.name !== 'desktop');
+	await newMember(page);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto(await createGroup(page));
+	const board = (await page.getByRole('region', { name: 'Leaderboard' }).boundingBox())!;
+	const members = (await page.getByRole('region', { name: 'Members' }).boundingBox())!;
+	expect(members.x).toBeGreaterThan(board.x + board.width - 1);
+	await expect(page.getByRole('navigation', { name: 'Group' })).toBeHidden();
+});
+
+test('members tab link works at every width', async ({ page }, info) => {
+	await newMember(page);
+	const path = await createGroup(page);
+	await page.goto(`${path}?tab=members`);
+	await expect(page.getByRole('region', { name: 'Members' })).toBeVisible();
+	if (info.project.name === 'phone')
+		await expect(page.getByRole('region', { name: 'Leaderboard' })).toBeHidden();
 });
 
 test('today shows the board beside the list', async ({ page }, info) => {

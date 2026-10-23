@@ -28,6 +28,8 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 	const tab = url.searchParams.get('tab') === 'members' ? 'members' : 'leaderboard';
 	const board = url.searchParams.get('board') === 'all' ? 'all' : 'month';
 	const members = await listMembers(db, params.id);
+	const leaderboard = await groupBoard(db, user.id, params.id, board, now);
+	if (!leaderboard) error(404, 'Not found');
 	const heir = members.find((m) => m.userId !== user.id);
 	return {
 		group: membership.group,
@@ -43,7 +45,8 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 		inviteLink: membership.inviteCode ? `${url.origin}/join/${membership.inviteCode}` : null,
 		// Matches leaveGroup: the first other member by join order inherits.
 		nextOwner: heir ? (heir.displayUsername ?? 'Someone') : null,
-		leaderboard: tab === 'leaderboard' ? await groupBoard(db, user.id, params.id, board, now) : null
+		// Always loaded: the group page shows both panes side by side at lg.
+		leaderboard
 	};
 };
 

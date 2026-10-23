@@ -52,10 +52,14 @@ test('a group gets a member through its link', async ({ page, browser }) => {
 		'page'
 	);
 	await expect(pageB.getByRole('link', { name: `@${b.username} (you)` })).toBeVisible();
-	await expect(pageB.getByText(`@${a.username}`)).toBeVisible();
+	await expect(
+		pageB.getByRole('region', { name: 'Leaderboard' }).getByText(`@${a.username}`)
+	).toBeVisible();
 
 	await page.goto(groupPath);
-	await expect(page.getByText(`@${b.username}`)).toBeVisible();
+	await expect(
+		page.getByRole('region', { name: 'Leaderboard' }).getByText(`@${b.username}`)
+	).toBeVisible();
 	await expect(page.getByRole('link', { name: `@${a.username} (you)` })).toBeVisible();
 	await pageB.context().close();
 });
@@ -133,9 +137,12 @@ test('the owner leaves and the other member becomes owner', async ({ page, brows
 	await expect(page).toHaveURL(/\/groups$/);
 
 	await pageB.goto(`${groupPath}?tab=members`);
-	await expect(pageB.getByRole('listitem').filter({ hasText: `@${b.username}` })).toContainText(
-		'Owner'
-	);
+	await expect(
+		pageB
+			.getByRole('region', { name: 'Members' })
+			.getByRole('listitem')
+			.filter({ hasText: `@${b.username}` })
+	).toContainText('Owner');
 	await pageB.context().close();
 });
 
@@ -163,10 +170,11 @@ test('tabs mark the current board', async ({ page }) => {
 	await newMember(page);
 	const { groupPath } = await createClimbers(page);
 	await page.goto(groupPath);
+	// The tab bar is phone-and-tablet only; both panes show side by side at lg.
 	const tab = page.getByRole('link', { name: 'Leaderboard' });
 	const month = page.getByRole('link', { name: 'This month' });
 	const all = page.getByRole('link', { name: 'All-time' });
-	await expect(tab).toHaveAttribute('aria-current', 'page');
+	if (await tab.isVisible()) await expect(tab).toHaveAttribute('aria-current', 'page');
 	await expect(month).toHaveAttribute('aria-current', 'page');
 	await all.click();
 	await expect(all).toHaveAttribute('aria-current', 'page');
