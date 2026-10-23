@@ -76,7 +76,7 @@ describe('CardHeader', () => {
 		render(CardHeader, props({ size: 5, score: score({ tiers: ['bingo'] }) }));
 		const tiers = page.getByRole('list', { name: 'Rewards' }).getByRole('listitem');
 		expect(tiers.elements().map((li) => li.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
-			'Bingo Ice cream ✓ Reached',
+			'Bingo Ice cream Reached',
 			'15 squares Movie night',
 			'Blackout A weekend away'
 		]);

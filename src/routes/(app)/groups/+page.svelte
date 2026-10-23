@@ -23,7 +23,7 @@
 	<div class="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5">
 		{#if data.groups.length === 0}
 			<div class="flex flex-col items-start gap-3 rounded-row border border-dashed border-line p-5">
-				<p class="font-bold">
+				<p class="flex items-center gap-2 font-bold">
 					<Icon name="users-three" class="text-forest" /> No groups yet. Create one, or ask a friend for
 					their invite link.
 				</p>

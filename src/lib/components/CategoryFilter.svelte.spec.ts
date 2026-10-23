@@ -17,7 +17,7 @@ const counts: Record<CategoryId, number> = {
 };
 
 describe('CategoryFilter', () => {
-	it('links every category with its count and marks the selected one', async () => {
+	it('links categories that have habits with their count and marks the selected one', async () => {
 		render(CategoryFilter, { selected: 'fitness', counts, archived: false });
 		await expect
 			.element(page.getByRole('link', { name: /All/ }))
@@ -29,7 +29,7 @@ describe('CategoryFilter', () => {
 		await expect
 			.element(page.getByRole('link', { name: /Mind/ }))
 			.not.toHaveAttribute('aria-current');
-		expect(page.getByRole('link').elements()).toHaveLength(10);
+		expect(page.getByRole('link').elements()).toHaveLength(3);
 	});
 
 	it('keeps the archived view when switching category', async () => {

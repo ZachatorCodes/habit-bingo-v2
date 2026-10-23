@@ -5,6 +5,8 @@
 	import Hero from '#lib/components/Hero.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import ProgressRing from '#lib/components/ProgressRing.svelte';
+	import { page } from '$app/state';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -15,6 +17,13 @@
 	const heading = 'text-xs font-extrabold tracking-wide text-muted uppercase';
 	const row = 'flex min-h-14 items-center gap-3 rounded-row bg-page p-3';
 </script>
+
+<Seo
+	title="{data.monthName} recap"
+	description="Your Habit Bingo card and check-ins."
+	path={page.url.pathname}
+	noindex
+/>
 
 <Hero
 	title={`${data.monthName} recap`}

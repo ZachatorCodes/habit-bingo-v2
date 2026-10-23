@@ -8,9 +8,9 @@ test('serves a valid web app manifest with reachable icons', async ({ request })
 		name: 'Habit Bingo',
 		short_name: 'Bingo',
 		display: 'standalone',
-		start_url: '/',
-		background_color: '#FFF7EC',
-		theme_color: '#FFF7EC'
+		start_url: '/today',
+		background_color: '#F5F1E8',
+		theme_color: '#2F5D46'
 	});
 	expect(
 		manifest.icons.map(
@@ -31,7 +31,7 @@ test('pages link the manifest, theme color, icon and apple-touch-icon', async ({
 		'href',
 		'/manifest.webmanifest'
 	);
-	await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#FFF7EC');
+	await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#2F5D46');
 	await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /\/icon\.svg$/);
 	const touch = page.locator('link[rel="apple-touch-icon"]');
 	await expect(touch).toHaveAttribute('href', /\/apple-touch-icon\.png$/);

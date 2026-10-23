@@ -14,6 +14,8 @@
 	import { greeting, todaySummary } from '#lib/game/greeting.ts';
 	import type { CardScore, Tier } from '#lib/game/score.ts';
 	import TodayRow from '#lib/components/TodayRow.svelte';
+	import { page } from '$app/state';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -50,6 +52,13 @@
 	] as const;
 </script>
 
+<Seo
+	title="Today"
+	description="Your Habit Bingo card and check-ins."
+	path={page.url.pathname}
+	noindex
+/>
+
 <Hero
 	title={data.name ? `${greeting(data.hour)}, ${data.name}` : greeting(data.hour)}
 	summary={data.card ? todaySummary(data.card.sections.doToday.length) : 'No card yet'}
@@ -58,7 +67,7 @@
 		<div class="mt-2 text-right">
 			<a
 				href={resolve('/(app)/card')}
-				class="text-[13px] font-semibold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-surface"
+				class="inline-flex min-h-11 items-center text-[13px] font-semibold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-surface"
 				>See your {data.monthName} card</a
 			>
 		</div>
@@ -156,7 +165,13 @@
 				{/if}
 				{#if sections.done.length > 0}
 					<details aria-label="Done" class="mt-2">
-						<summary class="cursor-pointer {heading}">Done ({sections.done.length})</summary>
+						<summary
+							class="group flex min-h-11 cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden {heading}"
+							><Icon
+								name="caret-right"
+								class="group-open:rotate-90 motion-safe:transition-transform"
+							/>Done ({sections.done.length})</summary
+						>
 						<ul class={list}>
 							{#each sections.done as row (row.squareId)}
 								<TodayRow {row} {day} keep={data.keep} onerror={showError} />

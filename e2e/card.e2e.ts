@@ -389,3 +389,17 @@ test('a 5×5 card with long names fits a phone', async ({ page, baseURL }) => {
 	await expect(name).toBeVisible();
 	expect(await name.evaluate((el) => getComputedStyle(el).webkitLineClamp)).toBe('2');
 });
+
+test('the free square is solid forest', async ({ page }) => {
+	await newMemberWithHabits(page, 8);
+	await buildToBoard(page);
+	const free = page.locator('main [role="img"][data-state="free"]');
+	await expect(free).toHaveCount(1);
+	await expect(free).toHaveCSS('background-color', 'rgb(47, 93, 70)');
+	await page.getByRole('button', { name: 'Start card' }).click();
+	await expect(page).toHaveURL(/\/card\?started=1$/);
+	await expect(page.locator('main [role="img"][data-state="free"]')).toHaveCSS(
+		'background-color',
+		'rgb(47, 93, 70)'
+	);
+});

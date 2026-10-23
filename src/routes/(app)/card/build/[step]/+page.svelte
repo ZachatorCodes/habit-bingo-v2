@@ -10,6 +10,8 @@
 	import TargetList from '#lib/components/TargetList.svelte';
 	import TextField from '#lib/components/TextField.svelte';
 	import SizePicker from '#lib/components/SizePicker.svelte';
+	import { page } from '$app/state';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -65,6 +67,13 @@
 	}
 </script>
 
+<Seo
+	title="Build your card"
+	description="Your Habit Bingo card and check-ins."
+	path={page.url.pathname}
+	noindex
+/>
+
 <Hero
 	title={data.forNext
 		? `Your ${data.monthName} card · starts ${data.monthName} 1`
@@ -109,8 +118,11 @@
 
 			<details bind:open={creating} class="rounded-2xl border border-line bg-surface p-4">
 				<summary
-					class="cursor-pointer rounded-xl font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
-					>New habit</summary
+					class="group flex min-h-11 cursor-pointer list-none items-center gap-1 rounded-xl font-extrabold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink [&::-webkit-details-marker]:hidden"
+					><Icon
+						name="caret-right"
+						class="group-open:rotate-90 motion-safe:transition-transform"
+					/>New habit</summary
 				>
 				<!-- novalidate: the server validates every field, as on the habit library's own form. -->
 				<form

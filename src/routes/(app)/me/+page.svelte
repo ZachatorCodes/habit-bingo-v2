@@ -7,6 +7,8 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import IconPicker from '#lib/components/IconPicker.svelte';
 	import TextField from '#lib/components/TextField.svelte';
+	import { page } from '$app/state';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -67,6 +69,13 @@
 	];
 </script>
 
+<Seo
+	title="Me"
+	description="Your Habit Bingo card and check-ins."
+	path={page.url.pathname}
+	noindex
+/>
+
 {#snippet saved(message: string)}
 	<p role="status" tabindex="-1" class="rounded-row bg-earned-tile px-4 py-3 font-bold text-ink">
 		<Icon name="check-circle" class="text-forest" />
@@ -87,7 +96,6 @@
 			class="grid size-12 shrink-0 place-items-center rounded-full bg-earned-tile text-3xl text-forest"
 			><Icon name={data.profile.avatarIcon} /></span
 		>
-		<p class="min-w-0 font-bold break-words">@{data.profile.displayUsername}</p>
 	</div>
 </Hero>
 
@@ -290,6 +298,12 @@
 				one.
 			</p>
 			<Button type="submit" variant="secondary" class="self-start">Sign out everywhere</Button>
+		</form>
+	</section>
+
+	<section class={sheet}>
+		<form method="POST" action="/signout" class={inner}>
+			<Button type="submit" variant="secondary" class="w-full">Sign out</Button>
 		</form>
 	</section>
 

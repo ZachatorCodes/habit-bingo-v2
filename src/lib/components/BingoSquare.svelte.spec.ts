@@ -38,6 +38,7 @@ describe('BingoSquare', () => {
 	it('free shows "Free" and no ring', () => {
 		const c = render(BingoSquare, { icon: 'drop', label: 'Free', state: 'free' }).container;
 		expect(c.textContent).toContain('Free');
+		expect(c.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Free');
 		expect(c.querySelector('[data-variant]')).toBeNull();
 	});
 

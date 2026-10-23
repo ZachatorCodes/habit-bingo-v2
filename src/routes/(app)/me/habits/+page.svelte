@@ -5,8 +5,11 @@
 	import HabitRow from '#lib/components/HabitRow.svelte';
 	import Hero from '#lib/components/Hero.svelte';
 	import Icon from '#lib/components/Icon.svelte';
+	import Notice from '#lib/components/Notice.svelte';
 	import StarterHabits from '#lib/components/StarterHabits.svelte';
 	import { CATEGORIES } from '#lib/game/categories.ts';
+	import { page } from '$app/state';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -40,6 +43,13 @@
 	);
 </script>
 
+<Seo
+	title="Habit library"
+	description="Your Habit Bingo card and check-ins."
+	path={page.url.pathname}
+	noindex
+/>
+
 <Hero
 	title="Habit library"
 	summary={data.archived
@@ -50,23 +60,14 @@
 <section class="relative -mt-[18px] rounded-[24px] bg-surface shadow-sheet">
 	<div class="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-5">
 		{#if data.created}
-			<p role="status" class="rounded-row bg-earned-tile px-4 py-3 font-bold">
-				<Icon name="check-circle" class="text-forest" /> Habit added.
-			</p>
+			<Notice tone="success">Habit added.</Notice>
 		{:else if data.saved}
-			<p role="status" class="rounded-row bg-earned-tile px-4 py-3 font-bold">
-				<Icon name="check-circle" class="text-forest" /> Habit saved.
-			</p>
+			<Notice tone="success">Habit saved.</Notice>
 		{:else if data.deleted}
-			<p role="status" class="rounded-row bg-earned-tile px-4 py-3 font-bold">
-				<Icon name="check-circle" class="text-forest" /> Habit deleted.
-			</p>
+			<Notice tone="success">Habit deleted.</Notice>
 		{/if}
 		{#if form && 'message' in form && form.message}
-			<p role="alert" class="rounded-row bg-risk-tile px-4 py-3 font-bold">
-				<Icon name="warning" />
-				{form.message}
-			</p>
+			<Notice tone="error">{form.message}</Notice>
 		{/if}
 
 		{#if data.welcome}
@@ -76,7 +77,9 @@
 			</div>
 		{/if}
 
-		<CategoryFilter selected={data.category} counts={data.counts} archived={data.archived} />
+		{#if data.activeCount > 0 || data.archived}
+			<CategoryFilter selected={data.category} counts={data.counts} archived={data.archived} />
+		{/if}
 
 		{#if groups.length === 0}
 			<div class="flex flex-col items-start gap-3 rounded-row border border-dashed border-line p-5">
@@ -94,7 +97,10 @@
 		{:else}
 			{#each groups as group (group.category.id)}
 				<section aria-labelledby={`cat-${group.category.id}`} class="flex flex-col gap-2">
-					<h2 id={`cat-${group.category.id}`} class="text-lg font-extrabold">
+					<h2
+						id={`cat-${group.category.id}`}
+						class="flex items-center gap-2 text-lg font-extrabold"
+					>
 						<Icon name={group.category.icon} class="text-forest" />
 						{group.category.label}
 					</h2>
@@ -108,7 +114,9 @@
 		{/if}
 
 		<div class="flex flex-wrap items-center justify-between gap-3">
-			<Button href="/me/habits/new">New habit</Button>
+			{#if groups.length > 0 || data.archived}
+				<Button href="/me/habits/new">New habit</Button>
+			{/if}
 			<!-- A resolve()d path plus a query string, which the lint rule cannot follow. -->
 			<!-- eslint-disable svelte/no-navigation-without-resolve -->
 			<a
@@ -129,6 +137,6 @@
 	</div>
 </section>
 
-{#if !data.archived && (data.welcome || data.activeCount === 0)}
+{#if !data.archived && (data.welcome || data.activeCount < 8)}
 	<StarterHabits addedIds={data.addedIds} {keep} />
 {/if}

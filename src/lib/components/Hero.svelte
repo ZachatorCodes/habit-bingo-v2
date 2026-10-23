@@ -6,7 +6,9 @@
 </script>
 
 <!-- Bottom padding leaves room for the following sheet to overlap by 18px (-mt-[18px] on the sheet). -->
-<header class="relative overflow-hidden bg-forest px-5 pt-8 pb-12 text-surface">
+<header
+	class="relative overflow-hidden bg-forest px-5 pt-[calc(2rem+var(--safe-top))] pb-12 text-surface"
+>
 	<svg
 		aria-hidden="true"
 		viewBox="0 0 80 80"
@@ -24,7 +26,7 @@
 	<div class="relative">
 		<h1 class="text-[28px] leading-tight font-extrabold break-words">{title}</h1>
 		{#if summary}
-			<p class="mt-1 text-[13px] font-semibold">{summary}</p>
+			<p class="mt-1 text-[15px] font-semibold">{summary}</p>
 		{/if}
 		{@render children?.()}
 	</div>

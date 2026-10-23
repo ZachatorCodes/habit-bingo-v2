@@ -5,6 +5,8 @@
 	import Hero from '#lib/components/Hero.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import TextField from '#lib/components/TextField.svelte';
+	import { page } from '$app/state';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -43,6 +45,13 @@
 	const heading = 'text-xs font-extrabold tracking-wide text-muted uppercase';
 	const result = 'flex flex-col gap-2 rounded-row bg-earned-tile p-4';
 </script>
+
+<Seo
+	title="Admin"
+	description="Your Habit Bingo card and check-ins."
+	path={page.url.pathname}
+	noindex
+/>
 
 <!-- The (app) layout supplies the noindex Seo tags. -->
 

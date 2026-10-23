@@ -7,7 +7,7 @@ import { clippedWeeks } from './weeks.ts';
 
 /** A square counts toward lines, tiers and blackout when it is complete, held or at risk (§3.5). */
 export function counts(state: SquareState): boolean {
-	return state === 'complete' || state === 'held' || state === 'atRisk';
+	return state === 'complete' || state === 'free' || state === 'held' || state === 'atRisk';
 }
 
 /** Every row, every column, then the two diagonals, as board indexes (spec §3.6). */

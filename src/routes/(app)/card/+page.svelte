@@ -13,7 +13,9 @@
 	import type { CardScore, Tier } from '#lib/game/score.ts';
 	import Hero from '#lib/components/Hero.svelte';
 	import Icon from '#lib/components/Icon.svelte';
+	import Notice from '#lib/components/Notice.svelte';
 	import CardHeader from '#lib/components/CardHeader.svelte';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -105,6 +107,13 @@
 	}
 </script>
 
+<Seo
+	title="Your card"
+	description="Your Habit Bingo card and check-ins."
+	path={page.url.pathname}
+	noindex
+/>
+
 {#if card}
 	<CardHeader
 		monthName={data.monthName}
@@ -115,26 +124,18 @@
 		states={card.squares.map((square) => square.state)}
 	>
 		{#if started}
-			<p role="status" class="rounded-2xl bg-earned-tile px-4 py-3 font-bold text-ink">
-				<span aria-hidden="true">✓</span> Card started!
-			</p>
+			<Notice tone="success">Card started!</Notice>
 		{/if}
 		{#if planned}
-			<p role="status" class="rounded-2xl bg-earned-tile px-4 py-3 font-bold text-ink">
-				<span aria-hidden="true">✓</span>
-				{data.nextMonthName} card saved. It starts {data.nextMonthName} 1.
-			</p>
+			<Notice tone="success"
+				>{data.nextMonthName} card saved. It starts {data.nextMonthName} 1.</Notice
+			>
 		{/if}
 		{#if saved}
-			<p role="status" class="rounded-2xl bg-earned-tile px-4 py-3 font-bold text-ink">
-				<span aria-hidden="true">✓</span> Changes saved.
-			</p>
+			<Notice tone="success">Changes saved.</Notice>
 		{/if}
 		{#if message}
-			<p role="alert" class="rounded-2xl bg-risk-tile px-4 py-3 font-bold text-ink">
-				<Icon name="warning" />
-				{message}
-			</p>
+			<Notice tone="error">{message}</Notice>
 		{/if}
 
 		<CardBoard

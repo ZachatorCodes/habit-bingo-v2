@@ -2,6 +2,11 @@
 @import '@fontsource-variable/nunito';
 
 /* Playful design tokens (spec §4). Text on state colors is always ink for WCAG AA contrast. */
+:root {
+	--safe-top: env(safe-area-inset-top, 0px);
+	--safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 @theme {
 	--font-sans: 'Nunito Variable', system-ui, sans-serif;
 

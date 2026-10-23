@@ -9,7 +9,7 @@
 
 	let { children }: LayoutProps = $props();
 
-	// Signed-in pages render their own header (a banner landmark) above their own <main>.
+	// Signed-in pages render their own <main> and tab bar.
 	// Error pages render in this layout only, so they always get this <main>.
 	const ownsMain = $derived(!page.error && (page.route.id?.startsWith('/(app)') ?? false));
 
@@ -34,6 +34,8 @@
 			{@render children()}
 		</main>
 	{/if}
-	<SiteFooter />
+	{#if !ownsMain}
+		<SiteFooter />
+	{/if}
 </div>
 <CookieNotice />
