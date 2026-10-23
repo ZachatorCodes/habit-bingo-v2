@@ -42,7 +42,7 @@
 		summary="This signs you out on every device. Then sign in with the new password."
 	/>
 	<div class="relative -mt-[18px] pb-4">
-		<section class="rounded-[24px] bg-surface shadow-sheet">
+		<section class="rounded-[24px] bg-surface shadow-sheet md:mx-auto md:max-w-[480px]">
 			<form
 				method="POST"
 				class="mx-auto flex max-w-md flex-col gap-4 px-4 py-5"
@@ -83,7 +83,7 @@
 {:else}
 	<Hero title={problems[status]} />
 	<div class="relative -mt-[18px] pb-4">
-		<section class="rounded-[24px] bg-surface shadow-sheet">
+		<section class="rounded-[24px] bg-surface shadow-sheet md:mx-auto md:max-w-[480px]">
 			<div class="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-6 text-center">
 				<ProgressRing icon="lock" variant="open" size="lg" />
 				<p class="text-muted">Ask an admin for a fresh link.</p>

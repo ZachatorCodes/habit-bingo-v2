@@ -12,7 +12,7 @@
 <Hero title="Privacy" />
 
 <article
-	class="relative mx-auto -mt-[18px] mb-8 w-[calc(100%-2rem)] max-w-2xl rounded-sheet bg-surface p-5 leading-relaxed text-ink shadow-sheet"
+	class="relative mx-auto -mt-[18px] mb-8 w-[calc(100%-2rem)] max-w-2xl rounded-sheet bg-surface p-5 leading-relaxed text-ink shadow-sheet md:max-w-[720px]"
 >
 	<p class="text-sm text-muted">Last updated October 9, 2026</p>
 

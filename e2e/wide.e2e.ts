@@ -83,6 +83,10 @@ test('no horizontal scroll at wide widths', async ({ page }, info) => {
 			await expectNoHorizontalScroll(page);
 		}
 	}
+	for (const route of ['/', '/signin', '/privacy']) {
+		await page.goto(route);
+		await expectNoHorizontalScroll(page);
+	}
 	await page.context().clearCookies();
 	await signIn(page, 'e2e_admin', 'e2e admin password 1');
 	for (const width of [768, 1024, 1440]) {
@@ -258,4 +262,21 @@ test('library filter is a side list', async ({ page }, info) => {
 		.first()
 		.boundingBox())!;
 	expect(first.x + first.width).toBeLessThanOrEqual(row.x + 1);
+});
+
+test('sign-in is a centred card', async ({ page }, info) => {
+	test.skip(info.project.name === 'phone');
+	await page.goto('/signin');
+	const card = page.locator('main section').filter({ has: page.locator('form') });
+	const box = (await card.boundingBox())!;
+	expect(box.width).toBeLessThanOrEqual(480);
+	expect(Math.abs(box.x + box.width / 2 - page.viewportSize()!.width / 2)).toBeLessThanOrEqual(4);
+});
+
+test('landing band pads for the notch', async ({ page }, info) => {
+	test.skip(info.project.name === 'phone');
+	await page.goto('/');
+	await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '40px'));
+	const h1 = (await page.getByRole('heading', { level: 1 }).boundingBox())!;
+	expect(h1.y).toBeGreaterThanOrEqual(40 + 80);
 });

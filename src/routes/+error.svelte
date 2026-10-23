@@ -21,7 +21,7 @@
 />
 
 <div class="relative -mt-[18px] pb-4">
-	<section class="rounded-[24px] bg-surface shadow-sheet">
+	<section class="rounded-[24px] bg-surface shadow-sheet md:mx-auto md:max-w-[480px]">
 		<div class="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-6 text-center">
 			<ProgressRing icon={notFound ? 'map-trifold' : 'warning'} variant="open" size="lg" />
 			{#if page.error?.errorId}
