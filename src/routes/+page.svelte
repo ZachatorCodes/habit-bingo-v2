@@ -35,7 +35,7 @@
 	<div
 		aria-hidden="true"
 		data-testid="landing-band"
-		class="relative col-span-full row-span-2 row-start-1 mb-8 overflow-hidden bg-forest md:mb-0"
+		class="relative col-span-full row-span-2 row-start-1 mb-8 self-stretch overflow-hidden bg-forest md:mb-0"
 	>
 		<svg viewBox="0 0 80 80" class="drift absolute -top-4 -right-3 size-28 text-leaf md:size-40">
 			<path d="M10 70C10 30 40 8 72 8c0 36-20 62-62 62Z" fill="currentColor" />

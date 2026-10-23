@@ -59,14 +59,19 @@ test('the sample card animates once, then stops (WCAG 2.2.2)', async ({ page }) 
 	await expect(card.getByRole('img', { name: /: complete$/ })).toHaveCount(3);
 });
 
-test('landing headline sits on the forest band at phone width', async ({ page }) => {
-	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto('/');
-	const band = await page.getByTestId('landing-band').boundingBox();
-	const h1 = await page.getByRole('heading', { level: 1 }).boundingBox();
-	expect(band!.width).toBe(390);
-	expect(h1!.x).toBeGreaterThanOrEqual(band!.x);
-	expect(h1!.x + h1!.width).toBeLessThanOrEqual(band!.x + band!.width);
-	expect(h1!.y).toBeGreaterThanOrEqual(band!.y);
-	expect(h1!.y + h1!.height).toBeLessThanOrEqual(band!.y + band!.height);
-});
+for (const [label, width, height] of [
+	['phone', 390, 844],
+	['computer', 1280, 800]
+] as const) {
+	test(`landing headline sits on the forest band at ${label} width`, async ({ page }) => {
+		await page.setViewportSize({ width, height });
+		await page.goto('/');
+		const band = await page.getByTestId('landing-band').boundingBox();
+		const h1 = await page.getByRole('heading', { level: 1 }).boundingBox();
+		expect(band!.width).toBe(width);
+		expect(h1!.x).toBeGreaterThanOrEqual(band!.x);
+		expect(h1!.x + h1!.width).toBeLessThanOrEqual(band!.x + band!.width);
+		expect(h1!.y).toBeGreaterThanOrEqual(band!.y);
+		expect(h1!.y + h1!.height).toBeLessThanOrEqual(band!.y + band!.height);
+	});
+}
