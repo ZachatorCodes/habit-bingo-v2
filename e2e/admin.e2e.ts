@@ -83,19 +83,79 @@ test('an admin creates an invite that a new person can use', async ({ page, brow
 	expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(inviteUrl);
 
 	const invites = page.getByRole('list', { name: 'Invites' });
-	await expect(invites.getByRole('listitem').filter({ hasText: code })).toContainText('Active');
 	await expect(invites.getByRole('listitem').filter({ hasText: code })).toContainText('0 of 1');
 
 	const newcomer = await newPage(browser);
 	await join(newcomer, inviteUrl, uniqueUsername());
 
 	await page.reload();
+	// A used-up code is no longer live, so it leaves the list.
+	await expect(
+		page.getByRole('list', { name: 'Invites' }).getByRole('listitem').filter({ hasText: code })
+	).toHaveCount(0);
+});
+
+async function createAdminInvite(page: Page): Promise<string> {
+	await page.getByRole('button', { name: 'Create invite' }).click();
+	const link = page.getByRole('textbox', { name: 'New invite link' });
+	await expect(link).toHaveValue(/\/join\//);
+	return (await link.inputValue()).split('/').pop()!;
+}
+
+test('an admin deletes an invite and it stops working', async ({ page, browser }) => {
+	await openAdmin(page);
+	const code = await createAdminInvite(page);
 	const row = page
 		.getByRole('list', { name: 'Invites' })
 		.getByRole('listitem')
 		.filter({ hasText: code });
-	await expect(row).toContainText('Used up');
-	await expect(row).toContainText('1 of 1');
+	await row.getByRole('button', { name: 'Delete' }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
+	await expect(page.getByText('Invite deleted.')).toBeVisible();
+	await expect(row).toHaveCount(0);
+
+	const visitor = await newPage(browser);
+	await visitor.goto(`/join/${code}`);
+	await expect(visitor.getByText('This invite has expired.')).toBeVisible();
+});
+
+test('deleting an invite twice says it was already gone', async ({ page, baseURL }) => {
+	await openAdmin(page);
+	const code = await createAdminInvite(page);
+	const del = () =>
+		page.request.post('/admin?/deleteInvite', { headers: { origin: baseURL! }, form: { code } });
+	expect((await del()).status()).toBe(200);
+	const second = await del();
+	expect(second.status()).toBe(404);
+	expect(await second.text()).toContain('That invite was already gone.');
+});
+
+test('members cannot delete invites', async ({ page, baseURL }) => {
+	await signIn(page, MEMBER.username, MEMBER.password);
+	await expect(page).toHaveURL(/\/today$/);
+	const post = await page.request.post('/admin?/deleteInvite', {
+		headers: { origin: baseURL! },
+		form: { code: 'E2E-OPEN' }
+	});
+	expect(post.status()).toBe(404);
+});
+
+test('the invite list fits a phone', async ({ page }) => {
+	await page.setViewportSize({ width: 360, height: 740 });
+	await signIn(page, ADMIN.username, ADMIN.password);
+	await expect(page).toHaveURL(/\/today$/);
+	await page.goto('/groups/new');
+	await waitForHydration(page);
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: 'Mountains', exact: true }) })
+		.click();
+	await page.getByRole('textbox', { name: 'Name' }).fill('W'.repeat(40));
+	await page.getByRole('button', { name: 'Create group' }).click();
+	await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+	await page.goto('/admin');
+	await expect(page.getByText('W'.repeat(40)).first()).toBeVisible();
+	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 });
 
 test('an admin reset link lets a user set a new password and sign in', async ({

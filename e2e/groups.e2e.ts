@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import {
 	newMember,
+	signIn,
 	newMemberWithHabits,
 	startCard,
 	uniqueUsername,
@@ -170,4 +171,37 @@ test('tabs mark the current board', async ({ page }) => {
 	await all.click();
 	await expect(all).toHaveAttribute('aria-current', 'page');
 	await expect(month).not.toHaveAttribute('aria-current', 'page');
+});
+
+test('an admin deletes a group link; the owner resets it', async ({ page, browser }) => {
+	await newMember(page);
+	const { groupPath, link } = await createClimbers(page);
+	const code = link.split('/').pop()!;
+
+	const admin = await otherPerson(browser);
+	await signIn(admin, 'e2e_admin', 'e2e admin password 1');
+	await expect(admin).toHaveURL(/\/today$/);
+	await admin.goto('/admin');
+	await waitForHydration(admin);
+	const row = admin
+		.getByRole('list', { name: 'Invites' })
+		.getByRole('listitem')
+		.filter({ hasText: code });
+	await expect(row).toContainText('Climbers');
+	await row.getByRole('button', { name: 'Delete' }).click();
+	await admin.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
+	await expect(admin.getByText('Invite deleted.')).toBeVisible();
+
+	await page.goto(`${groupPath}?tab=members`);
+	await waitForHydration(page);
+	await expect(page.getByText('No invite link.')).toBeVisible();
+	await expect(page.getByRole('textbox', { name: 'Invite link' })).toHaveCount(0);
+
+	await page.getByRole('button', { name: 'Reset link' }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Reset link' }).click();
+	const fresh = await page.getByRole('textbox', { name: 'Invite link' }).inputValue();
+	expect(fresh).not.toBe(link);
+	await page.goto(fresh);
+	await expect(page.getByRole('heading', { level: 1, name: /Climbers/ })).toBeVisible();
+	await admin.context().close();
 });

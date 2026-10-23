@@ -230,7 +230,7 @@ describe('invites at sign-up', () => {
 	async function newGroup() {
 		const made = await createGroup(db, inviterId, { name: 'Crew', icon: 'rocket' }, new Date());
 		if (!made.ok) throw new Error(made.message);
-		const membership = await getMembership(db, inviterId, made.groupId);
+		const membership = await getMembership(db, inviterId, made.groupId, new Date());
 		return { groupId: made.groupId, code: membership!.inviteCode };
 	}
 	const members = (groupId: string) =>

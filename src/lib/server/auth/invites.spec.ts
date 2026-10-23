@@ -1,12 +1,13 @@
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from '#lib/server/db/client.ts';
-import { invite, user } from '#lib/server/db/schema.ts';
+import { group, invite, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import { createTestAuth } from './test-auth.ts';
 import {
 	consumeInvite,
 	createInvite,
+	deleteInvite,
 	getInviteStatus,
 	getJoinStatus,
 	listInvites
@@ -88,36 +89,52 @@ describe('invites', () => {
 	});
 });
 
-describe('listInvites', () => {
-	it('lists invites newest first with their status and uses', async () => {
-		const older = new Date(NOW.getTime() - 2 * DAY);
-		const { code: usedUp } = await createInvite(
-			db,
-			{ createdBy: adminId, expiresInDays: 7, maxUses: 1 },
-			older
-		);
-		await consumeInvite(db, usedUp, older);
-		const { code: expired } = await createInvite(
-			db,
-			{ createdBy: adminId, expiresInDays: 1, maxUses: 5 },
-			new Date(NOW.getTime() - DAY - 1000)
-		);
-		await db
-			.update(invite)
-			.set({ createdAt: new Date(NOW.getTime() - DAY) })
-			.where(eq(invite.code, expired));
-		await db.update(invite).set({ createdAt: older }).where(eq(invite.code, usedUp));
-		const { code: valid } = await createInvite(
+describe('deleteInvite', () => {
+	it('retires a live code once', async () => {
+		const { code } = await createInvite(
 			db,
 			{ createdBy: adminId, expiresInDays: 7, maxUses: 3 },
 			NOW
 		);
+		expect(await deleteInvite(db, code, NOW)).toBe(true);
+		expect(await getInviteStatus(db, code, NOW)).toBe('expired');
+		expect(await deleteInvite(db, code, NOW)).toBe(false);
+	});
+});
+
+describe('listInvites', () => {
+	it('shows only live codes, labelled with their group', async () => {
+		const mk = (o: { days?: number; max?: number; groupId?: string }, at = NOW) =>
+			createInvite(
+				db,
+				{ createdBy: adminId, expiresInDays: o.days ?? 7, maxUses: o.max ?? 3, groupId: o.groupId },
+				at
+			);
+		await db.insert(group).values({ id: 'g1', name: 'Crew', icon: 'rocket', createdBy: adminId });
+		const { code: expired } = await mk({ days: 1 }, new Date(NOW.getTime() - 2 * DAY));
+		const { code: usedUp } = await mk({ max: 1 });
+		await consumeInvite(db, usedUp, NOW);
+		const { code: deleted } = await mk({});
+		await deleteInvite(db, deleted, NOW);
+		const { code: admin } = await mk({});
+		const { code: link } = await mk({ groupId: 'g1' });
+		await db
+			.update(invite)
+			.set({ createdAt: new Date(NOW.getTime() + 1000) })
+			.where(eq(invite.code, link));
+		await db.update(invite).set({ createdAt: NOW }).where(eq(invite.code, admin));
 
 		expect(await listInvites(db, NOW)).toEqual([
-			{ code: valid, status: 'valid', uses: 0, maxUses: 3, expiresAt: expect.any(Date) },
-			{ code: expired, status: 'expired', uses: 0, maxUses: 5, expiresAt: expect.any(Date) },
-			{ code: usedUp, status: 'usedUp', uses: 1, maxUses: 1, expiresAt: expect.any(Date) }
+			{
+				code: link,
+				uses: 0,
+				maxUses: 3,
+				expiresAt: expect.any(Date),
+				group: { name: 'Crew', icon: 'rocket' }
+			},
+			{ code: admin, uses: 0, maxUses: 3, expiresAt: expect.any(Date), group: null }
 		]);
+		expect([expired, usedUp, deleted]).toHaveLength(3);
 	});
 });
 

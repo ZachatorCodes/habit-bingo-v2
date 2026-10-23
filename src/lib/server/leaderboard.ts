@@ -43,7 +43,7 @@ export async function groupBoard(
 	board: 'month' | 'all',
 	now: Date
 ): Promise<{ rows: BoardRow[]; provisionalMonth: string | null } | null> {
-	if (!(await getMembership(db, viewerId, groupId))) return null;
+	if (!(await getMembership(db, viewerId, groupId, now))) return null;
 	const members = await listMembers(db, groupId);
 	const viewer = members.find((m) => m.userId === viewerId);
 	if (!viewer) return null;
@@ -100,7 +100,7 @@ export async function memberCard(
 	monthName: string;
 	card: { size: number; squares: ViewSquare[]; score: CardScore } | null;
 } | null> {
-	if (!(await getMembership(db, viewerId, groupId))) return null;
+	if (!(await getMembership(db, viewerId, groupId, now))) return null;
 	const member = (await listMembers(db, groupId)).find((m) => m.userId === memberId);
 	if (!member) return null;
 	const today = todayOf(member, now);

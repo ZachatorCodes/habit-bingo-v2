@@ -22,7 +22,8 @@ function database() {
 export const load: PageServerLoad = async ({ locals, cookies, params, url }) => {
 	const user = requireUser(locals);
 	const db = database();
-	const membership = await getMembership(db, user.id, params.id);
+	const now = requestNow(cookies, TEST_CLOCK);
+	const membership = await getMembership(db, user.id, params.id, now);
 	if (!membership) error(404, 'Not found');
 	const tab = url.searchParams.get('tab') === 'members' ? 'members' : 'leaderboard';
 	const board = url.searchParams.get('board') === 'all' ? 'all' : 'month';
@@ -39,13 +40,10 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 			avatarIcon,
 			role
 		})),
-		inviteLink: `${url.origin}/join/${membership.inviteCode}`,
+		inviteLink: membership.inviteCode ? `${url.origin}/join/${membership.inviteCode}` : null,
 		// Matches leaveGroup: the first other member by join order inherits.
 		nextOwner: heir ? (heir.displayUsername ?? 'Someone') : null,
-		leaderboard:
-			tab === 'leaderboard'
-				? await groupBoard(db, user.id, params.id, board, requestNow(cookies, TEST_CLOCK))
-				: null
+		leaderboard: tab === 'leaderboard' ? await groupBoard(db, user.id, params.id, board, now) : null
 	};
 };
 
@@ -53,15 +51,17 @@ export const actions: Actions = {
 	leave: async ({ locals, cookies, params }) => {
 		const user = requireUser(locals);
 		const db = database();
-		if (!(await getMembership(db, user.id, params.id))) error(404, 'Not found');
+		if (!(await getMembership(db, user.id, params.id, requestNow(cookies, TEST_CLOCK))))
+			error(404, 'Not found');
 		const result = await leaveGroup(db, user.id, params.id, requestNow(cookies, TEST_CLOCK));
 		if (!result) error(404, 'Not found');
 		redirect(303, '/groups');
 	},
-	remove: async ({ locals, params, request }) => {
+	remove: async ({ locals, cookies, params, request }) => {
 		const user = requireUser(locals);
 		const db = database();
-		if (!(await getMembership(db, user.id, params.id))) error(404, 'Not found');
+		if (!(await getMembership(db, user.id, params.id, requestNow(cookies, TEST_CLOCK))))
+			error(404, 'Not found');
 		const memberId = (await request.formData()).get('userId');
 		if (typeof memberId !== 'string' || !(await removeMember(db, user.id, params.id, memberId)))
 			error(404, 'Not found');
@@ -70,7 +70,8 @@ export const actions: Actions = {
 	reset: async ({ locals, cookies, params }) => {
 		const user = requireUser(locals);
 		const db = database();
-		if (!(await getMembership(db, user.id, params.id))) error(404, 'Not found');
+		if (!(await getMembership(db, user.id, params.id, requestNow(cookies, TEST_CLOCK))))
+			error(404, 'Not found');
 		if (!(await resetInvite(db, user.id, params.id, requestNow(cookies, TEST_CLOCK))))
 			error(404, 'Not found');
 		redirect(303, `/groups/${params.id}?tab=members`);

@@ -60,7 +60,8 @@ export async function listGroups(
 export async function getMembership(
 	db: Db,
 	userId: string,
-	groupId: string
+	groupId: string,
+	now: Date
 ): Promise<{ group: GroupSummary; role: 'owner' | 'member'; inviteCode: string } | null> {
 	const [row] = await db
 		.select({ id: group.id, name: group.name, icon: group.icon, role: groupMember.role })
@@ -68,11 +69,11 @@ export async function getMembership(
 		.innerJoin(group, eq(group.id, groupMember.groupId))
 		.where(and(eq(groupMember.groupId, groupId), eq(groupMember.userId, userId)));
 	if (!row) return null;
-	// The live link is the one expiring last; reset expires the older ones.
+	// The live link is the one expiring last; reset expires the older ones. None when deleted.
 	const [link] = await db
 		.select({ code: invite.code })
 		.from(invite)
-		.where(eq(invite.groupId, groupId))
+		.where(and(eq(invite.groupId, groupId), gt(invite.expiresAt, now)))
 		.orderBy(desc(invite.expiresAt))
 		.limit(1);
 	return {

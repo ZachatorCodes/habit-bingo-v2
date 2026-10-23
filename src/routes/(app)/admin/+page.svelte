@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { enhance, type SubmitFunction } from '$app/forms';
 	import Button from '#lib/components/Button.svelte';
+	import ConfirmAction from '#lib/components/ConfirmAction.svelte';
 	import CopyField from '#lib/components/CopyField.svelte';
 	import Hero from '#lib/components/Hero.svelte';
 	import Icon from '#lib/components/Icon.svelte';
+	import Notice from '#lib/components/Notice.svelte';
 	import TextField from '#lib/components/TextField.svelte';
 	import { page } from '$app/state';
 	import Seo from '#lib/components/Seo.svelte';
@@ -26,8 +28,6 @@
 			? { link: form.resetLink, username: form.resetUsername ?? '' }
 			: undefined
 	);
-
-	const statusLabels = { valid: 'Active', expired: 'Expired', usedUp: 'Used up' } as const;
 
 	/** Moves focus to the first problem or the new link, so it is announced. */
 	const focusResult: SubmitFunction =
@@ -118,22 +118,37 @@
 <section aria-labelledby="list-heading" class="{sheet} mt-4">
 	<div class={inner}>
 		<h2 id="list-heading" class={heading}>Invites</h2>
+		{#if form && 'deleted' in form}
+			<Notice tone="success">Invite deleted.</Notice>
+		{:else if form && 'deleteError' in form}
+			<Notice tone="error">{form.deleteError}</Notice>
+		{/if}
 		{#if data.invites.length > 0}
 			<ul aria-labelledby="list-heading" class="flex flex-col gap-2">
 				{#each data.invites as invite (invite.code)}
-					<li class="flex flex-col gap-1 rounded-row bg-page p-3">
-						<span class="font-mono font-bold break-all">{invite.code}</span>
-						<span class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-							<span class="font-bold">
-								<Icon
-									name={invite.status === 'valid' ? 'check-circle' : 'prohibit'}
-									class={invite.status === 'valid' ? 'text-forest' : 'text-muted'}
-								/>
-								{statusLabels[invite.status]}
+					<li class="flex flex-wrap items-center justify-between gap-3 rounded-row bg-page p-3">
+						<div class="flex min-w-0 flex-col gap-1">
+							<span class="font-mono font-bold break-all">{invite.code}</span>
+							{#if invite.group}
+								<span class="text-sm font-bold break-words">
+									<Icon name={invite.group.icon} />
+									{invite.group.name}
+								</span>
+							{/if}
+							<span class="flex flex-wrap gap-x-3 gap-y-1 text-sm">
+								<span>{invite.uses} of {invite.maxUses}</span>
+								<span class="text-muted">Expires {invite.expires}</span>
 							</span>
-							<span>{invite.uses} of {invite.maxUses}</span>
-							<span class="text-muted">Expires {invite.expires}</span>
-						</span>
+						</div>
+						<ConfirmAction
+							action="?/deleteInvite"
+							label="Delete"
+							ariaLabel={`Delete invite ${invite.code}`}
+							title="Delete this invite?"
+							text="Nobody new can use it."
+							confirm="Delete"
+							fields={{ code: invite.code }}
+						/>
 					</li>
 				{/each}
 			</ul>

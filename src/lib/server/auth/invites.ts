@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { and, desc, eq, gt, lt, sql } from 'drizzle-orm';
 import type { Db } from '#lib/server/db/client.ts';
-import { invite, user } from '#lib/server/db/schema.ts';
+import { group, invite, user } from '#lib/server/db/schema.ts';
 
 export type InviteStatus = 'valid' | 'expired' | 'usedUp' | 'notFound';
 
@@ -58,25 +58,42 @@ export async function getJoinStatus(
 
 export type InviteSummary = {
 	code: string;
-	status: Exclude<InviteStatus, 'notFound'>;
 	uses: number;
 	maxUses: number;
 	expiresAt: Date;
+	group: { name: string; icon: string } | null;
 };
 
-/** The most recent invites, newest first, for the admin page. */
+/** The newest live invites (unexpired, with uses left) for the admin page. */
 export async function listInvites(db: Db, now: Date, limit = 100): Promise<InviteSummary[]> {
 	const rows = await db
 		.select({
 			code: invite.code,
 			uses: invite.uses,
 			maxUses: invite.maxUses,
-			expiresAt: invite.expiresAt
+			expiresAt: invite.expiresAt,
+			groupName: group.name,
+			groupIcon: group.icon
 		})
 		.from(invite)
+		.leftJoin(group, eq(group.id, invite.groupId))
+		.where(and(gt(invite.expiresAt, now), lt(invite.uses, invite.maxUses)))
 		.orderBy(desc(invite.createdAt), invite.code)
 		.limit(limit);
-	return rows.map((row) => ({ ...row, status: statusOf(row, now) }));
+	return rows.map(({ groupName, groupIcon, ...row }) => ({
+		...row,
+		group: groupName === null || groupIcon === null ? null : { name: groupName, icon: groupIcon }
+	}));
+}
+
+/** Retires a live invite by expiring it now; false when it was not live (already gone). */
+export async function deleteInvite(db: Db, code: string, now: Date): Promise<boolean> {
+	const rows = await db
+		.update(invite)
+		.set({ expiresAt: now })
+		.where(and(eq(invite.code, code), gt(invite.expiresAt, now)))
+		.returning({ code: invite.code });
+	return rows.length === 1;
 }
 
 /**
