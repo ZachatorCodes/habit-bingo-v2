@@ -31,10 +31,11 @@
 />
 
 <!-- Band and content share one grid so the card sheet can overlap the band's bottom edge on phones. -->
-<div class="grid md:grid-cols-2 md:items-center">
+<div class="grid grid-cols-1 md:grid-cols-2 md:items-center">
 	<div
 		aria-hidden="true"
-		class="relative col-span-full row-start-1 overflow-hidden bg-forest md:row-span-2"
+		data-testid="landing-band"
+		class="relative col-span-full row-span-2 row-start-1 mb-8 overflow-hidden bg-forest md:mb-0"
 	>
 		<svg viewBox="0 0 80 80" class="drift absolute -top-4 -right-3 size-28 text-leaf md:size-40">
 			<path d="M10 70C10 30 40 8 72 8c0 36-20 62-62 62Z" fill="currentColor" />
@@ -47,12 +48,12 @@
 		</svg>
 	</div>
 	<div
-		class="relative row-start-1 px-4 pt-[calc(3rem+var(--safe-top))] pb-14 text-center text-surface md:col-start-1 md:py-20 md:pl-[max(1rem,calc((100vw-64rem)/2+1rem))] md:text-left"
+		class="relative col-start-1 row-start-1 px-4 pt-[calc(3rem+var(--safe-top))] pb-14 text-center text-surface md:col-start-1 md:py-20 md:pl-[max(1rem,calc(100%-31rem))] md:text-left"
 	>
 		<h1 class="text-4xl leading-tight font-extrabold md:text-5xl">
 			Turn your habits into a game of bingo.
 		</h1>
-		<p class="mt-4 text-lg text-surface/90">
+		<p class="mt-4 text-lg text-surface">
 			Build a monthly card, check off habits, and race your friends to a blackout.
 		</p>
 		<div class="mt-8 flex flex-col items-center gap-3 md:items-start">
@@ -60,11 +61,11 @@
 			<Button href={resolve('/signin')} variant="secondary" class="focus-visible:outline-surface!"
 				>Sign in</Button
 			>
-			<p class="text-surface/90">Invite-only beta.</p>
+			<p class="text-surface">Invite-only beta.</p>
 		</div>
 	</div>
 	<div
-		class="relative row-start-2 -mt-8 flex justify-center px-4 md:col-start-2 md:row-start-1 md:mt-0 md:pr-[max(1rem,calc((100vw-64rem)/2+1rem))]"
+		class="relative col-start-1 row-start-2 -mt-8 flex justify-center px-4 md:col-start-2 md:row-start-1 md:mt-0 md:pr-[max(1rem,calc(100%-31rem))]"
 	>
 		<SampleCard />
 	</div>
