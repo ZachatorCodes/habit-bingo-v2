@@ -41,7 +41,9 @@
 		>
 
 		{#if data.card}
-			<CardBoard size={data.card.size as CardSize} squares={data.card.squares} />
+			<div class="lg:max-w-[640px]">
+				<CardBoard size={data.card.size as CardSize} squares={data.card.squares} />
+			</div>
 		{:else}
 			<p class="text-lg text-muted">No {data.monthName} card yet.</p>
 		{/if}

@@ -42,7 +42,7 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 	const recap = unseen && { month: unseen.month, monthName: monthName(unseen.month) };
 	const days = cards.flatMap((c) => backfillDates(today, c.startDate));
 	if (days.length === 0)
-		return { name, hour, monthName: monthName(month), buildCard, recap, card: null };
+		return { name, hour, monthName: monthName(month), buildCard, recap, card: null, board: null };
 
 	const asked = url.searchParams.get('day');
 	// Only the backfill window can be logged; anything else shows the newest day.
@@ -108,6 +108,7 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 		buildCard,
 		recap,
 		headsUp,
+		board: { squares: board.squares, score: board.score, size: card.size },
 		card: {
 			id: card.id,
 			today,

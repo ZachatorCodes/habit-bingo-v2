@@ -82,7 +82,7 @@
 				class={[
 					'line-clamp-2 w-full font-extrabold break-words',
 					compact
-						? 'hidden text-[10px] leading-[1.1] sm:block sm:text-xs sm:leading-tight'
+						? 'hidden text-[10px] leading-[1.1] sm:block sm:text-xs sm:leading-tight md:text-sm'
 						: 'text-xs leading-tight',
 					sq === 'lost' && 'line-through'
 				]}>{sq === 'buildNext' ? 'Next month' : label}</span

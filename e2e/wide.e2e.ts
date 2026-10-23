@@ -73,3 +73,82 @@ test('no horizontal scroll at wide widths', async ({ page }, info) => {
 		}
 	}
 });
+
+test('today shows the board beside the list', async ({ page }, info) => {
+	test.skip(info.project.name !== 'desktop');
+	await newMemberWithHabits(page, 8);
+	await buildAndStartCard(page);
+	await page.goto('/today');
+	await waitForHydration(page);
+	const board = page.getByRole('region', { name: 'Your card' });
+	await expect(board).toBeVisible();
+	const heading = (await page.getByRole('heading', { name: 'Do today' }).boundingBox())!;
+	expect((await board.boundingBox())!.x).toBeGreaterThan(heading.x + heading.width);
+	const labels = () => board.getByRole('img').evaluateAll((els) => els.map((el) => el.ariaLabel));
+	const before = await labels();
+	const reload = page.waitForResponse((r) => r.url().includes('/today/__data.json'));
+	await page.getByRole('button', { name: 'Log Go biking' }).click();
+	await reload;
+	await expect.poll(labels).not.toEqual(before);
+});
+
+test('today without a card shows Build one beside the list', async ({ page }, info) => {
+	test.skip(info.project.name !== 'desktop');
+	await newMember(page);
+	await page.goto('/today');
+	await expect(
+		page.getByRole('region', { name: 'Your card' }).getByRole('link', { name: 'Build one' })
+	).toBeVisible();
+});
+
+test('card names show on 5×5 at wide widths', async ({ page, baseURL }, info) => {
+	test.skip(info.project.name !== 'desktop');
+	await newMember(page);
+	for (let i = 0; i < 24; i++) {
+		const response = await page.request.post('/me/habits/new', {
+			headers: { origin: baseURL!, accept: 'text/html' },
+			form: {
+				icon: 'flower-lotus',
+				name: `Habit ${String(i).padStart(2, '0')} wide`,
+				category: 'mind',
+				direction: 'atLeast',
+				period: 'week',
+				countMode: 'days',
+				target: '2'
+			},
+			maxRedirects: 0
+		});
+		expect(response.status()).toBe(303);
+	}
+	await page.goto('/card/build');
+	await waitForHydration(page);
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: /5×5/ }) })
+		.click();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/habits$/);
+	await waitForHydration(page);
+	const labels = page.locator('label').filter({ has: page.getByRole('checkbox') });
+	for (let i = 0; i < 24; i++) await labels.nth(i).click();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/targets$/);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/rewards$/);
+	await waitForHydration(page);
+	await page.getByLabel('First bingo').fill('Ice cream');
+	await page.getByLabel('15 squares').fill('Movie night');
+	await page.getByLabel('Blackout').fill('A weekend away');
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await expect(page).toHaveURL(/\/card\/build\/board$/);
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Start card' }).click();
+	await expect(page).toHaveURL(/\/card\?started=1$/);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	const names = page.locator('main [data-label]');
+	await expect(names).toHaveCount(24);
+	for (const name of await names.all()) await expect(name).toBeVisible();
+	const square = (await page.locator('main [role="img"][data-state]').first().boundingBox())!;
+	expect(square.width).toBeGreaterThanOrEqual(100);
+});

@@ -6,6 +6,7 @@
 	import Confetti from 'phosphor-svelte/lib/Confetti';
 	import Warning from 'phosphor-svelte/lib/Warning';
 	import Button from '#lib/components/Button.svelte';
+	import CardBoard from '#lib/components/CardBoard.svelte';
 	import Hero from '#lib/components/Hero.svelte';
 	import DaySwitcher from '#lib/components/DaySwitcher.svelte';
 	import Toast from '#lib/components/Toast.svelte';
@@ -75,125 +76,143 @@
 </Hero>
 
 <section class="relative -mt-[18px] rounded-[24px] bg-surface shadow-sheet">
-	<div class="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-6">
-		{#if data.recap}
-			<div
-				class="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-earned-tile px-4 py-3"
-			>
-				<a
-					href={resolve('/(app)/me/history/[month]', { month: data.recap.month })}
-					data-sveltekit-preload-data="off"
-					class="flex items-center gap-2 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
-					><Confetti
-						weight="duotone"
-						size={22}
-						class="shrink-0 text-forest"
-						aria-hidden="true"
-					/>Your {data.recap.monthName} recap is ready</a
+	<div class="mx-auto max-w-2xl px-4 py-6 lg:grid lg:max-w-6xl lg:grid-cols-[1fr_420px] lg:gap-6">
+		<div class="flex flex-col gap-5">
+			{#if data.recap}
+				<div
+					class="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-earned-tile px-4 py-3"
 				>
-				<form
-					method="POST"
-					action="?/dismissRecap{data.keep ?? ''}"
-					use:enhance={() =>
-						async ({ result, update }) => {
-							if (result.type === 'redirect') await invalidateAll();
-							else await update();
-						}}
-				>
-					<input type="hidden" name="month" value={data.recap.month} />
-					<button
-						type="submit"
-						class="rounded-xl px-2 py-1 font-bold underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
-						>Dismiss</button
+					<a
+						href={resolve('/(app)/me/history/[month]', { month: data.recap.month })}
+						data-sveltekit-preload-data="off"
+						class="flex items-center gap-2 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+						><Confetti
+							weight="duotone"
+							size={22}
+							class="shrink-0 text-forest"
+							aria-hidden="true"
+						/>Your {data.recap.monthName} recap is ready</a
 					>
-				</form>
-			</div>
-		{/if}
-		{#if data.buildCard}
-			<div class="flex flex-col items-center gap-4 py-8 text-center">
-				<p class="text-lg text-muted">Build this month's card to start checking in.</p>
-				<Button href={resolve('/(app)/card/build')}>Build one</Button>
-			</div>
-		{/if}
-		{#if data.headsUp?.length}
-			<section aria-labelledby="heads-up" class="rounded-2xl bg-risk-tile px-4 py-3">
-				<h2 id="heads-up" class="flex items-center gap-2 {heading}">
-					<Warning weight="duotone" size={18} class="text-terracotta" aria-hidden="true" />Heads up
-				</h2>
-				<ul class="flex flex-col gap-1">
-					{#each data.headsUp as nudge (nudge.text)}
-						<li>
-							<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve() can't carry the ?day= query -->
-							<a
-								href={nudge.to.kind === 'sheet'
-									? resolve('/(app)/card/squares/[id]', { id: nudge.to.squareId })
-									: nudge.to.kind === 'day'
-										? `${resolve('/(app)/today')}?day=${nudge.to.date}`
-										: nudge.to.kind === 'next'
-											? resolve('/(app)/card/next')
-											: resolve('/(app)/card')}
-								data-sveltekit-preload-data={nudge.to.kind === 'next' ? 'off' : undefined}
-								class="block py-1 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
-								>{nudge.text}</a
-							>
-							<!-- eslint-enable svelte/no-navigation-without-resolve -->
-						</li>
-					{/each}
-				</ul>
-			</section>
-		{/if}
-		{#if data.card}
-			{@const { day, days, today, sections } = data.card}
-			<DaySwitcher {days} selected={day} {today} />
-			{#if message}
-				<p role="alert" class="rounded-2xl bg-risk-tile px-4 py-3 font-bold text-ink">
-					<Icon name="warning" />
-					{message}
-				</p>
+					<form
+						method="POST"
+						action="?/dismissRecap{data.keep ?? ''}"
+						use:enhance={() =>
+							async ({ result, update }) => {
+								if (result.type === 'redirect') await invalidateAll();
+								else await update();
+							}}
+					>
+						<input type="hidden" name="month" value={data.recap.month} />
+						<button
+							type="submit"
+							class="rounded-xl px-2 py-1 font-bold underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+							>Dismiss</button
+						>
+					</form>
+				</div>
 			{/if}
-
-			<section aria-labelledby="do-today" class="flex flex-col">
-				<h2 id="do-today" class={heading}>Do today</h2>
-				{#if sections.doToday.length === 0}
-					<p class="rounded-2xl bg-earned-tile px-4 py-3 font-bold text-ink">All done today</p>
-				{:else}
-					<ul class={list}>
-						{#each sections.doToday as row (row.squareId)}
-							<TodayRow {row} {day} keep={data.keep} onerror={showError} />
+			{#if data.buildCard}
+				<div class="flex flex-col items-center gap-4 py-8 text-center lg:hidden">
+					<p class="text-lg text-muted">Build this month's card to start checking in.</p>
+					<Button href={resolve('/(app)/card/build')}>Build one</Button>
+				</div>
+			{/if}
+			{#if data.headsUp?.length}
+				<section aria-labelledby="heads-up" class="rounded-2xl bg-risk-tile px-4 py-3">
+					<h2 id="heads-up" class="flex items-center gap-2 {heading}">
+						<Warning weight="duotone" size={18} class="text-terracotta" aria-hidden="true" />Heads
+						up
+					</h2>
+					<ul class="flex flex-col gap-1">
+						{#each data.headsUp as nudge (nudge.text)}
+							<li>
+								<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve() can't carry the ?day= query -->
+								<a
+									href={nudge.to.kind === 'sheet'
+										? resolve('/(app)/card/squares/[id]', { id: nudge.to.squareId })
+										: nudge.to.kind === 'day'
+											? `${resolve('/(app)/today')}?day=${nudge.to.date}`
+											: nudge.to.kind === 'next'
+												? resolve('/(app)/card/next')
+												: resolve('/(app)/card')}
+									data-sveltekit-preload-data={nudge.to.kind === 'next' ? 'off' : undefined}
+									class="block py-1 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+									>{nudge.text}</a
+								>
+								<!-- eslint-enable svelte/no-navigation-without-resolve -->
+							</li>
 						{/each}
 					</ul>
+				</section>
+			{/if}
+			{#if data.card}
+				{@const { day, days, today, sections } = data.card}
+				<DaySwitcher {days} selected={day} {today} />
+				{#if message}
+					<p role="alert" class="rounded-2xl bg-risk-tile px-4 py-3 font-bold text-ink">
+						<Icon name="warning" />
+						{message}
+					</p>
 				{/if}
-				{#if sections.done.length > 0}
-					<details aria-label="Done" class="mt-2">
-						<summary
-							class="group flex min-h-11 cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden {heading}"
-							><Icon
-								name="caret-right"
-								class="group-open:rotate-90 motion-safe:transition-transform"
-							/>Done ({sections.done.length})</summary
-						>
-						<ul class={list}>
-							{#each sections.done as row (row.squareId)}
-								<TodayRow {row} {day} keep={data.keep} onerror={showError} />
-							{/each}
-						</ul>
-					</details>
-				{/if}
-			</section>
 
-			{#each groups as group (group.key)}
-				{#if sections[group.key].length > 0}
-					<section aria-labelledby={group.key} class="flex flex-col">
-						<h2 id={group.key} class={heading}>{group.heading}</h2>
+				<section aria-labelledby="do-today" class="flex flex-col">
+					<h2 id="do-today" class={heading}>Do today</h2>
+					{#if sections.doToday.length === 0}
+						<p class="rounded-2xl bg-earned-tile px-4 py-3 font-bold text-ink">All done today</p>
+					{:else}
 						<ul class={list}>
-							{#each sections[group.key] as row (row.squareId)}
+							{#each sections.doToday as row (row.squareId)}
 								<TodayRow {row} {day} keep={data.keep} onerror={showError} />
 							{/each}
 						</ul>
-					</section>
-				{/if}
-			{/each}
-		{/if}
+					{/if}
+					{#if sections.done.length > 0}
+						<details aria-label="Done" class="mt-2">
+							<summary
+								class="group flex min-h-11 cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden {heading}"
+								><Icon
+									name="caret-right"
+									class="group-open:rotate-90 motion-safe:transition-transform"
+								/>Done ({sections.done.length})</summary
+							>
+							<ul class={list}>
+								{#each sections.done as row (row.squareId)}
+									<TodayRow {row} {day} keep={data.keep} onerror={showError} />
+								{/each}
+							</ul>
+						</details>
+					{/if}
+				</section>
+
+				{#each groups as group (group.key)}
+					{#if sections[group.key].length > 0}
+						<section aria-labelledby={group.key} class="flex flex-col">
+							<h2 id={group.key} class={heading}>{group.heading}</h2>
+							<ul class={list}>
+								{#each sections[group.key] as row (row.squareId)}
+									<TodayRow {row} {day} keep={data.keep} onerror={showError} />
+								{/each}
+							</ul>
+						</section>
+					{/if}
+				{/each}
+			{/if}
+		</div>
+		<!-- The card beside the list on wide screens (spec §3). -->
+		<section aria-label="Your card" class="hidden self-start lg:sticky lg:top-4 lg:block">
+			{#if data.board}
+				<p class="mb-3 text-[26px] leading-none font-extrabold text-forest tabular-nums">
+					{data.board.score.points}<span class="ml-1 text-xs font-semibold text-muted">pts</span>
+				</p>
+				<CardBoard size={data.board.size} squares={data.board.squares} />
+			{/if}
+			{#if data.buildCard}
+				<div class="flex flex-col items-center gap-4 py-8 text-center">
+					<p class="text-lg text-muted">Build this month's card to start checking in.</p>
+					<Button href={resolve('/(app)/card/build')}>Build one</Button>
+				</div>
+			{/if}
+		</section>
 	</div>
 </section>
 
