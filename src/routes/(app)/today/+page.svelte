@@ -14,6 +14,8 @@
 	import { greeting, todaySummary } from '#lib/game/greeting.ts';
 	import type { CardScore, Tier } from '#lib/game/score.ts';
 	import TodayRow from '#lib/components/TodayRow.svelte';
+	import { page } from '$app/state';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -49,6 +51,13 @@
 		{ key: 'slip', heading: 'Log a slip' }
 	] as const;
 </script>
+
+<Seo
+	title="Today"
+	description="Your Habit Bingo card and check-ins."
+	path={page.url.pathname}
+	noindex
+/>
 
 <Hero
 	title={data.name ? `${greeting(data.hour)}, ${data.name}` : greeting(data.hour)}

@@ -2,7 +2,6 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Icon from '#lib/components/Icon.svelte';
-	import Seo from '#lib/components/Seo.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -12,13 +11,6 @@
 		page.url.pathname === href || (under && page.url.pathname.startsWith(`${href}/`));
 	const current = (href: string, under = false) => (active(href, under) ? 'page' : undefined);
 </script>
-
-<Seo
-	title="Your habits"
-	description="Your Habit Bingo card and check-ins."
-	path={page.url.pathname}
-	noindex
-/>
 
 <nav aria-label="Main" class="bar">
 	<a href={resolve('/(app)/today')} aria-current={current('/today')} class="tab"

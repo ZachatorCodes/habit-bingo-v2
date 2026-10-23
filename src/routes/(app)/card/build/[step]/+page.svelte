@@ -10,6 +10,8 @@
 	import TargetList from '#lib/components/TargetList.svelte';
 	import TextField from '#lib/components/TextField.svelte';
 	import SizePicker from '#lib/components/SizePicker.svelte';
+	import { page } from '$app/state';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -64,6 +66,13 @@
 		};
 	}
 </script>
+
+<Seo
+	title="Build your card"
+	description="Your Habit Bingo card and check-ins."
+	path={page.url.pathname}
+	noindex
+/>
 
 <Hero
 	title={data.forNext

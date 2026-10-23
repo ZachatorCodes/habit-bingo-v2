@@ -14,6 +14,7 @@
 	import Hero from '#lib/components/Hero.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import CardHeader from '#lib/components/CardHeader.svelte';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -104,6 +105,13 @@
 		}
 	}
 </script>
+
+<Seo
+	title="Your card"
+	description="Your Habit Bingo card and check-ins."
+	path={page.url.pathname}
+	noindex
+/>
 
 {#if card}
 	<CardHeader

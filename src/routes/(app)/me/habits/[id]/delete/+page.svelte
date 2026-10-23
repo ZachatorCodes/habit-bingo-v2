@@ -2,10 +2,19 @@
 	import { resolve } from '$app/paths';
 	import Hero from '#lib/components/Hero.svelte';
 	import Icon from '#lib/components/Icon.svelte';
+	import { page } from '$app/state';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 </script>
+
+<Seo
+	title="Delete {data.habit.name}"
+	description="Your Habit Bingo card and check-ins."
+	path={page.url.pathname}
+	noindex
+/>
 
 <Hero title="Delete {data.habit.name}?" />
 

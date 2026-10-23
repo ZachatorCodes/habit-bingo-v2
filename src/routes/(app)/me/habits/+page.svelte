@@ -7,6 +7,8 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import StarterHabits from '#lib/components/StarterHabits.svelte';
 	import { CATEGORIES } from '#lib/game/categories.ts';
+	import { page } from '$app/state';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -39,6 +41,13 @@
 				: '?archived=1'
 	);
 </script>
+
+<Seo
+	title="Habit library"
+	description="Your Habit Bingo card and check-ins."
+	path={page.url.pathname}
+	noindex
+/>
 
 <Hero
 	title="Habit library"

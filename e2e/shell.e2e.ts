@@ -59,3 +59,17 @@ test('start URL leads to Today or sign-in', async ({ page, request }) => {
 	await page.goto('/today');
 	await expect(page).toHaveURL(/\/signin/);
 });
+
+test('every signed-in page has its own title', async ({ page }) => {
+	await newMember(page);
+	for (const [path, title] of [
+		['/today', 'Today'],
+		['/card', 'Your card'],
+		['/me', 'Me'],
+		['/me/habits', 'Habit library'],
+		['/me/history', 'History']
+	]) {
+		await page.goto(path);
+		await expect(page).toHaveTitle(`${title} · Habit Bingo`);
+	}
+});

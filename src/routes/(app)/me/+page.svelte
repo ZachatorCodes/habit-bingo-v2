@@ -7,6 +7,8 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import IconPicker from '#lib/components/IconPicker.svelte';
 	import TextField from '#lib/components/TextField.svelte';
+	import { page } from '$app/state';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -66,6 +68,13 @@
 		}
 	];
 </script>
+
+<Seo
+	title="Me"
+	description="Your Habit Bingo card and check-ins."
+	path={page.url.pathname}
+	noindex
+/>
 
 {#snippet saved(message: string)}
 	<p role="status" tabindex="-1" class="rounded-row bg-earned-tile px-4 py-3 font-bold text-ink">
