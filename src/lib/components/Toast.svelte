@@ -21,7 +21,7 @@
 <!-- One live region for the page's life, so screen readers announce each message as it arrives. -->
 <div
 	role="status"
-	class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4"
+	class="pointer-events-none fixed inset-x-0 bottom-[calc(1rem+var(--tab-bar,var(--safe-bottom,0px)))] z-50 flex justify-center px-4"
 >
 	{#if shown}
 		{#key shown.id}

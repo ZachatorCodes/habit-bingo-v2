@@ -47,10 +47,15 @@ test('a new card fills the Today sections', async ({ page }) => {
 
 test('a double tap on + logs once', async ({ page }) => {
 	await onToday(page);
+	let posts = 0;
+	page.on('request', (r) => {
+		if (r.method() === 'POST' && r.url().includes('/log')) posts++;
+	});
 	await page.getByRole('button', { name: 'Log Drink water' }).dblclick();
 	const row = section(page, 'Do today').filter({ hasText: 'Drink water' });
 	await expect(row).toContainText('1/8 today');
-	await expect(row).not.toContainText('2/8 today');
+	await page.waitForLoadState('networkidle');
+	expect(posts).toBe(1);
 });
 
 test('logging moves a day habit to Done and back with undo', async ({ page }) => {
@@ -320,6 +325,16 @@ test('the card header reflects check-ins', async ({ page }) => {
 		section(page, 'Anytime this month').filter({ hasText: 'Finish a book' })
 	).toContainText('1 of 1 this month');
 	expect(await pointsOf()).toBeGreaterThan(before);
+});
+
+test('keyboard focus stays on + after a log that leaves the row open', async ({ page }) => {
+	await onToday(page);
+	const log = page.getByRole('button', { name: 'Log Go biking' });
+	await log.focus();
+	const logged = page.waitForResponse((r) => r.url().includes('/today/__data.json'));
+	await page.keyboard.press('Enter');
+	await logged;
+	await expect(log).toBeFocused();
 });
 
 test('focus follows the main button when a row meets its target and is undone', async ({

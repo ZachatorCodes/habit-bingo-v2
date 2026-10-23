@@ -167,7 +167,7 @@
 				data-primary
 				aria-label="Log {row.name}"
 				aria-busy={busy}
-				disabled={busy}
+				aria-disabled={busy}
 				class={[button, 'bg-terracotta text-white', busy && 'opacity-70 motion-safe:scale-95']}
 				><Plus weight="bold" aria-hidden="true" /></button
 			>

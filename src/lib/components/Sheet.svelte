@@ -53,6 +53,7 @@
 	class="w-full max-w-lg overflow-visible bg-transparent p-0 text-ink backdrop:bg-ink/40 max-sm:mt-auto max-sm:mb-0 max-sm:max-w-none sm:m-auto"
 >
 	<div
+		style="padding-bottom: calc(1.25rem + var(--safe-bottom, 0px))"
 		class="max-h-[85dvh] overflow-y-auto rounded-t-[24px] bg-surface p-5 shadow-sheet sm:rounded-[24px]"
 	>
 		<div class="flex items-start justify-between gap-3">

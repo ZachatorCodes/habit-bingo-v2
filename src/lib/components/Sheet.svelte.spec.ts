@@ -15,6 +15,13 @@ describe('Sheet', () => {
 		await expect.element(page.getByText('Sheet body')).toBeVisible();
 	});
 
+	it('pads its bottom for the home indicator', async () => {
+		document.documentElement.style.setProperty('--safe-bottom', '34px');
+		render(Sheet, { title: 'Go biking', onclose: () => {}, children: body });
+		const panel = page.getByRole('dialog').element().firstElementChild as HTMLElement;
+		expect(getComputedStyle(panel).paddingBottom).toBe('54px');
+		document.documentElement.style.removeProperty('--safe-bottom');
+	});
 	it('closes with the Close button and with Escape', async () => {
 		const onclose = vi.fn();
 		render(Sheet, { title: 'Go biking', onclose, children: body });

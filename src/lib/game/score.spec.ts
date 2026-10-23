@@ -24,8 +24,9 @@ const rule = (
 const all = (n: number, value = true) => Array.from({ length: n }, () => value);
 
 describe('counts', () => {
-	it('complete, held and atRisk count; the rest do not', () => {
+	it('free, complete, held and atRisk count; the rest do not', () => {
 		const states: SquareState[] = [
+			'free',
 			'empty',
 			'inProgress',
 			'complete',
@@ -34,7 +35,7 @@ describe('counts', () => {
 			'lost',
 			'buildNext'
 		];
-		expect(states.filter(counts)).toEqual(['complete', 'held', 'atRisk']);
+		expect(states.filter(counts)).toEqual(['free', 'complete', 'held', 'atRisk']);
 	});
 });
 
