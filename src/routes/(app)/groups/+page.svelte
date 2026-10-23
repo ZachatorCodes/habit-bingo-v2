@@ -20,7 +20,7 @@
 <Hero title="Groups" {summary} />
 
 <section class="relative -mt-[18px] rounded-[24px] bg-surface shadow-sheet">
-	<div class="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5">
+	<div class="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5 lg:max-w-5xl">
 		{#if data.groups.length === 0}
 			<div class="flex flex-col items-start gap-3 rounded-row border border-dashed border-line p-5">
 				<p class="flex items-center gap-2 font-bold">
@@ -29,7 +29,7 @@
 				</p>
 			</div>
 		{:else}
-			<ul class="flex flex-col gap-2">
+			<ul class="flex flex-col gap-2 md:grid md:grid-cols-2 xl:grid-cols-3">
 				{#each data.groups as group (group.id)}
 					<li>
 						<a

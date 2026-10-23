@@ -40,7 +40,7 @@
 <Hero title="Welcome to Habit Bingo" summary="A few quick things so your card feels like yours." />
 
 <div class="relative -mt-[18px] pb-4">
-	<section class="rounded-[24px] bg-surface shadow-sheet">
+	<section class="rounded-[24px] bg-surface shadow-sheet md:mx-auto md:max-w-[480px]">
 		<form
 			method="POST"
 			class="mx-auto flex max-w-md flex-col gap-5 px-4 py-5"

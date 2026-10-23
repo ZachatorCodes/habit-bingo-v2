@@ -30,7 +30,7 @@
 
 {#snippet sheet(content: Snippet)}
 	<div class="relative -mt-[18px] pb-4">
-		<section class="rounded-[24px] bg-surface shadow-sheet">
+		<section class="rounded-[24px] bg-surface shadow-sheet md:mx-auto md:max-w-[480px]">
 			<div class="mx-auto flex max-w-md flex-col gap-4 px-4 py-5">
 				{@render content()}
 			</div>

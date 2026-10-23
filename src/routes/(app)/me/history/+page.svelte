@@ -19,7 +19,7 @@
 <Hero title="History" summary="Your finished months and their recaps." />
 
 <section class="relative -mt-[18px] rounded-[24px] bg-surface shadow-sheet">
-	<div class="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5">
+	<div class="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5 lg:max-w-5xl">
 		{#if data.months.length === 0}
 			<p class="rounded-row border border-dashed border-line p-5 font-bold">
 				<Icon name="target" class="text-forest" />
@@ -27,7 +27,10 @@
 			</p>
 		{:else}
 			<!-- Opening a recap marks it seen, so a hover must not load it. -->
-			<ul class="flex flex-col gap-2" data-sveltekit-preload-data="off">
+			<ul
+				class="flex flex-col gap-2 md:grid md:grid-cols-2 xl:grid-cols-3"
+				data-sveltekit-preload-data="off"
+			>
 				{#each data.months as { month, name, points, tiers } (month)}
 					<li>
 						<a

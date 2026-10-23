@@ -21,13 +21,13 @@
 	}
 
 	const chip =
-		'inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-forest';
+		'inline-flex min-h-11 items-center gap-1.5 rounded-full lg:flex lg:w-full border px-3.5 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-forest';
 </script>
 
 <!-- Links are resolve()d paths plus a query string, which the lint rule cannot follow. -->
 <!-- eslint-disable svelte/no-navigation-without-resolve -->
-<nav aria-label="Filter by category">
-	<ul class="flex flex-wrap gap-2">
+<nav aria-label="Filter by category" class="lg:sticky lg:top-4">
+	<ul class="flex flex-wrap gap-2 lg:flex-col lg:flex-nowrap">
 		<li>
 			<a
 				href={resolve('/(app)/me/habits') + query(null)}

@@ -26,7 +26,7 @@
 <Hero {title} summary={lede} />
 
 <section class="relative -mt-[18px] rounded-[24px] bg-surface shadow-sheet">
-	<div class="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-5">
+	<div class="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-5 md:max-w-[640px]">
 		<a
 			href={resolve('/(app)/me/habits')}
 			class="inline-flex min-h-11 items-center gap-1 font-bold text-forest underline-offset-4 hover:underline"

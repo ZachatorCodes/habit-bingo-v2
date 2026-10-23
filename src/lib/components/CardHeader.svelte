@@ -47,8 +47,10 @@
 <Hero title="{monthName} card" summary="{daysLeft} {daysLeft === 1 ? 'day' : 'days'} left" />
 
 <section class="relative -mt-[18px] rounded-[24px] bg-surface shadow-sheet">
-	<div class="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-6">
-		<div class="flex items-end justify-between gap-4">
+	<div
+		class="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-6 lg:grid lg:max-w-5xl lg:grid-cols-[minmax(0,640px)_1fr] lg:grid-rows-[auto_1fr] lg:gap-x-8"
+	>
+		<div class="flex items-end justify-between gap-4 lg:col-start-2 lg:row-start-1">
 			<p class="text-[26px] leading-none font-extrabold text-forest tabular-nums">
 				<span aria-hidden="true"
 					>{score.points}<span class="ml-1 text-xs font-semibold text-muted">pts</span></span
@@ -60,9 +62,11 @@
 			</div>
 		</div>
 
-		{@render children?.()}
+		<div class="flex flex-col gap-5 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+			{@render children?.()}
+		</div>
 
-		<div class="flex flex-col">
+		<div class="flex flex-col lg:col-start-2 lg:row-start-2">
 			<p class="mb-1 text-xs font-extrabold tracking-[0.02em]">{score.percent}% counting</p>
 			<ul aria-label="Rewards" class="flex flex-col divide-y divide-line">
 				{#each tiers as { tier, label, reward } (tier)}

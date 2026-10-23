@@ -48,7 +48,7 @@
 		</svg>
 	</div>
 	<div
-		class="relative col-start-1 row-start-1 px-4 pt-[calc(3rem+var(--safe-top))] pb-14 text-center text-surface md:col-start-1 md:py-20 md:pl-[max(1rem,calc(100%-31rem))] md:text-left"
+		class="relative col-start-1 row-start-1 px-4 pt-[calc(3rem+var(--safe-top))] pb-14 text-center text-surface md:col-start-1 md:pt-[calc(5rem+var(--safe-top))] md:pb-20 md:pl-[max(1rem,calc(100%-31rem))] md:text-left"
 	>
 		<h1 class="text-4xl leading-tight font-extrabold md:text-5xl">
 			Turn your habits into a game of bingo.

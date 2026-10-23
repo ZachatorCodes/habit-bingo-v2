@@ -144,3 +144,11 @@ export async function startCard(page: Page): Promise<void> {
 	await page.getByRole('button', { name: 'Start card' }).click();
 	await expect(page).toHaveURL(/\/card\?started=1$/);
 }
+
+/** Fails when the page scrolls sideways. */
+export async function expectNoHorizontalScroll(page: Page): Promise<void> {
+	const overflow = await page.evaluate(
+		() => document.documentElement.scrollWidth - window.innerWidth
+	);
+	expect(overflow).toBeLessThanOrEqual(0);
+}
