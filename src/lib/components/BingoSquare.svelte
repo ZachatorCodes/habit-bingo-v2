@@ -56,7 +56,7 @@
 
 <div
 	role="img"
-	aria-label="{label}: {stateText}"
+	aria-label={sq === 'free' ? label : `${label}: ${stateText}`}
 	data-state={sq}
 	onanimationend={() => (popped = false)}
 	class={[

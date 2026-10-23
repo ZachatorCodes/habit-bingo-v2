@@ -47,9 +47,9 @@ async function octoberCard(page: Page, iso: string): Promise<void> {
 
 const center = (page: Page) => page.locator('main [role="img"][data-state]').nth(4);
 
-test('the center square is complete before the last 7 days', async ({ page }) => {
+test('the center square is free before the last 7 days', async ({ page }) => {
 	await octoberCard(page, OCT_20);
-	await expect(center(page)).toHaveAttribute('aria-label', 'Free: complete');
+	await expect(center(page)).toHaveAttribute('aria-label', 'Free');
 	await expect(page.getByRole('link', { name: /Build November's card/ })).toHaveCount(0);
 });
 

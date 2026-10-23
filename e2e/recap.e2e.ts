@@ -45,7 +45,7 @@ test('on the 3rd the month is still open: no banner, no history', async ({ page 
 	await octoberCard(page);
 	await setClock(page, '2026-11-03T12:00:00Z');
 	await page.goto('/today');
-	await expect(page.getByRole('navigation', { name: 'Day' })).toBeVisible();
+	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 	await expect(banner(page)).toHaveCount(0);
 	await page.goto('/me/history');
 	await expect(
