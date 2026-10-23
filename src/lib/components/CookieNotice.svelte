@@ -43,3 +43,13 @@
 		</button>
 	</div>
 {/if}
+
+<style>
+	/* While the notice floats over the page, keep the last controls reachable above it. */
+	:global(html:has([aria-label='Cookie notice'])) {
+		scroll-padding-bottom: calc(var(--tab-bar, 0px) + 8rem);
+	}
+	:global(html:has([aria-label='Cookie notice']) body) {
+		padding-bottom: calc(var(--tab-bar, 0px) + 8rem);
+	}
+</style>

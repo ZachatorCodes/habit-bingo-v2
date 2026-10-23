@@ -66,9 +66,12 @@
 		background: var(--color-surface);
 		color: var(--color-ink);
 	}
-	/* --tab-bar also lifts the cookie notice above the tabs. */
-	:global(body) {
+	/* --tab-bar also lifts the cookie notice above the tabs, and keeps scrolled-to controls clear of them. */
+	:global(html) {
 		--tab-bar: calc(76px + var(--safe-bottom));
+		scroll-padding-bottom: var(--tab-bar);
+	}
+	:global(body) {
 		padding-bottom: var(--tab-bar);
 	}
 	.bar {
