@@ -397,6 +397,12 @@ test('5×5 names show on a phone', async ({ page, baseURL }) => {
 		lineHeight: parseFloat(getComputedStyle(el).lineHeight)
 	}));
 	expect(height).toBeLessThanOrEqual(Math.ceil(lineHeight * 2));
+	// Ordinary words wrap at spaces; only an unspaced run may break anywhere.
+	const spaced = await names.filter({ hasText: 'Habit 01' }).evaluate((el) => ({
+		wrap: getComputedStyle(el).overflowWrap,
+		brk: getComputedStyle(el).wordBreak
+	}));
+	expect(spaced).toEqual({ wrap: 'anywhere', brk: 'normal' });
 	await expectNoHorizontalScroll(page);
 });
 

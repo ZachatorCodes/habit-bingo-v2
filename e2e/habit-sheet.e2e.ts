@@ -112,6 +112,65 @@ test('future days are disabled', async ({ page }) => {
 	).toBeDisabled();
 });
 
+test('days you cannot log look disabled', async ({ page }) => {
+	await onCard(page);
+	await square(page, 'Drink water').click();
+	const sheet = page.getByRole('dialog', { name: 'Drink water' });
+	const future = sheet.getByRole('button', { name: "Wednesday October 21, can't log" });
+	const open = sheet.getByRole('button', { name: 'Monday October 19, not logged' });
+	await expect(future).toHaveCSS('color', 'rgb(92, 106, 96)');
+	await expect(open).not.toHaveCSS('color', 'rgb(92, 106, 96)');
+});
+
+// Holds the first sheet refresh back until the test releases it, so it lands after later ones.
+async function delayFirstRefresh(page: Page) {
+	let release!: () => void;
+	let seen!: () => void;
+	const held = new Promise<void>((r) => (release = r));
+	const intercepted = new Promise<void>((r) => (seen = r));
+	let first = true;
+	await page.route(/\/squares\/[^/]+\/__data\.json.*refresh=/, async (route) => {
+		if (!first) return route.continue();
+		first = false;
+		const response = await route.fetch();
+		seen();
+		await held;
+		await route.fulfill({ response });
+	});
+	return { release, intercepted };
+}
+
+test('a late refresh does not undo a newer count', async ({ page }) => {
+	await onCard(page);
+	await square(page, 'Drink water').click();
+	const sheet = page.getByRole('dialog', { name: 'Drink water' });
+	const count = sheet.getByRole('status', { name: 'Count' });
+	const { release, intercepted } = await delayFirstRefresh(page);
+	await sheet.getByRole('button', { name: 'Add one' }).click();
+	await intercepted;
+	await sheet.getByRole('button', { name: 'Add one' }).click();
+	await expect(count).toHaveText('2');
+	await page.waitForTimeout(800); // the second refresh lands and is applied first
+	release();
+	await page.waitForTimeout(800);
+	await expect(count).toHaveText('2');
+});
+
+test('a refresh that lands after Escape does not reopen the sheet', async ({ page }) => {
+	await onCard(page);
+	await square(page, 'Drink water').click();
+	const sheet = page.getByRole('dialog', { name: 'Drink water' });
+	const { release, intercepted } = await delayFirstRefresh(page);
+	await sheet.getByRole('button', { name: 'Add one' }).click();
+	await intercepted;
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	release();
+	await page.waitForTimeout(1000);
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await expect(page).toHaveURL(/\/card$/);
+});
+
 test('a bad day parameter falls back to today', async ({ page }) => {
 	await onCard(page);
 	const href = (await square(page, 'Drink water').getAttribute('href'))!;
@@ -192,7 +251,7 @@ test('closing the sheet before a save finishes keeps it closed', async ({ page }
 	await expect(page.getByRole('dialog')).toBeHidden();
 	release();
 	await answered;
-	await page.waitForTimeout(500);
+	await page.waitForTimeout(1000);
 	await expect(page.getByRole('dialog')).toHaveCount(0);
 	await expect(page).toHaveURL(/\/card$/);
 });

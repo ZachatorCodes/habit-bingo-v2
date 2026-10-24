@@ -81,7 +81,7 @@
 				aria-hidden="true"
 				class={[
 					'line-clamp-2 w-full font-extrabold',
-					compact ? 'text-xs leading-[1.1] break-all' : 'text-xs leading-tight break-words',
+					compact ? 'text-xs leading-[1.1] wrap-anywhere' : 'text-xs leading-tight break-words',
 					sq === 'lost' && 'line-through'
 				]}>{sq === 'buildNext' ? 'Next month' : label}</span
 			>

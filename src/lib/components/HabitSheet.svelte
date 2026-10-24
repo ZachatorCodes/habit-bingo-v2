@@ -69,6 +69,11 @@
 	const dayQuery = (day: string) => (day === data.today ? '' : `?day=${day}`);
 	/** The count shown while a change is on its way; null shows the server's. */
 	let pending = $state<number | null>(null);
+	/** Saves still on their way: the optimistic count stays until the last one settles. */
+	let saving = 0;
+	const settle = () => {
+		if (--saving === 0) pending = null;
+	};
 	const count = $derived(pending ?? data.count);
 	const dayTitle = $derived(
 		`${WEEKDAYS[weekday(data.day)]}, ${monthName(data.calendar.month).slice(0, 3)} ${Number(data.day.slice(8))}: ${count} logged`
@@ -80,6 +85,7 @@
 		return ({ submitter }) => {
 			const hadFocus = submitter === document.activeElement;
 			const before = count;
+			saving++;
 			pending = next();
 			if (pending > before) {
 				tap();
@@ -96,7 +102,7 @@
 			}
 			return async ({ result, update }) => {
 				if (result.type === 'failure' || result.type === 'error') {
-					pending = null;
+					settle();
 					const message =
 						result.type === 'failure' && typeof result.data?.message === 'string'
 							? result.data.message
@@ -111,7 +117,7 @@
 				} else {
 					await update();
 				}
-				pending = null;
+				settle();
 				// A disabled − (at zero) drops focus: hand it to + so the keyboard stays in the stepper.
 				if (hadFocus && (submitter as HTMLButtonElement).disabled) {
 					await tick();

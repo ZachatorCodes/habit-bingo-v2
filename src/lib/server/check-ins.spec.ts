@@ -128,7 +128,7 @@ describe('logCheckIn', () => {
 		const refused = {
 			ok: false,
 			field: 'date',
-			message: 'You can log any day this month, up to today.'
+			message: "You can log any day of this card's month, up to today."
 		};
 		for (const date of ['2026-10-16', '2026-10-18', '2026-10-21', 'not-a-date']) {
 			expect(await logCheckIn(db, me, id, date, 1, OCT_20)).toEqual(refused);
@@ -143,7 +143,7 @@ describe('logCheckIn', () => {
 		expect(await logCheckIn(db, me, id, '2026-10-21', 1, OCT_20)).toMatchObject({
 			ok: false,
 			field: 'date',
-			message: 'You can log any day this month, up to today.'
+			message: "You can log any day of this card's month, up to today."
 		});
 	});
 

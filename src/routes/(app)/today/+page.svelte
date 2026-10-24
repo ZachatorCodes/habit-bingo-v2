@@ -91,11 +91,14 @@
 	});
 	afterNavigate(() => (closing = false));
 	// After a change inside the sheet: reload the sheet itself; Today refreshes when it closes.
+	let refreshes = 0;
 	async function refreshSheet(href: string) {
+		const mine = ++refreshes;
 		const sheet = await preloadData(
 			`${href}${href.includes('?') ? '&' : '?'}refresh=${Date.now()}`
 		);
-		if (sheet.type === 'loaded' && sheet.status === 200) {
+		// Only the newest refresh counts, and not once the sheet has closed.
+		if (mine === refreshes && page.state.sheet && sheet.type === 'loaded' && sheet.status === 200) {
 			// eslint-disable-next-line svelte/no-navigation-without-resolve -- href was built with resolve()
 			replaceState(href, { sheet: sheet.data.sheet as App.PageState['sheet'] });
 		}

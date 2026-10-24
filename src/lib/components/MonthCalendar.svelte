@@ -33,7 +33,11 @@
 		const { count, loggable } = info(date);
 		return [
 			'relative flex min-h-11 w-full min-w-11 flex-col items-center justify-center rounded-xl text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink',
-			date === selected ? 'bg-forest text-white' : loggable ? 'text-ink' : 'text-ink-muted',
+			date === selected
+				? 'bg-forest text-white'
+				: loggable
+					? 'text-ink'
+					: 'text-muted disabled:opacity-60',
 			date === today && 'ring-2 ring-forest ring-inset',
 			count > 0 && 'logged'
 		];
@@ -59,11 +63,7 @@
 <div bind:this={root} role="grid" aria-label={`${monthName(month)} ${month.slice(0, 4)}`}>
 	<div role="row" class="grid grid-cols-7 gap-1 pb-1">
 		{#each heads as head (head)}
-			<div
-				role="columnheader"
-				aria-label={head}
-				class="text-ink-muted text-center text-xs font-bold"
-			>
+			<div role="columnheader" aria-label={head} class="text-center text-xs font-bold text-muted">
 				{head.slice(0, 3)}
 			</div>
 		{/each}
