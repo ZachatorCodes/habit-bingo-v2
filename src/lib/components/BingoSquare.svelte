@@ -80,10 +80,8 @@
 				data-label
 				aria-hidden="true"
 				class={[
-					'line-clamp-2 w-full font-extrabold break-words',
-					compact
-						? 'hidden text-[10px] leading-[1.1] sm:block sm:text-xs sm:leading-tight md:text-sm'
-						: 'text-xs leading-tight',
+					'line-clamp-2 w-full font-extrabold',
+					compact ? 'text-xs leading-[1.1] break-all' : 'text-xs leading-tight break-words',
 					sq === 'lost' && 'line-through'
 				]}>{sq === 'buildNext' ? 'Next month' : label}</span
 			>
