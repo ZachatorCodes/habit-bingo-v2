@@ -1,5 +1,8 @@
 import { and, eq, gt, inArray, sql } from 'drizzle-orm';
 import { backfillMonths, canLog } from '#lib/game/backfill.ts';
+import { highlightChanges } from '#lib/game/feed.ts';
+import { highlightState } from '#lib/server/card-view.ts';
+import { syncHighlights } from '#lib/server/feed.ts';
 import { localDate } from '#lib/server/clock.ts';
 import type { Db } from '#lib/server/db/client.ts';
 import { card, cardSquare, checkIn } from '#lib/server/db/schema.ts';
@@ -61,6 +64,36 @@ async function checkLoggable(
 	return { ok: true, count: 0 };
 }
 
+/**
+ * Runs a check-in write and posts or retracts the feed highlights it changed. The card row lock
+ * makes simultaneous check-ins on one card take turns, so a shared line posts its bingo once.
+ */
+async function withHighlights(
+	db: Db,
+	userId: string,
+	squareId: string,
+	today: string,
+	write: (tx: Db) => Promise<CheckInResult>
+): Promise<CheckInResult> {
+	return db.transaction(async (tx) => {
+		const [{ cardId }] = await tx
+			.select({ cardId: cardSquare.cardId })
+			.from(cardSquare)
+			.where(eq(cardSquare.id, squareId));
+		await tx.execute(sql`select id from card where id = ${cardId} for update`);
+		const before = await highlightState(tx, cardId, today);
+		const result = await write(tx);
+		const after = await highlightState(tx, cardId, today);
+		await syncHighlights(
+			tx,
+			{ id: cardId, userId },
+			after.squares,
+			highlightChanges(before.state, after.state)
+		);
+		return result;
+	});
+}
+
 /** Adds (+1) or removes (−1) one check-in on a square and date (see `checkLoggable`). */
 export async function logCheckIn(
 	db: Db,
@@ -73,29 +106,31 @@ export async function logCheckIn(
 	const allowed = await checkLoggable(db, user, squareId, date, now);
 	if (!allowed?.ok) return allowed;
 
-	const where = and(eq(checkIn.squareId, squareId), eq(checkIn.date, date));
-	if (delta === 1) {
-		// One statement, so simultaneous taps each count.
-		const [row] = await db
-			.insert(checkIn)
-			.values({ id: crypto.randomUUID(), squareId, date, count: 1 })
-			.onConflictDoUpdate({
-				target: [checkIn.squareId, checkIn.date],
-				set: { count: sql`least(${checkIn.count} + 1, ${MAX_COUNT})`, updatedAt: now }
-			})
+	return withHighlights(db, user.id, squareId, localDate(now, user.timezone), async (tx) => {
+		const where = and(eq(checkIn.squareId, squareId), eq(checkIn.date, date));
+		if (delta === 1) {
+			// One statement, so simultaneous taps each count.
+			const [row] = await tx
+				.insert(checkIn)
+				.values({ id: crypto.randomUUID(), squareId, date, count: 1 })
+				.onConflictDoUpdate({
+					target: [checkIn.squareId, checkIn.date],
+					set: { count: sql`least(${checkIn.count} + 1, ${MAX_COUNT})`, updatedAt: now }
+				})
+				.returning({ count: checkIn.count });
+			return { ok: true, count: row.count };
+		}
+		// Decrement only above 1, then delete at 1: each statement re-checks its condition under the
+		// row lock, so simultaneous undos each count once and never break the 1–20 CHECK.
+		const [row] = await tx
+			.update(checkIn)
+			.set({ count: sql`${checkIn.count} - 1`, updatedAt: now })
+			.where(and(where, gt(checkIn.count, 1)))
 			.returning({ count: checkIn.count });
-		return { ok: true, count: row.count };
-	}
-	// Decrement only above 1, then delete at 1: each statement re-checks its condition under the
-	// row lock, so simultaneous undos each count once and never break the 1–20 CHECK.
-	const [row] = await db
-		.update(checkIn)
-		.set({ count: sql`${checkIn.count} - 1`, updatedAt: now })
-		.where(and(where, gt(checkIn.count, 1)))
-		.returning({ count: checkIn.count });
-	if (row) return { ok: true, count: row.count };
-	await db.delete(checkIn).where(and(where, eq(checkIn.count, 1)));
-	return { ok: true, count: 0 };
+		if (row) return { ok: true, count: row.count };
+		await tx.delete(checkIn).where(and(where, eq(checkIn.count, 1)));
+		return { ok: true, count: 0 };
+	});
 }
 
 /**
@@ -115,17 +150,19 @@ export async function setCheckIn(
 	if (!Number.isFinite(count))
 		return { ok: false, field: 'count', message: `Pick a number from 0 to ${MAX_COUNT}.` };
 	const value = Math.min(Math.max(Math.trunc(count), 0), MAX_COUNT);
-	const where = and(eq(checkIn.squareId, squareId), eq(checkIn.date, date));
-	if (value === 0) {
-		await db.delete(checkIn).where(where);
-		return { ok: true, count: 0 };
-	}
-	await db
-		.insert(checkIn)
-		.values({ id: crypto.randomUUID(), squareId, date, count: value })
-		.onConflictDoUpdate({
-			target: [checkIn.squareId, checkIn.date],
-			set: { count: value, updatedAt: now }
-		});
-	return { ok: true, count: value };
+	return withHighlights(db, user.id, squareId, localDate(now, user.timezone), async (tx) => {
+		const where = and(eq(checkIn.squareId, squareId), eq(checkIn.date, date));
+		if (value === 0) {
+			await tx.delete(checkIn).where(where);
+			return { ok: true, count: 0 };
+		}
+		await tx
+			.insert(checkIn)
+			.values({ id: crypto.randomUUID(), squareId, date, count: value })
+			.onConflictDoUpdate({
+				target: [checkIn.squareId, checkIn.date],
+				set: { count: value, updatedAt: now }
+			});
+		return { ok: true, count: value };
+	});
 }

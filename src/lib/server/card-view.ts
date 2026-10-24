@@ -3,9 +3,12 @@ import { evaluateSquare } from '#lib/game/evaluate.ts';
 import { centerState, nextMonthOpens } from '#lib/game/next-month.ts';
 import { scoreCard, squarePoints, type CardScore } from '#lib/game/score.ts';
 import type { SquareState } from '#lib/game/square-state.ts';
-import { getCard, type Card } from '#lib/server/cards.ts';
+import type { HighlightState } from '#lib/game/feed.ts';
+import { getCard, getCardById, type Card } from '#lib/server/cards.ts';
 import { getCheckIns } from '#lib/server/check-ins.ts';
 import type { Db } from '#lib/server/db/client.ts';
+import { card as cardTable } from '#lib/server/db/schema.ts';
+import { eq } from 'drizzle-orm';
 import type { IconName } from '#lib/icons.ts';
 
 export type ViewSquare = {
@@ -59,4 +62,37 @@ export async function cardView(
 		};
 	});
 	return { squares, score: scoreCard(card.size, squares), nextMonthName: next };
+}
+
+/**
+ * What the feed compares around a check-in: each square's state and the reached tiers, from the
+ * same per-square evaluation as `cardView`. `squares` carries what a posted highlight names.
+ */
+export async function highlightState(
+	db: Db,
+	cardId: string,
+	today: string,
+	counts?: Awaited<ReturnType<typeof getCheckIns>>
+): Promise<{
+	state: HighlightState;
+	squares: { id: string; name: string; icon: IconName; isPrivate: boolean }[];
+}> {
+	const [{ userId }] = await db
+		.select({ userId: cardTable.userId })
+		.from(cardTable)
+		.where(eq(cardTable.id, cardId));
+	const card = (await getCardById(db, userId, cardId))!;
+	const view = await cardView(db, userId, card, today, counts);
+	const habits = card.squares.flatMap((s) => (s.isCenter ? [] : [s]));
+	return {
+		state: {
+			squares: habits.map((s) => ({
+				id: s.id,
+				direction: s.direction,
+				state: view.squares[card.squares.indexOf(s)].state
+			})),
+			tiers: view.score.tiers
+		},
+		squares: habits
+	};
 }

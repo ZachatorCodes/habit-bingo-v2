@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { CARD_SIZES, type CardSize } from '#lib/game/card-layout.ts';
 import { evaluateSquare } from '#lib/game/evaluate.ts';
 import type { Db } from '#lib/server/db/client.ts';
-import { checkIn, user } from '#lib/server/db/schema.ts';
+import { checkIn, feedEvent, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import { startCard, updateCard, type Card, type CardPlan, type Rewards } from './cards';
 import { getCheckIns, logCheckIn, MAX_COUNT, setCheckIn } from './check-ins';
@@ -262,5 +263,45 @@ describe('check-ins and card edits', () => {
 		expect(evaluateSquare(square, updated.card, checkIns.get(kept.id)!, '2026-10-02').state).toBe(
 			'complete'
 		);
+	});
+});
+
+describe('feed highlights', () => {
+	const monthly = { period: 'month', countMode: 'days' }; // only these can complete
+	const keys = async (cardId: string) =>
+		(await db.select({ key: feedEvent.key }).from(feedEvent).where(eq(feedEvent.cardId, cardId)))
+			.map((e) => e.key)
+			.sort();
+
+	it('posts a completed square and removes it on undo', async () => {
+		const me = await makeUser();
+		const card = await cardFor(me, await makeHabits(me.id, 8, monthly), OCT_1);
+		const { id } = habitSquare(card);
+		await logCheckIn(db, me, id, '2026-10-20', 1, OCT_20);
+		expect(await keys(card.id)).toEqual(['card', `square:${id}`]);
+		await logCheckIn(db, me, id, '2026-10-20', -1, OCT_20);
+		expect(await keys(card.id)).toEqual(['card']);
+	});
+
+	it('posts tier:bingo once when a line completes, via setCheckIn too', async () => {
+		const me = await makeUser();
+		const card = await cardFor(me, await makeHabits(me.id, 8, monthly), OCT_1);
+		const [a, b, c] = [0, 1, 2].map((i) => habitSquare(card, i).id);
+		await logCheckIn(db, me, a, '2026-10-20', 1, OCT_20);
+		await logCheckIn(db, me, b, '2026-10-20', 1, OCT_20);
+		await setCheckIn(db, me, c, '2026-10-20', 1, OCT_20);
+		const all = await keys(card.id);
+		expect(all.filter((k) => k === 'tier:bingo')).toHaveLength(1);
+		await setCheckIn(db, me, c, '2026-10-20', 0, OCT_20);
+		expect(await keys(card.id)).not.toContain('tier:bingo');
+	});
+
+	it('simultaneous logs post one bingo', async () => {
+		const me = await makeUser();
+		const card = await cardFor(me, await makeHabits(me.id, 8, monthly), OCT_1);
+		const [a, b, c] = [0, 1, 2].map((i) => habitSquare(card, i).id);
+		await logCheckIn(db, me, a, '2026-10-20', 1, OCT_20);
+		await Promise.all([b, c].map((id) => logCheckIn(db, me, id, '2026-10-20', 1, OCT_20)));
+		expect((await keys(card.id)).filter((k) => k === 'tier:bingo')).toHaveLength(1);
 	});
 });

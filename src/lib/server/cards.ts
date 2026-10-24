@@ -11,7 +11,8 @@ import type { IconName } from '#lib/icons.ts';
 import { isUniqueViolation } from '#lib/server/auth/sign-up.ts';
 import { localDate, startOfLocalDay } from '#lib/server/clock.ts';
 import type { Db } from '#lib/server/db/client.ts';
-import { card, cardSquare } from '#lib/server/db/schema.ts';
+import { card, cardSquare, feedEvent } from '#lib/server/db/schema.ts';
+import { postCardStarted } from '#lib/server/feed.ts';
 import { listHabits, type Habit } from '#lib/server/habits.ts';
 
 const EDIT_WINDOW_MS = 48 * 3_600_000;
@@ -297,6 +298,7 @@ export async function startCard(
 					...(entry ? snapshot(entry.habit!, entry.target) : {})
 				}))
 			);
+			await postCardStarted(tx, { id: cardId, userId: user.id, month });
 			return true;
 		});
 		if (!created) return exists;
@@ -354,6 +356,16 @@ export async function updateCard(
 				inArray(
 					cardSquare.id,
 					dropped.map((s) => s.id)
+				)
+			);
+			// A new habit never inherits the old one's highlight.
+			await tx.delete(feedEvent).where(
+				and(
+					eq(feedEvent.cardId, existing.id),
+					inArray(
+						feedEvent.key,
+						dropped.map((s) => `square:${s.id}`)
+					)
 				)
 			);
 		}

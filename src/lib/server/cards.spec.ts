@@ -2,7 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CARD_SIZES, type CardSize } from '#lib/game/card-layout.ts';
 import type { Db } from '#lib/server/db/client.ts';
-import { card, cardSquare, user } from '#lib/server/db/schema.ts';
+import { card, cardSquare, feedEvent, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import {
 	currentMonth,
@@ -616,5 +616,45 @@ describe('ownership', () => {
 		await db.delete(user).where(eq(user.id, me.id));
 		expect(await db.select().from(card)).toHaveLength(0);
 		expect(await db.select().from(cardSquare)).toHaveLength(0);
+	});
+});
+
+describe('feed highlights', () => {
+	const keys = async (cardId: string) =>
+		(await db.select({ key: feedEvent.key }).from(feedEvent).where(eq(feedEvent.cardId, cardId)))
+			.map((e) => e.key)
+			.sort();
+
+	it('startCard posts only cardStarted', async () => {
+		const me = await makeUser();
+		const habits: Habit[] = [];
+		for (let i = 0; i < 8; i++) {
+			habits.push(
+				await makeHabit(me.id, `Limit ${i}`, { direction: 'atMost', countMode: 'times', target: 3 })
+			);
+		}
+		const created = await started(me, habits);
+		expect(await keys(created.id)).toEqual(['card']);
+	});
+
+	it('swapping a habit removes its square event', async () => {
+		const me = await makeUser();
+		const habits = await makeHabits(me.id, 8);
+		const extra = await makeHabit(me.id, 'Extra', { icon: 'book-open', category: 'mind' });
+		const created = await started(me, habits);
+		const gone = created.squares.find((s) => !s.isCenter && s.habitId === habits[7].id)!;
+		await db.insert(feedEvent).values({
+			id: crypto.randomUUID(),
+			userId: me.id,
+			cardId: created.id,
+			type: 'squareComplete',
+			key: `square:${gone.id}`,
+			payload: {},
+			createdAt: new Date()
+		});
+		const swapped = [...habits.slice(0, 7), extra];
+		const result = await updateCard(db, me, created.id, withoutSize(plan(swapped)), OCT_19);
+		expect(result.ok).toBe(true);
+		expect(await keys(created.id)).toEqual(['card']);
 	});
 });
