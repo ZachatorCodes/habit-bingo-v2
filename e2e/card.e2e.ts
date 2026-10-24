@@ -368,8 +368,9 @@ test('5×5 names show on a phone', async ({ page, baseURL }) => {
 	await waitForHydration(page);
 	const labels = page.locator('label').filter({ has: page.getByRole('checkbox') });
 	for (let i = 0; i < 24; i++) await labels.nth(i).click();
-	// A plain click is blocked by a label on touch emulation after 24 picks, so dispatch it.
-	await page.getByRole('button', { name: 'Continue' }).dispatchEvent('click');
+	// A long unspaced name must not widen the picker past the phone (it used to block this tap).
+	await expectNoHorizontalScroll(page);
+	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/targets$/);
 	await waitForHydration(page);
 	await page.getByRole('button', { name: 'Continue' }).click();
