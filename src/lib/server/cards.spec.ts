@@ -657,4 +657,24 @@ describe('feed highlights', () => {
 		expect(result.ok).toBe(true);
 		expect(await keys(created.id)).toEqual(['card']);
 	});
+
+	it('an edit clears a highlight that is no longer true', async () => {
+		const me = await makeUser();
+		const habits = await makeHabits(me.id, 8);
+		const created = await started(me, habits);
+		// A kept square that is not complete must lose a stale highlight, not only swapped squares.
+		const kept = created.squares.find((s) => !s.isCenter)!;
+		await db.insert(feedEvent).values({
+			id: crypto.randomUUID(),
+			userId: me.id,
+			cardId: created.id,
+			type: 'squareComplete',
+			key: `square:${kept.id}`,
+			payload: {},
+			createdAt: new Date()
+		});
+		const result = await updateCard(db, me, created.id, withoutSize(plan(habits)), OCT_19);
+		expect(result.ok).toBe(true);
+		expect(await keys(created.id)).toEqual(['card']);
+	});
 });

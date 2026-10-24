@@ -10,21 +10,31 @@ export type HighlightState = {
 	tiers: Tier[];
 };
 
-/** Event keys a highlight is stored under: `square:<id>` or `tier:<tier>`. */
+const TIERS: readonly Tier[] = ['bingo', 'sixtyPercent', 'blackout'];
+
+/**
+ * Event keys a highlight is stored under: `square:<id>` or `tier:<tier>`. Posts only what this
+ * check-in newly made true; removes everything not true now, so a highlight lost while no one was
+ * checking in (a held square slipping as the days pass) is cleared on the next check-in.
+ */
 export function highlightChanges(
 	before: HighlightState,
 	after: HighlightState
 ): { post: string[]; remove: string[] } {
-	const post: string[] = [];
-	const remove: string[] = [];
 	const done = (s: HighlightState) =>
 		new Set(
 			s.squares.filter((q) => q.direction === 'atLeast' && q.state === 'complete').map((q) => q.id)
 		);
 	const [was, is] = [done(before), done(after)];
-	for (const id of is) if (!was.has(id)) post.push(`square:${id}`);
-	for (const id of was) if (!is.has(id)) remove.push(`square:${id}`);
-	for (const t of after.tiers) if (!before.tiers.includes(t)) post.push(`tier:${t}`);
-	for (const t of before.tiers) if (!after.tiers.includes(t)) remove.push(`tier:${t}`);
+	const post = [
+		...[...is].filter((id) => !was.has(id)).map((id) => `square:${id}`),
+		...after.tiers.filter((t) => !before.tiers.includes(t)).map((t) => `tier:${t}`)
+	];
+	const remove = [
+		...after.squares
+			.filter((q) => q.direction === 'atLeast' && !is.has(q.id))
+			.map((q) => `square:${q.id}`),
+		...TIERS.filter((t) => !after.tiers.includes(t)).map((t) => `tier:${t}`)
+	];
 	return { post, remove };
 }
