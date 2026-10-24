@@ -107,14 +107,17 @@ async function createGroup(page: Page): Promise<string> {
 	return new URL(page.url()).pathname;
 }
 
-test('group page shows leaderboard and members side by side', async ({ page }, info) => {
+test('group page puts feed beside a leaderboard and members column', async ({ page }, info) => {
 	test.skip(info.project.name !== 'desktop');
 	await newMember(page);
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await page.goto(await createGroup(page));
+	const feed = (await page.getByRole('region', { name: 'Feed' }).boundingBox())!;
 	const board = (await page.getByRole('region', { name: 'Leaderboard' }).boundingBox())!;
 	const members = (await page.getByRole('region', { name: 'Members' }).boundingBox())!;
-	expect(members.x).toBeGreaterThan(board.x + board.width - 1);
+	expect(board.x).toBeGreaterThan(feed.x + feed.width - 1);
+	expect(members.y).toBeGreaterThan(board.y + board.height - 1);
+	expect(members.x).toBe(board.x);
 	await expect(page.getByRole('navigation', { name: 'Group' })).toBeHidden();
 });
 

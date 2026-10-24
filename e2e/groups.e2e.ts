@@ -47,6 +47,7 @@ test('a group gets a member through its link', async ({ page, browser }) => {
 	const b = await newMember(pageB);
 	await join(pageB, link);
 	await expect(pageB.getByRole('heading', { level: 1, name: /Climbers/ })).toBeVisible();
+	await pageB.goto(`${groupPath}?tab=leaderboard`);
 	await expect(pageB.getByRole('link', { name: 'This month' })).toHaveAttribute(
 		'aria-current',
 		'page'
@@ -56,7 +57,7 @@ test('a group gets a member through its link', async ({ page, browser }) => {
 		pageB.getByRole('region', { name: 'Leaderboard' }).getByText(`@${a.username}`)
 	).toBeVisible();
 
-	await page.goto(groupPath);
+	await page.goto(`${groupPath}?tab=leaderboard`);
 	await expect(
 		page.getByRole('region', { name: 'Leaderboard' }).getByText(`@${b.username}`)
 	).toBeVisible();
@@ -90,7 +91,12 @@ test("a member's card hides private habits", async ({ page, browser }) => {
 
 	await page.goto('/groups');
 	await page.getByRole('link', { name: /Climbers/ }).click();
-	await page.getByRole('link', { name: new RegExp(`@${b.username}`) }).click();
+	await page.waitForURL(/\/groups\/[^/]+$/);
+	await page.goto(`${new URL(page.url()).pathname}?tab=leaderboard`);
+	await page
+		.getByRole('region', { name: 'Leaderboard' })
+		.getByRole('link', { name: new RegExp(`@${b.username}`) })
+		.click();
 	await expect(
 		page.getByRole('heading', { level: 1, name: new RegExp(`@${b.username}`) })
 	).toBeVisible();
@@ -153,6 +159,7 @@ test('strangers get a 404', async ({ page, browser }) => {
 	const pageB = await otherPerson(browser);
 	await newMember(pageB);
 	await join(pageB, link);
+	await pageB.goto(`${groupPath}?tab=leaderboard`);
 	const cardPath = new URL(
 		(await pageB.getByRole('link', { name: /\(you\)/ }).getAttribute('href'))!,
 		pageB.url()
@@ -169,7 +176,7 @@ test('strangers get a 404', async ({ page, browser }) => {
 test('tabs mark the current board', async ({ page }) => {
 	await newMember(page);
 	const { groupPath } = await createClimbers(page);
-	await page.goto(groupPath);
+	await page.goto(`${groupPath}?tab=leaderboard`);
 	// The tab bar is phone-and-tablet only; both panes show side by side at lg.
 	const tab = page.getByRole('link', { name: 'Leaderboard' });
 	const month = page.getByRole('link', { name: 'This month' });
