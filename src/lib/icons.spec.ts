@@ -11,6 +11,16 @@ import {
 } from '#lib/icons.ts';
 
 describe('icon registry', () => {
+	it('every category offers 14 pickable icons (two rows of seven)', () => {
+		for (const c of CATEGORIES)
+			expect(
+				ICONS.filter((i) => i.group === c.id && isPickableIcon(i.name)).map((i) => i.name),
+				c.id
+			).toHaveLength(14);
+	});
+	it('the money category reads Finance', () => {
+		expect(CATEGORIES.find((c) => c.id === 'money')?.label).toBe('Finance');
+	});
 	it('has about 60 unique icons, every group a real category', () => {
 		expect(ICONS.length).toBeGreaterThanOrEqual(54);
 		expect(new Set(ICONS.map((i) => i.name)).size).toBe(ICONS.length);

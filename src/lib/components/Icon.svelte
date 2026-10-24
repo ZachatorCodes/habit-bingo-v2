@@ -2,6 +2,62 @@
 	import type { Component } from 'svelte';
 	import { FALLBACK_ICON, isIconName, type IconName } from '#lib/icons.ts';
 	import Barbell from 'phosphor-svelte/lib/Barbell';
+	import PersonSimpleWalk from 'phosphor-svelte/lib/PersonSimpleWalk';
+	import PersonSimpleHike from 'phosphor-svelte/lib/PersonSimpleHike';
+	import BoxingGlove from 'phosphor-svelte/lib/BoxingGlove';
+	import Football from 'phosphor-svelte/lib/Football';
+	import Volleyball from 'phosphor-svelte/lib/Volleyball';
+	import TennisBall from 'phosphor-svelte/lib/TennisBall';
+	import FirstAidKit from 'phosphor-svelte/lib/FirstAidKit';
+	import OrangeSlice from 'phosphor-svelte/lib/OrangeSlice';
+	import YinYang from 'phosphor-svelte/lib/YinYang';
+	import Peace from 'phosphor-svelte/lib/Peace';
+	import Feather from 'phosphor-svelte/lib/Feather';
+	import Butterfly from 'phosphor-svelte/lib/Butterfly';
+	import CloudSun from 'phosphor-svelte/lib/CloudSun';
+	import Hourglass from 'phosphor-svelte/lib/Hourglass';
+	import FlowerTulip from 'phosphor-svelte/lib/FlowerTulip';
+	import Couch from 'phosphor-svelte/lib/Couch';
+	import Bathtub from 'phosphor-svelte/lib/Bathtub';
+	import CookingPot from 'phosphor-svelte/lib/CookingPot';
+	import Key from 'phosphor-svelte/lib/Key';
+	import Lamp from 'phosphor-svelte/lib/Lamp';
+	import Shower from 'phosphor-svelte/lib/Shower';
+	import HandWaving from 'phosphor-svelte/lib/HandWaving';
+	import Handshake from 'phosphor-svelte/lib/Handshake';
+	import Users from 'phosphor-svelte/lib/Users';
+	import UserPlus from 'phosphor-svelte/lib/UserPlus';
+	import Confetti from 'phosphor-svelte/lib/Confetti';
+	import Cake from 'phosphor-svelte/lib/Cake';
+	import VideoCamera from 'phosphor-svelte/lib/VideoCamera';
+	import Champagne from 'phosphor-svelte/lib/Champagne';
+	import Books from 'phosphor-svelte/lib/Books';
+	import Exam from 'phosphor-svelte/lib/Exam';
+	import Calculator from 'phosphor-svelte/lib/Calculator';
+	import Flask from 'phosphor-svelte/lib/Flask';
+	import Atom from 'phosphor-svelte/lib/Atom';
+	import GlobeHemisphereWest from 'phosphor-svelte/lib/GlobeHemisphereWest';
+	import Microscope from 'phosphor-svelte/lib/Microscope';
+	import Student from 'phosphor-svelte/lib/Student';
+	import PianoKeys from 'phosphor-svelte/lib/PianoKeys';
+	import Microphone from 'phosphor-svelte/lib/Microphone';
+	import FilmSlate from 'phosphor-svelte/lib/FilmSlate';
+	import Scissors from 'phosphor-svelte/lib/Scissors';
+	import Needle from 'phosphor-svelte/lib/Needle';
+	import PaintRoller from 'phosphor-svelte/lib/PaintRoller';
+	import Image from 'phosphor-svelte/lib/Image';
+	import Headphones from 'phosphor-svelte/lib/Headphones';
+	import Bank from 'phosphor-svelte/lib/Bank';
+	import CreditCard from 'phosphor-svelte/lib/CreditCard';
+	import CurrencyDollar from 'phosphor-svelte/lib/CurrencyDollar';
+	import Money from 'phosphor-svelte/lib/Money';
+	import Vault from 'phosphor-svelte/lib/Vault';
+	import ChartPie from 'phosphor-svelte/lib/ChartPie';
+	import HandCoins from 'phosphor-svelte/lib/HandCoins';
+	import Tag from 'phosphor-svelte/lib/Tag';
+	import Airplane from 'phosphor-svelte/lib/Airplane';
+	import Umbrella from 'phosphor-svelte/lib/Umbrella';
+	import Crown from 'phosphor-svelte/lib/Crown';
 	import PersonSimpleRun from 'phosphor-svelte/lib/PersonSimpleRun';
 	import Bicycle from 'phosphor-svelte/lib/Bicycle';
 	import SwimmingPool from 'phosphor-svelte/lib/SwimmingPool';
@@ -179,6 +235,62 @@
 		'caret-right': CaretRight,
 		'arrow-left': ArrowLeft,
 		'map-trifold': MapTrifold,
+		'person-simple-walk': PersonSimpleWalk,
+		'person-simple-hike': PersonSimpleHike,
+		'boxing-glove': BoxingGlove,
+		football: Football,
+		volleyball: Volleyball,
+		'tennis-ball': TennisBall,
+		'first-aid-kit': FirstAidKit,
+		'orange-slice': OrangeSlice,
+		'yin-yang': YinYang,
+		peace: Peace,
+		feather: Feather,
+		butterfly: Butterfly,
+		'cloud-sun': CloudSun,
+		hourglass: Hourglass,
+		'flower-tulip': FlowerTulip,
+		couch: Couch,
+		bathtub: Bathtub,
+		'cooking-pot': CookingPot,
+		key: Key,
+		lamp: Lamp,
+		shower: Shower,
+		'hand-waving': HandWaving,
+		handshake: Handshake,
+		users: Users,
+		'user-plus': UserPlus,
+		confetti: Confetti,
+		cake: Cake,
+		'video-camera': VideoCamera,
+		champagne: Champagne,
+		books: Books,
+		exam: Exam,
+		calculator: Calculator,
+		flask: Flask,
+		atom: Atom,
+		'globe-hemisphere-west': GlobeHemisphereWest,
+		microscope: Microscope,
+		student: Student,
+		'piano-keys': PianoKeys,
+		microphone: Microphone,
+		'film-slate': FilmSlate,
+		scissors: Scissors,
+		needle: Needle,
+		'paint-roller': PaintRoller,
+		image: Image,
+		headphones: Headphones,
+		bank: Bank,
+		'credit-card': CreditCard,
+		'currency-dollar': CurrencyDollar,
+		money: Money,
+		vault: Vault,
+		'chart-pie': ChartPie,
+		'hand-coins': HandCoins,
+		tag: Tag,
+		airplane: Airplane,
+		umbrella: Umbrella,
+		crown: Crown,
 		fire: Fire,
 		'hands-clapping': HandsClapping
 	};

@@ -11,7 +11,7 @@ describe('categories', () => {
 			'users-three Social',
 			'graduation-cap Learning',
 			'palette Creative',
-			'piggy-bank Money',
+			'piggy-bank Finance',
 			'sparkle Other'
 		]);
 		expect(CATEGORIES.map((c) => c.id)).toEqual([
