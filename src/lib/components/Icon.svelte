@@ -80,6 +80,8 @@
 	import CaretRight from 'phosphor-svelte/lib/CaretRight';
 	import ArrowLeft from 'phosphor-svelte/lib/ArrowLeft';
 	import MapTrifold from 'phosphor-svelte/lib/MapTrifold';
+	import Fire from 'phosphor-svelte/lib/Fire';
+	import HandsClapping from 'phosphor-svelte/lib/HandsClapping';
 
 	type IconProps = {
 		weight?: Props['weight'];
@@ -176,7 +178,9 @@
 		warning: Warning,
 		'caret-right': CaretRight,
 		'arrow-left': ArrowLeft,
-		'map-trifold': MapTrifold
+		'map-trifold': MapTrifold,
+		fire: Fire,
+		'hands-clapping': HandsClapping
 	};
 
 	const Glyph = $derived(COMPONENTS[isIconName(name) ? name : FALLBACK_ICON]);
