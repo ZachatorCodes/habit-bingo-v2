@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { BACKFILL_DAYS, backfillDates, backfillMonths, canLog } from './backfill.ts';
+import {
+	BACKFILL_DAYS,
+	backfillDates,
+	backfillMonths,
+	canLog,
+	loggableDates,
+	settledBefore
+} from './backfill.ts';
 
 describe('backfillDates', () => {
 	it('is today and the 3 days before, newest first', () => {
@@ -37,15 +44,33 @@ describe('backfillMonths', () => {
 	});
 });
 
+describe('loggableDates', () => {
+	it('is every day of the card so far, newest first', () => {
+		expect(loggableDates('2026-10-24', '2026-10-01')).toHaveLength(24);
+		const late = loggableDates('2026-10-24', '2026-10-20');
+		expect(late).toEqual(['2026-10-24', '2026-10-23', '2026-10-22', '2026-10-21', '2026-10-20']);
+	});
+});
+
 describe('canLog', () => {
-	it('allows only dates in the window', () => {
-		expect(canLog('2026-10-20', '2026-10-20', '2026-10-01')).toBe(true);
-		expect(canLog('2026-10-17', '2026-10-20', '2026-10-01')).toBe(true);
-		expect(canLog('2026-10-16', '2026-10-20', '2026-10-01')).toBe(false);
-		expect(canLog('2026-10-18', '2026-10-20', '2026-10-19')).toBe(false);
-		expect(canLog('2026-10-21', '2026-10-20', '2026-10-01')).toBe(false);
+	it('allows any day of the open month from the start date to today', () => {
+		expect(canLog('2026-10-24', '2026-10-24', '2026-10-01')).toBe(true);
+		expect(canLog('2026-10-12', '2026-10-24', '2026-10-01')).toBe(true);
+		expect(canLog('2026-10-19', '2026-10-24', '2026-10-20')).toBe(false);
+		expect(canLog('2026-10-25', '2026-10-24', '2026-10-01')).toBe(false);
+	});
+
+	it('keeps last month open on the 1st-3rd, then locks it', () => {
 		expect(canLog('2026-10-31', '2026-11-01', '2026-10-01')).toBe(true);
+		expect(canLog('2026-10-31', '2026-11-02', '2026-10-01')).toBe(true);
 		expect(canLog('2026-11-01', '2026-11-01', '2026-10-01')).toBe(false);
 		expect(canLog('2026-10-31', '2026-11-04', '2026-10-01')).toBe(false);
+	});
+});
+
+describe('settledBefore', () => {
+	it('is the first day that can still change', () => {
+		expect(settledBefore('2026-10-24', '2026-10')).toBe('2026-10-01');
+		expect(settledBefore('2026-11-04', '2026-10')).toBe('2026-11-01');
 	});
 });

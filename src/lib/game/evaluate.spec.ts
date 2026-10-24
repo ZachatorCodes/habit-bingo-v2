@@ -18,7 +18,7 @@ function range(from: string, to: string, count = 1): Record<string, number> {
 	}
 	return out;
 }
-const TODAY = '2026-10-20'; // a Tuesday; the backfill window is Oct 17–20
+const TODAY = '2026-10-20'; // a Tuesday
 
 describe('earn squares (atLeast / month)', () => {
 	const read = rule('atLeast', 'month', 'days', 4);
@@ -58,10 +58,17 @@ describe('atLeast / day', () => {
 		expect(evaluateSquare(walk, span, counts(days), TODAY).state).toBe('atRisk');
 	});
 
-	it('lost once a missed day leaves the window', () => {
-		const days = range('2026-10-01', '2026-10-20');
+	it('lost once the month closes with a day missed', () => {
+		const days = range('2026-10-01', '2026-10-31');
 		delete days['2026-10-15'];
-		expect(evaluateSquare(walk, span, counts(days), TODAY).state).toBe('lost');
+		expect(evaluateSquare(walk, span, counts(days), '2026-11-04').state).toBe('lost');
+	});
+
+	it('a day missed 10 days ago is atRisk while the month is open, lost once it closes', () => {
+		const days = range('2026-10-01', '2026-10-31');
+		delete days['2026-10-14'];
+		expect(evaluateSquare(walk, span, counts(days), '2026-10-24').state).toBe('atRisk');
+		expect(evaluateSquare(walk, span, counts(days), '2026-11-04').state).toBe('lost');
 	});
 
 	it('needs N check-ins to meet a day', () => {
@@ -95,7 +102,7 @@ describe('atLeast / week', () => {
 		expect(evaluateSquare(gym, span, two, saturday).state).toBe('held');
 	});
 
-	it('a short past week is atRisk while its last day is in the window, then lost', () => {
+	it('a short past week is atRisk while the month is open, then lost', () => {
 		const shortLastWeek = counts({
 			...range('2026-10-01', '2026-10-02'),
 			...range('2026-10-05', '2026-10-07'),
@@ -107,7 +114,16 @@ describe('atLeast / week', () => {
 			'2026-10-05': 1,
 			...range('2026-10-12', '2026-10-14')
 		});
-		expect(evaluateSquare(gym, span, shortEarlier, TODAY).state).toBe('lost');
+		expect(evaluateSquare(gym, span, shortEarlier, '2026-11-04').state).toBe('lost');
+	});
+
+	it('a week missed on Oct 8 is atRisk on Oct 24, lost on Nov 4', () => {
+		const missed = counts({
+			...range('2026-10-01', '2026-10-02'),
+			...range('2026-10-12', '2026-10-31', 3)
+		});
+		expect(evaluateSquare(gym, span, missed, '2026-10-24').state).toBe('atRisk');
+		expect(evaluateSquare(gym, span, missed, '2026-11-04').state).toBe('lost');
 	});
 
 	it('a 1-day stub week requiring nothing is fine (Review Focus 5)', () => {
@@ -145,6 +161,12 @@ describe('limits', () => {
 		const none = rule('atMost', 'month', 'days', 0);
 		expect(evaluateSquare(none, span, counts({}), TODAY).state).toBe('atRisk');
 		expect(evaluateSquare(none, span, counts({ '2026-10-05': 1 }), TODAY).state).toBe('lost');
+	});
+
+	it('an at-most square recovers when its slip is removed', () => {
+		const coffee = rule('atMost', 'day', 'times', 1);
+		expect(evaluateSquare(coffee, span, counts({ '2026-10-10': 2 }), TODAY).state).toBe('lost');
+		expect(evaluateSquare(coffee, span, counts({ '2026-10-10': 1 }), TODAY).state).toBe('held');
 	});
 
 	it('removing the slip restores the square', () => {
