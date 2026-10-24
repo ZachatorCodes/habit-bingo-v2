@@ -25,12 +25,11 @@ Success:
   - In practice: any day of the current card, plus the previous card's remaining days on the
     1st–3rd.
   - The `BACKFILL_DAYS = 3` constant keeps one meaning only: the 3-day grace after a month ends.
-- **Settling:** a day becomes final only when its month closes on the 4th. Two consequences:
-  - **"At least" protect squares** (daily or weekly): a missed past day no longer makes the square
-    `lost` after 3 days. It stays `atRisk` ("you can still log it") until the month closes, then it
-    is `lost` if still missed.
-  - **"At most" squares:** going over the limit is still `lost` at once, but deleting a slip by
-    mistake brings the square back while the month is open.
+- **Missed days (owner decision 2026-10-24):** scoring keeps the 3-day rule. A day missed more than
+  3 days ago makes an "at least" protect square `lost`, so it stops counting toward lines and
+  points. Because any day this month can be logged, logging the missed day later wins the square
+  back. Going over an "at most" limit is `lost`, and deleting the slip wins it back too. Nothing is
+  final until the month closes.
 - **Points, tiers, recaps, leaderboards:** unchanged; they read the same square states.
 - **Feed:** highlights already follow the card's current state. Logging an old day posts or removes
   highlights at the time it is logged.
@@ -83,8 +82,8 @@ Every behaviour below is written as a failing test first, run and seen failing, 
 - **Unit tests:**
   - `canLog` and the loggable-day set: the start date, today, future days, the previous month on
     the 1st–3rd versus the 4th.
-  - The settling rule: an "at least" daily square with a missed day 10 days ago is `atRisk`
-    mid-month and `lost` after the close. An "at most" square recovers when its slip is deleted.
+  - Winning back: an "at least" daily square missed 10 days ago is `lost`, and logging that day
+    makes it `held` again. An "at most" square recovers when its slip is deleted.
   - `monthGrid(month, weekStartsOn)`: weeks, leading and trailing blanks, both start days.
   - Calendar day states.
   - `src/lib/game` keeps 100% coverage.

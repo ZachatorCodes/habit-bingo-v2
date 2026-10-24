@@ -1,5 +1,5 @@
 import { addDays, lastDayOf, monthOf } from './calendar.ts';
-import { settledBefore } from './backfill.ts';
+import { BACKFILL_DAYS } from './backfill.ts';
 import type { HabitRule } from './habit-rules.ts';
 import type { SquareState } from './square-state.ts';
 import { clippedWeeks, weekOf, type Week } from './weeks.ts';
@@ -47,8 +47,8 @@ function protectState(
 	today: string,
 	end: string
 ): SquareState {
-	// Days settle when their month closes.
-	const settled = settledBefore(today, monthOf(span.startDate));
+	// A day missed more than 3 days ago stops counting; logging it later (any day this month) wins it back.
+	const settled = addDays(today, -BACKFILL_DAYS);
 	const count = (date: string) => counts.get(date) ?? 0;
 
 	if (rule.period === 'day') {

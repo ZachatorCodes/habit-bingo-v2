@@ -42,8 +42,3 @@ export function loggableDates(today: string, startDate: string): string[] {
 export function canLog(date: string, today: string, startDate: string): boolean {
 	return loggableDates(today, startDate).includes(date);
 }
-
-/** The first day that can still change: the month's first day while it is open, else the day after it. */
-export function settledBefore(today: string, cardMonth: string): string {
-	return isOpen(today, cardMonth) ? `${cardMonth}-01` : addDays(lastDayOf(cardMonth), 1);
-}

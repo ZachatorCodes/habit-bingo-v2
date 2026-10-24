@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	BACKFILL_DAYS,
-	backfillDates,
-	backfillMonths,
-	canLog,
-	loggableDates,
-	settledBefore
-} from './backfill.ts';
+import { BACKFILL_DAYS, backfillDates, backfillMonths, canLog, loggableDates } from './backfill.ts';
 
 describe('backfillDates', () => {
 	it('is today and the 3 days before, newest first', () => {
@@ -65,12 +58,5 @@ describe('canLog', () => {
 		expect(canLog('2026-10-31', '2026-11-02', '2026-10-01')).toBe(true);
 		expect(canLog('2026-11-01', '2026-11-01', '2026-10-01')).toBe(false);
 		expect(canLog('2026-10-31', '2026-11-04', '2026-10-01')).toBe(false);
-	});
-});
-
-describe('settledBefore', () => {
-	it('is the first day that can still change', () => {
-		expect(settledBefore('2026-10-24', '2026-10')).toBe('2026-10-01');
-		expect(settledBefore('2026-11-04', '2026-10')).toBe('2026-11-01');
 	});
 });

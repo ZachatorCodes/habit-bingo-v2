@@ -64,11 +64,12 @@ describe('atLeast / day', () => {
 		expect(evaluateSquare(walk, span, counts(days), '2026-11-04').state).toBe('lost');
 	});
 
-	it('a day missed 10 days ago is atRisk while the month is open, lost once it closes', () => {
-		const days = range('2026-10-01', '2026-10-31');
+	it('a day missed over 3 days ago stops counting, and logging it later wins the square back', () => {
+		const days = range('2026-10-01', '2026-10-24');
 		delete days['2026-10-14'];
-		expect(evaluateSquare(walk, span, counts(days), '2026-10-24').state).toBe('atRisk');
-		expect(evaluateSquare(walk, span, counts(days), '2026-11-04').state).toBe('lost');
+		expect(evaluateSquare(walk, span, counts(days), '2026-10-24').state).toBe('lost');
+		days['2026-10-14'] = 1; // backfilled from the calendar
+		expect(evaluateSquare(walk, span, counts(days), '2026-10-24').state).toBe('held');
 	});
 
 	it('needs N check-ins to meet a day', () => {
@@ -117,13 +118,14 @@ describe('atLeast / week', () => {
 		expect(evaluateSquare(gym, span, shortEarlier, '2026-11-04').state).toBe('lost');
 	});
 
-	it('a week missed on Oct 8 is atRisk on Oct 24, lost on Nov 4', () => {
-		const missed = counts({
+	it('a week missed on Oct 8 is lost on Oct 24, and won back once its days are logged', () => {
+		const missed = {
 			...range('2026-10-01', '2026-10-02'),
-			...range('2026-10-12', '2026-10-31', 3)
-		});
-		expect(evaluateSquare(gym, span, missed, '2026-10-24').state).toBe('atRisk');
-		expect(evaluateSquare(gym, span, missed, '2026-11-04').state).toBe('lost');
+			...range('2026-10-12', '2026-10-24')
+		};
+		expect(evaluateSquare(gym, span, counts(missed), '2026-10-24').state).toBe('lost');
+		const caughtUp = counts({ ...missed, ...range('2026-10-05', '2026-10-07') });
+		expect(evaluateSquare(gym, span, caughtUp, '2026-10-24').state).toBe('held');
 	});
 
 	it('a 1-day stub week requiring nothing is fine (Review Focus 5)', () => {
