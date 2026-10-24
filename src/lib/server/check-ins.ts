@@ -59,7 +59,7 @@ async function checkLoggable(
 		);
 	if (!square) return null;
 	if (!canLog(date, today, square.startDate)) {
-		return { ok: false, field: 'date', message: 'You can only log today and the 3 days before.' };
+		return { ok: false, field: 'date', message: 'You can log any day this month, up to today.' };
 	}
 	return { ok: true, count: 0 };
 }

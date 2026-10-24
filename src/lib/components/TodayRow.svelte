@@ -22,6 +22,7 @@
 <script lang="ts">
 	import { enhance, type SubmitFunction } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { tick, type Snippet } from 'svelte';
 	import { prefersReducedMotion, Spring } from 'svelte/motion';
 	import { burst, tap } from '#lib/celebrate.ts';
@@ -37,11 +38,14 @@
 		keep: string;
 		/** Called with a message when the server refuses a check-in or can't be reached. */
 		onerror?: (message: string) => void;
+		/** Called when the name is clicked; the page may open the habit sheet in place. */
+		onopen?: (event: MouseEvent, href: string) => void;
 	};
 
-	let { row, day, keep, onerror }: Props = $props();
+	let { row, day, keep, onerror, onopen }: Props = $props();
 
 	/** What the row shows while a check-in is on its way; null shows the server's row. */
+	const href = $derived(resolve('/(app)/card/squares/[id]', { id: row.squareId }));
 	let pending = $state<TodayRowView | null>(null);
 	/** True from submit until the server answers; stops a double tap logging twice. */
 	let busy = $state(false);
@@ -129,7 +133,14 @@
 		/>
 	</div>
 	<div class="min-w-0 flex-1">
-		<p class="truncate text-[14.5px] font-bold">{row.name}</p>
+		<p class="truncate text-[14.5px] font-bold">
+			<a
+				{href}
+				onclick={(event) => onopen?.(event, href)}
+				class="focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+				>{row.name}</a
+			>
+		</p>
 		<p class="text-xs font-semibold text-muted">{view.text}</p>
 	</div>
 	{#snippet undo(cls: string, ref: boolean, icon: Snippet)}

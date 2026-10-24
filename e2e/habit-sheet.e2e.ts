@@ -17,6 +17,16 @@ async function onCard(page: Page): Promise<void> {
 	await waitForHydration(page);
 }
 
+// The same, with the card started on Thursday Oct 1, so Oct 10 (a Saturday) can be logged.
+async function onCardFromFirst(page: Page): Promise<void> {
+	await newMemberWithHabits(page, 8);
+	await setClock(page, '2026-10-01T12:00:00Z');
+	await buildAndStartCard(page);
+	await setClock(page, '2026-10-20T12:00:00Z');
+	await page.goto('/card');
+	await waitForHydration(page);
+}
+
 const square = (page: Page, name: string) =>
 	page.getByRole('link', { name: new RegExp(`^${name}: `) });
 
@@ -41,18 +51,75 @@ test('logging another day from the sheet', async ({ page }) => {
 	await onCard(page);
 	await square(page, 'Drink water').click();
 	const sheet = page.getByRole('dialog', { name: 'Drink water' });
-	await sheet.getByRole('link', { name: 'Yesterday' }).click();
-	await expect(sheet.getByRole('link', { name: 'Yesterday' })).toHaveAttribute(
-		'aria-current',
-		'date'
-	);
+	await sheet.getByRole('button', { name: 'Monday October 19, not logged' }).click();
+	await expect(sheet.getByRole('heading', { name: 'Monday, Oct 19: 0 logged' })).toBeVisible();
 	await sheet.getByRole('button', { name: 'Add one' }).click();
 	await expect(sheet.getByRole('status', { name: 'Count' })).toHaveText('1');
 	await sheet.getByRole('button', { name: 'Add one' }).click();
 	await expect(sheet.getByRole('status', { name: 'Count' })).toHaveText('2');
-	await expect(sheet.getByRole('list', { name: 'History' })).toContainText(/Mon 19\s*2/);
+	await expect(sheet.getByRole('button', { name: 'Monday October 19, 2 logged' })).toBeVisible();
 	await sheet.getByRole('button', { name: 'Remove one' }).click();
 	await expect(sheet.getByRole('status', { name: 'Count' })).toHaveText('1');
+});
+
+test('log a day 10 days ago from the calendar', async ({ page }) => {
+	await onCardFromFirst(page);
+	// The link wraps the square, which carries the label.
+	const squareLabel = () =>
+		square(page, 'Go biking').evaluate((a) =>
+			a.querySelector('[aria-label]')!.getAttribute('aria-label')
+		);
+	const before = await squareLabel();
+	await square(page, 'Go biking').click();
+	const sheet = page.getByRole('dialog', { name: 'Go biking' });
+	await sheet.getByRole('button', { name: 'Saturday October 10, not logged' }).click();
+	await expect(sheet.getByRole('heading', { name: 'Saturday, Oct 10: 0 logged' })).toBeVisible();
+	await sheet.getByRole('button', { name: 'Add one' }).click();
+	await expect(sheet.getByRole('button', { name: 'Saturday October 10, 1 logged' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await expect.poll(squareLabel).not.toBe(before);
+});
+
+test('deleting an old slip brings back a lost square', async ({ page }) => {
+	await onCardFromFirst(page);
+	// On the sheet's own page, so each save is a plain reload.
+	await page.goto((await square(page, 'Eat out').getAttribute('href'))! + '?day=2026-10-08');
+	await waitForHydration(page);
+	const count = page.getByRole('status', { name: 'Count' });
+	// Eat out is at most 10 a month: the 11th slip loses the square.
+	for (let n = 1; n <= 11; n++) {
+		await page.getByRole('button', { name: 'Add one' }).click();
+		await expect(count).toHaveText(String(n));
+	}
+	await expect(page.getByText('Lost', { exact: true })).toBeVisible();
+	await page.getByRole('button', { name: 'Remove one' }).click();
+	await expect(count).toHaveText('10');
+	// Back at the limit, not over it: no longer lost.
+	await expect(page.getByText('At risk: at the limit')).toBeVisible();
+	await expect(page.getByText('Lost', { exact: true })).toHaveCount(0);
+});
+
+test('future days are disabled', async ({ page }) => {
+	await onCard(page);
+	await square(page, 'Drink water').click();
+	const sheet = page.getByRole('dialog', { name: 'Drink water' });
+	await expect(
+		sheet.getByRole('button', { name: "Wednesday October 21, can't log" })
+	).toBeDisabled();
+	await expect(
+		sheet.getByRole('button', { name: "Wednesday October 14, can't log" })
+	).toBeDisabled();
+});
+
+test('a bad day parameter falls back to today', async ({ page }) => {
+	await onCard(page);
+	const href = (await square(page, 'Drink water').getAttribute('href'))!;
+	for (const day of ['2099-01-01', 'nope', '2026-09-10', '2026-10-14']) {
+		const response = await page.goto(`${href}?day=${day}`);
+		expect(response?.status()).toBe(200);
+		await expect(page.getByRole('heading', { name: 'Tuesday, Oct 20: 0 logged' })).toBeVisible();
+	}
 });
 
 test('the days toggle marks and clears a day', async ({ page }) => {
@@ -81,6 +148,21 @@ test('the sheet works without JavaScript', async ({ page, browser }) => {
 	await expect(noJs.getByRole('status', { name: 'Count' })).toHaveText('1');
 	await noJs.getByRole('link', { name: 'Back to card' }).click();
 	await expect(noJs).toHaveURL(/\/card$/);
+	await context.close();
+});
+
+test('calendar logging works without JavaScript', async ({ page, browser }) => {
+	await onCard(page);
+	const href = (await square(page, 'Drink water').getAttribute('href'))!;
+	const context = await browser.newContext({ javaScriptEnabled: false });
+	await context.addCookies(await page.context().cookies());
+	const noJs = await context.newPage();
+	await noJs.goto(href);
+	await noJs.getByRole('link', { name: 'Monday October 19, not logged' }).click();
+	await expect(noJs.getByRole('heading', { name: 'Monday, Oct 19: 0 logged' })).toBeVisible();
+	await noJs.getByRole('button', { name: 'Add one' }).click();
+	await expect(noJs.getByRole('status', { name: 'Count' })).toHaveText('1');
+	await expect(noJs.getByRole('link', { name: 'Monday October 19, 1 logged' })).toBeVisible();
 	await context.close();
 });
 
