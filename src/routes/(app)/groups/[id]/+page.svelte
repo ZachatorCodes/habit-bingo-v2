@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import ConfirmAction from '#lib/components/ConfirmAction.svelte';
 	import CopyField from '#lib/components/CopyField.svelte';
+	import FeedItem from '#lib/components/FeedItem.svelte';
 	import Hero from '#lib/components/Hero.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import Seo from '#lib/components/Seo.svelte';
@@ -62,6 +63,11 @@
 		<nav aria-label="Group" class="flex gap-2 border-b border-line lg:hidden">
 			<a
 				href={page}
+				aria-current={data.tab === 'feed' ? 'page' : undefined}
+				class={tabClass(data.tab === 'feed')}>Feed</a
+			>
+			<a
+				href={`${page}?tab=leaderboard`}
 				aria-current={data.tab === 'leaderboard' ? 'page' : undefined}
 				class={tabClass(data.tab === 'leaderboard')}>Leaderboard</a
 			>
@@ -72,86 +78,109 @@
 			>
 		</nav>
 
-		<div class="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
+		<div class="flex flex-col gap-5 lg:grid lg:grid-cols-[1fr_360px] lg:items-start lg:gap-8">
 			<section
-				aria-label="Leaderboard"
-				class="flex-col gap-5 {data.tab === 'leaderboard' ? 'flex' : 'hidden lg:flex'}"
+				aria-label="Feed"
+				class="flex-col gap-3 {data.tab === 'feed' ? 'flex' : 'hidden lg:flex'}"
 			>
-				<nav aria-label="Board" class="flex flex-wrap gap-2">
-					<a
-						href={page}
-						aria-current={data.board === 'month' ? 'page' : undefined}
-						class={pillClass(data.board === 'month')}>This month</a
-					>
-					<a
-						href={`${page}?board=all`}
-						aria-current={data.board === 'all' ? 'page' : undefined}
-						class={pillClass(data.board === 'all')}>All-time</a
-					>
-				</nav>
-				<ol class="flex flex-col gap-2">
-					{#each data.leaderboard.rows as row (row.userId)}
-						<li>
-							<a
-								href={resolve('/(app)/groups/[id]/members/[userId]', {
-									id: data.group.id,
-									userId: row.userId
-								})}
-								class="relative flex min-h-14 items-center gap-3 rounded-row bg-page p-3 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
-							>
-								{#if row.isViewer}
-									<span
-										aria-hidden="true"
-										class="absolute top-1/2 left-1 size-1.5 -translate-y-1/2 rounded-full bg-forest"
-									></span>
-								{/if}
-								<span class="w-6 text-center font-extrabold tabular-nums">{row.rank ?? ''}</span>
-								{@render avatar(row.avatarIcon, row.displayUsername, row.isViewer)}
-								{#if row.points === null}
-									<span class="text-sm text-muted">No card yet</span>
-								{:else}
-									<span class="text-sm font-bold tabular-nums"
-										>{row.points} pts · {row.lines} {row.lines === 1 ? 'line' : 'lines'}</span
-									>
-								{/if}
-							</a>
-						</li>
-					{/each}
-				</ol>
-				{#if data.leaderboard.provisionalMonth}
-					<p class="text-sm text-muted">
-						Includes {monthName(data.leaderboard.provisionalMonth)}, which is final on the 4th.
-					</p>
+				{#if data.feed.items.length === 0}
+					<p class="text-muted">Nothing yet. Highlights show up here as your group checks in.</p>
+				{:else}
+					<ul class="flex flex-col gap-2">
+						{#each data.feed.items as item (item.id)}
+							<FeedItem {item} groupId={data.group.id} now={data.now} />
+						{/each}
+					</ul>
 				{/if}
-				<!-- eslint-enable svelte/no-navigation-without-resolve -->
+				{#if data.feed.olderCursor}
+					<a
+						href={`${page}?before=${encodeURIComponent(data.feed.olderCursor)}`}
+						class="{linkClass} self-start rounded-full border border-line bg-surface">Show older</a
+					>
+				{/if}
 			</section>
-			<section
-				aria-label="Members"
-				class="flex-col gap-5 {data.tab === 'members' ? 'flex' : 'hidden lg:flex'}"
-			>
-				<ul class="flex flex-col gap-2">
-					{#each data.members as member (member.userId)}
-						<li class="flex min-h-14 items-center gap-3 rounded-row bg-page p-3">
-							{@render avatar(member.avatarIcon, member.displayUsername)}
-							{#if member.role === 'owner'}
-								<span class="rounded-full bg-earned-tile px-2 py-0.5 text-xs font-bold text-forest"
-									>Owner</span
+			<div class="contents lg:flex lg:flex-col lg:gap-8">
+				<section
+					aria-label="Leaderboard"
+					class="flex-col gap-5 {data.tab === 'leaderboard' ? 'flex' : 'hidden lg:flex'}"
+				>
+					<nav aria-label="Board" class="flex flex-wrap gap-2">
+						<a
+							href={`${page}?tab=leaderboard`}
+							aria-current={data.board === 'month' ? 'page' : undefined}
+							class={pillClass(data.board === 'month')}>This month</a
+						>
+						<a
+							href={`${page}?tab=leaderboard&board=all`}
+							aria-current={data.board === 'all' ? 'page' : undefined}
+							class={pillClass(data.board === 'all')}>All-time</a
+						>
+					</nav>
+					<ol class="flex flex-col gap-2">
+						{#each data.leaderboard.rows as row (row.userId)}
+							<li>
+								<a
+									href={resolve('/(app)/groups/[id]/members/[userId]', {
+										id: data.group.id,
+										userId: row.userId
+									})}
+									class="relative flex min-h-14 items-center gap-3 rounded-row bg-page p-3 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
 								>
-							{:else if data.isOwner}
-								<ConfirmAction
-									action="?/remove"
-									label="Remove"
-									ariaLabel={`Remove @${member.displayUsername}`}
-									title={`Remove @${member.displayUsername}?`}
-									text="They lose access to this group. They can rejoin with the invite link."
-									confirm="Remove"
-									fields={{ userId: member.userId }}
-								/>
-							{/if}
-						</li>
-					{/each}
-				</ul>
-			</section>
+									{#if row.isViewer}
+										<span
+											aria-hidden="true"
+											class="absolute top-1/2 left-1 size-1.5 -translate-y-1/2 rounded-full bg-forest"
+										></span>
+									{/if}
+									<span class="w-6 text-center font-extrabold tabular-nums">{row.rank ?? ''}</span>
+									{@render avatar(row.avatarIcon, row.displayUsername, row.isViewer)}
+									{#if row.points === null}
+										<span class="text-sm text-muted">No card yet</span>
+									{:else}
+										<span class="text-sm font-bold tabular-nums"
+											>{row.points} pts · {row.lines} {row.lines === 1 ? 'line' : 'lines'}</span
+										>
+									{/if}
+								</a>
+							</li>
+						{/each}
+					</ol>
+					{#if data.leaderboard.provisionalMonth}
+						<p class="text-sm text-muted">
+							Includes {monthName(data.leaderboard.provisionalMonth)}, which is final on the 4th.
+						</p>
+					{/if}
+					<!-- eslint-enable svelte/no-navigation-without-resolve -->
+				</section>
+				<section
+					aria-label="Members"
+					class="flex-col gap-5 {data.tab === 'members' ? 'flex' : 'hidden lg:flex'}"
+				>
+					<ul class="flex flex-col gap-2">
+						{#each data.members as member (member.userId)}
+							<li class="flex min-h-14 items-center gap-3 rounded-row bg-page p-3">
+								{@render avatar(member.avatarIcon, member.displayUsername)}
+								{#if member.role === 'owner'}
+									<span
+										class="rounded-full bg-earned-tile px-2 py-0.5 text-xs font-bold text-forest"
+										>Owner</span
+									>
+								{:else if data.isOwner}
+									<ConfirmAction
+										action="?/remove"
+										label="Remove"
+										ariaLabel={`Remove @${member.displayUsername}`}
+										title={`Remove @${member.displayUsername}?`}
+										text="They lose access to this group. They can rejoin with the invite link."
+										confirm="Remove"
+										fields={{ userId: member.userId }}
+									/>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				</section>
+			</div>
 		</div>
 	</div>
 </section>

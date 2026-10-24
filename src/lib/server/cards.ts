@@ -5,13 +5,16 @@ import { monthName, monthOf, nextMonth } from '#lib/game/calendar.ts';
 import { CARD_SIZES, isValidLayout, type CardSize } from '#lib/game/card-layout.ts';
 import type { CategoryId } from '#lib/game/categories.ts';
 import { normalizeRule, targetRange, type HabitRule } from '#lib/game/habit-rules.ts';
+import { highlightChanges } from '#lib/game/feed.ts';
 import { canBuildNextMonth } from '#lib/game/next-month.ts';
 import { prorateTarget } from '#lib/game/proration.ts';
 import type { IconName } from '#lib/icons.ts';
 import { isUniqueViolation } from '#lib/server/auth/sign-up.ts';
 import { localDate, startOfLocalDay } from '#lib/server/clock.ts';
 import type { Db } from '#lib/server/db/client.ts';
-import { card, cardSquare } from '#lib/server/db/schema.ts';
+import { card, cardSquare, feedEvent } from '#lib/server/db/schema.ts';
+import { postCardStarted, syncHighlights } from '#lib/server/feed.ts';
+import { highlightState } from '#lib/server/card-view.ts';
 import { listHabits, type Habit } from '#lib/server/habits.ts';
 
 const EDIT_WINDOW_MS = 48 * 3_600_000;
@@ -297,6 +300,7 @@ export async function startCard(
 					...(entry ? snapshot(entry.habit!, entry.target) : {})
 				}))
 			);
+			await postCardStarted(tx, { id: cardId, userId: user.id, month });
 			return true;
 		});
 		if (!created) return exists;
@@ -356,6 +360,16 @@ export async function updateCard(
 					dropped.map((s) => s.id)
 				)
 			);
+			// A new habit never inherits the old one's highlight.
+			await tx.delete(feedEvent).where(
+				and(
+					eq(feedEvent.cardId, existing.id),
+					inArray(
+						feedEvent.key,
+						dropped.map((s) => `square:${s.id}`)
+					)
+				)
+			);
 		}
 		// Park the surviving squares off the board so moving them can't hit the unique position.
 		for (const square of existing.squares) {
@@ -383,6 +397,14 @@ export async function updateCard(
 				});
 			}
 		}
+		// An edit can make a posted highlight false; clear what is no longer true (it never posts).
+		const current = await highlightState(tx, existing.id, localDate(now, user.timezone));
+		await syncHighlights(
+			tx,
+			{ id: existing.id, userId: user.id },
+			current.squares,
+			highlightChanges(current.state, current.state)
+		);
 		return { ok: true as const, card: (await getCardById(tx, user.id, existing.id))! };
 	});
 }
