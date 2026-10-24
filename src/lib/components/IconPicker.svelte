@@ -78,7 +78,8 @@
 				{#if groups}
 					<span class="text-sm font-bold text-muted">{section.title}</span>
 				{/if}
-				<div class="grid grid-cols-[repeat(auto-fill,minmax(44px,1fr))] gap-2">
+				<!-- Seven across at every width: each category is exactly two rows of 14. -->
+				<div class="grid grid-cols-7 gap-2">
 					{#each section.icons as icon (icon.name)}
 						{@render tile(icon)}
 					{/each}

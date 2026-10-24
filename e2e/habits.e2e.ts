@@ -12,6 +12,25 @@ test('the library starts empty with a way to add a habit', async ({ page }) => {
 	);
 });
 
+test('the new habit form fits a phone: 7 icons per row and a full-width private option', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await newMember(page);
+	await page.goto('/me/habits/new');
+	const tops = await page
+		.getByRole('radiogroup', { name: /icon/i })
+		.getByRole('radio')
+		.evaluateAll((radios) =>
+			radios.map((r) => Math.round((r.closest('label') ?? r).getBoundingClientRect().top))
+		);
+	expect(tops.filter((t) => t === tops[0])).toHaveLength(7);
+	const privateOption = page.locator('label').filter({ has: page.getByRole('checkbox') });
+	const box = (await privateOption.boundingBox())!;
+	// One line of text beside the box, not three squeezed ones.
+	expect(box.height).toBeLessThan(60);
+});
+
 test('an empty category filter says so', async ({ page }) => {
 	await newMember(page);
 	await page.goto('/me/habits?category=mind');

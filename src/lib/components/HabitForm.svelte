@@ -204,8 +204,9 @@
 			bind:checked={isPrivate}
 			class="mt-0.5 size-6 accent-forest"
 		/>
-		<span
-			>Private: friends see <Icon name="lock" /><span class="sr-only"> a lock</span> instead of the name</span
+		<span class="min-w-0 flex-1"
+			>Private: friends see <span class="inline-flex align-[-0.125em]"><Icon name="lock" /></span
+			><span class="sr-only"> a lock</span> instead of the name</span
 		>
 	</label>
 

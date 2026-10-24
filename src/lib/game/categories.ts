@@ -7,7 +7,7 @@ export const CATEGORIES = [
 	{ id: 'social', icon: 'users-three', label: 'Social' },
 	{ id: 'learning', icon: 'graduation-cap', label: 'Learning' },
 	{ id: 'creative', icon: 'palette', label: 'Creative' },
-	{ id: 'money', icon: 'piggy-bank', label: 'Money' },
+	{ id: 'money', icon: 'piggy-bank', label: 'Finance' },
 	{ id: 'other', icon: 'sparkle', label: 'Other' }
 ] as const;
 
