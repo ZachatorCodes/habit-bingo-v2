@@ -124,3 +124,18 @@ test('next month is closed before the window', async ({ page }) => {
 	await page.goto('/card/build/habits?for=next');
 	await expect(page).toHaveURL(/\/card$/);
 });
+
+test('on the 2nd last month is loggable, on the 4th it is not', async ({ page }) => {
+	await octoberCard(page, '2026-10-01T12:00:00Z');
+	await setClock(page, '2026-11-02T12:00:00Z');
+	await page.goto('/today?day=2026-10-31');
+	await waitForHydration(page);
+	const link = page.getByRole('link', { name: 'Drink water', exact: true });
+	const href = (await link.getAttribute('href'))!;
+	await link.click();
+	await page.getByLabel('Friday October 30, not logged').click();
+	await page.getByRole('button', { name: 'Add one' }).click();
+	await expect(page.getByLabel('Friday October 30, 1 logged')).toBeVisible();
+	await setClock(page, '2026-11-04T12:00:00Z');
+	expect((await page.goto(href))?.status()).toBe(404);
+});

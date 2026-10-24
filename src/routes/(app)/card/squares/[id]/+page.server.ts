@@ -1,16 +1,15 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { TEST_CLOCK } from '$app/env/private';
-import { addDays } from '#lib/game/calendar.ts';
-import { backfillDates } from '#lib/game/backfill.ts';
+import { addDays, lastDayOf, monthOf } from '#lib/game/calendar.ts';
+import { backfillMonths, canLog, loggableDates } from '#lib/game/backfill.ts';
 import { CATEGORIES } from '#lib/game/categories.ts';
 import { evaluateSquare } from '#lib/game/evaluate.ts';
 import { describeRule } from '#lib/game/habit-rules.ts';
 import { stateText } from '#lib/game/state-text.ts';
 import { progressText } from '#lib/game/today.ts';
-import { clippedWeeks, weekOf } from '#lib/game/weeks.ts';
 import type { SheetData } from '#lib/components/HabitSheet.svelte';
 import { requireUser } from '#lib/server/auth/guards.ts';
-import { currentMonth, getCard } from '#lib/server/cards.ts';
+import { getCard } from '#lib/server/cards.ts';
 import { getCheckIns, logCheckIn, setCheckIn } from '#lib/server/check-ins.ts';
 import { localDate, requestNow } from '#lib/server/clock.ts';
 import { getDb } from '#lib/server/db/client.ts';
@@ -28,27 +27,28 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 	const db = requireDb();
 	const timezone = user.timezone ?? 'UTC';
 	const now = requestNow(cookies, TEST_CLOCK);
-	const card = await getCard(db, user.id, currentMonth({ timezone }, now));
-	const square = card?.squares.find((s) => s.id === params.id && !s.isCenter);
+	const today = localDate(now, timezone);
+	// This month's card, and on the 1st–3rd last month's too (its days are still open).
+	let card: Awaited<ReturnType<typeof getCard>> = null;
+	let square;
+	for (const month of backfillMonths(today)) {
+		card = await getCard(db, user.id, month);
+		square = card?.squares.find((s) => s.id === params.id && !s.isCenter);
+		if (square) break;
+	}
 	if (!card || !square || square.isCenter) error(404, 'Not found');
 
-	const today = localDate(now, timezone);
-	const days = backfillDates(today, card.startDate);
+	const open = loggableDates(today, card.startDate);
 	const asked = url.searchParams.get('day');
-	const day = asked && days.includes(asked) ? asked : today;
+	const day =
+		asked && canLog(asked, today, card.startDate) ? asked : (open.find((d) => d <= today) ?? today);
 	const counts = (await getCheckIns(db, card.id)).get(square.id) ?? new Map<string, number>();
 	const { state, progress } = evaluateSquare(square, card, counts, today);
 
-	// History: this week's days for a week habit, otherwise the month so far.
-	const week =
-		square.period === 'week'
-			? weekOf(clippedWeeks(square, card.startDate, card.weekStartsOn), day)
-			: null;
-	const from = week?.start ?? card.startDate;
-	const to = week && week.end < today ? week.end : today;
-	const history: SheetData['history'] = [];
-	for (let d = from; d <= to; d = addDays(d, 1))
-		history.push({ date: d, count: counts.get(d) ?? 0 });
+	const month = monthOf(card.startDate);
+	const days: SheetData['calendar']['days'] = {};
+	for (let d = `${month}-01`; d <= lastDayOf(month); d = addDays(d, 1))
+		days[d] = { count: counts.get(d) ?? 0, loggable: open.includes(d) };
 
 	const category = CATEGORIES.find((c) => c.id === square.category)!;
 	const sheet: SheetData = {
@@ -64,9 +64,8 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 		progressText: progressText(square, card, counts, day, today),
 		today,
 		day,
-		days,
 		count: counts.get(day) ?? 0,
-		history: history.reverse()
+		calendar: { month, weekStartsOn: card.weekStartsOn, direction: square.direction, days }
 	};
 	return { sheet };
 };

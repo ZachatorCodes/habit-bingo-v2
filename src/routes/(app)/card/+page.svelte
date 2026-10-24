@@ -90,14 +90,18 @@
 
 	// After a change (or another day picked) inside the sheet: reload it and the card behind it.
 	// (invalidateAll would rerun the sheet route's own load, since the URL is the sheet's.)
+	let refreshes = 0;
 	async function refreshSheet(href: string) {
+		const mine = ++refreshes;
 		// preloadData reuses what it already loaded for a URL, so ask for a fresh copy.
 		const fresher = (url: string) => `${url}${url.includes('?') ? '&' : '?'}refresh=${Date.now()}`;
 		const [sheet, cardPage] = await Promise.all([
 			preloadData(fresher(href)),
 			preloadData(fresher(resolve('/(app)/card')))
 		]);
-		if (sheet.type === 'loaded' && sheet.status === 200) {
+		// Only the newest refresh counts, and not once the sheet has closed.
+		if (mine !== refreshes) return;
+		if (page.state.sheet && sheet.type === 'loaded' && sheet.status === 200) {
 			// eslint-disable-next-line svelte/no-navigation-without-resolve -- href was built with resolve()
 			replaceState(href, { sheet: sheet.data.sheet as App.PageState['sheet'] });
 		}

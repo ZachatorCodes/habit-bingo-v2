@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
+	expectNoHorizontalScroll,
 	newMember,
 	newMemberWithHabits,
 	newMemberWithoutJs,
@@ -330,11 +331,16 @@ test('the test clock moves the app to another month', async ({ page }) => {
 	await expect(page.getByText('No card for December yet.')).toBeVisible();
 });
 
-test('a 5×5 card with long names fits a phone', async ({ page, baseURL }) => {
+test('5×5 names show on a phone', async ({ page, baseURL }) => {
+	test.setTimeout(90_000); // 24 habits plus the whole builder
 	await newMember(page);
 	// 24 habits with 40-character names, created straight through the form action.
 	for (let i = 0; i < 24; i++) {
-		const name = `Habit ${String(i).padStart(2, '0')} with a rather long name ok`.slice(0, 40);
+		// Habit 00 is 40 characters with no spaces, the worst case for wrapping.
+		const name =
+			i === 0
+				? 'Unbroken'.padEnd(40, 'x')
+				: `Habit ${String(i).padStart(2, '0')} with a rather long name ok`.slice(0, 40);
 		const response = await page.request.post('/me/habits/new', {
 			headers: { origin: baseURL!, accept: 'text/html' },
 			form: {
@@ -362,6 +368,8 @@ test('a 5×5 card with long names fits a phone', async ({ page, baseURL }) => {
 	await waitForHydration(page);
 	const labels = page.locator('label').filter({ has: page.getByRole('checkbox') });
 	for (let i = 0; i < 24; i++) await labels.nth(i).click();
+	// A long unspaced name must not widen the picker past the phone (it used to block this tap).
+	await expectNoHorizontalScroll(page);
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/card\/build\/targets$/);
 	await waitForHydration(page);
@@ -377,17 +385,25 @@ test('a 5×5 card with long names fits a phone', async ({ page, baseURL }) => {
 	await page.getByRole('button', { name: 'Start card' }).click();
 	await expect(page).toHaveURL(/\/card\?started=1$/);
 
-	// Review Focus 5: no sideways scrolling, and names stop after two lines.
-	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-	const name = page.locator('main [data-label]').first();
-	// Compact squares hide the name below sm (the ring icon carries it); it returns from sm.
-	await expect(name).toBeHidden();
-	await page.setViewportSize({ width: 360, height: 800 });
-	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
-	await expect(name).toBeHidden();
-	await page.setViewportSize({ width: 640, height: 844 });
-	await expect(name).toBeVisible();
-	expect(await name.evaluate((el) => getComputedStyle(el).webkitLineClamp)).toBe('2');
+	await page.setViewportSize({ width: 360, height: 740 });
+	// Review Focus 5: every name shows, long ones stop at two lines, no sideways scrolling.
+	const names = page.locator('main [data-label]');
+	await expect(names).toHaveCount(24);
+	for (const name of await names.all()) await expect(name).toBeVisible();
+	const long = names.filter({ hasText: 'Unbrokenxxx' });
+	const { height, lineHeight } = await long.evaluate((el) => ({
+		// line-clamp clips the box; scrollHeight would still count the hidden lines.
+		height: el.clientHeight,
+		lineHeight: parseFloat(getComputedStyle(el).lineHeight)
+	}));
+	expect(height).toBeLessThanOrEqual(Math.ceil(lineHeight * 2));
+	// Ordinary words wrap at spaces; only an unspaced run may break anywhere.
+	const spaced = await names.filter({ hasText: 'Habit 01' }).evaluate((el) => ({
+		wrap: getComputedStyle(el).overflowWrap,
+		brk: getComputedStyle(el).wordBreak
+	}));
+	expect(spaced).toEqual({ wrap: 'anywhere', brk: 'normal' });
+	await expectNoHorizontalScroll(page);
 });
 
 test('the free square is solid forest', async ({ page }) => {

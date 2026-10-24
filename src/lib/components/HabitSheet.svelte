@@ -19,12 +19,15 @@
 		today: string;
 		/** The day being logged. */
 		day: string;
-		/** Days that can be logged, newest first. */
-		days: string[];
 		/** That day's count. */
 		count: number;
-		/** Newest first. */
-		history: { date: string; count: number }[];
+		/** The card's month: every date with its count, and whether it can be logged. */
+		calendar: {
+			month: string;
+			weekStartsOn: 'monday' | 'sunday';
+			direction: 'atLeast' | 'atMost';
+			days: Record<string, { count: number; loggable: boolean }>;
+		};
 	};
 </script>
 
@@ -35,8 +38,9 @@
 	import { tick } from 'svelte';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { burst, tap } from '#lib/celebrate.ts';
-	import { addDays, weekday } from '#lib/game/calendar.ts';
+	import { monthName, weekday } from '#lib/game/calendar.ts';
 	import Plus from 'phosphor-svelte/lib/Plus';
+	import MonthCalendar from './MonthCalendar.svelte';
 	import ProgressRing from './ProgressRing.svelte';
 	import Toast from './Toast.svelte';
 
@@ -63,31 +67,25 @@
 	const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 	const base = $derived(resolve('/(app)/card/squares/[id]', { id: data.id }));
 	const dayQuery = (day: string) => (day === data.today ? '' : `?day=${day}`);
-	const label = (day: string) =>
-		day === data.today
-			? 'Today'
-			: day === addDays(data.today, -1)
-				? 'Yesterday'
-				: WEEKDAYS[weekday(day)];
-	const short = (day: string) => `${WEEKDAYS[weekday(day)].slice(0, 3)} ${Number(day.slice(8))}`;
-
 	/** The count shown while a change is on its way; null shows the server's. */
 	let pending = $state<number | null>(null);
+	/** Saves still on their way: the optimistic count stays until the last one settles. */
+	let saving = 0;
+	const settle = () => {
+		if (--saving === 0) pending = null;
+	};
 	const count = $derived(pending ?? data.count);
+	const dayTitle = $derived(
+		`${WEEKDAYS[weekday(data.day)]}, ${monthName(data.calendar.month).slice(0, 3)} ${Number(data.day.slice(8))}: ${count} logged`
+	);
 	let root = $state<HTMLElement>();
 	let toast = $state<{ id: number; text: string } | null>(null);
-
-	function follow(event: MouseEvent, href: string) {
-		if (!onnavigate || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey)
-			return;
-		event.preventDefault();
-		void onnavigate(href);
-	}
 
 	function optimistic(next: () => number): SubmitFunction {
 		return ({ submitter }) => {
 			const hadFocus = submitter === document.activeElement;
 			const before = count;
+			saving++;
 			pending = next();
 			if (pending > before) {
 				tap();
@@ -104,7 +102,7 @@
 			}
 			return async ({ result, update }) => {
 				if (result.type === 'failure' || result.type === 'error') {
-					pending = null;
+					settle();
 					const message =
 						result.type === 'failure' && typeof result.data?.message === 'string'
 							? result.data.message
@@ -119,7 +117,7 @@
 				} else {
 					await update();
 				}
-				pending = null;
+				settle();
 				// A disabled − (at zero) drops focus: hand it to + so the keyboard stays in the stepper.
 				if (hadFocus && (submitter as HTMLButtonElement).disabled) {
 					await tick();
@@ -151,21 +149,17 @@
 		</div>
 	</div>
 
-	<nav aria-label="Day" class="flex flex-wrap gap-2">
-		{#each data.days as day (day)}
-			<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve() can't carry the ?day= query -->
-			<a
-				href={`${base}${dayQuery(day)}`}
-				onclick={(event) => follow(event, `${base}${dayQuery(day)}`)}
-				aria-current={day === data.day ? 'date' : undefined}
-				class={[
-					'rounded-full border px-3 py-1 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink',
-					day === data.day ? 'border-forest bg-forest text-surface' : 'border-line bg-surface'
-				]}>{label(day)}</a
-			>
-			<!-- eslint-enable svelte/no-navigation-without-resolve -->
-		{/each}
-	</nav>
+	<MonthCalendar
+		month={data.calendar.month}
+		weekStartsOn={data.calendar.weekStartsOn}
+		direction={data.calendar.direction}
+		today={data.today}
+		selected={data.day}
+		days={data.calendar.days}
+		href={onnavigate ? undefined : (date) => `${base}${dayQuery(date)}`}
+		onselect={(date) => void onnavigate?.(`${base}${dayQuery(date)}`)}
+	/>
+	<h3 class="text-sm font-extrabold">{dayTitle}</h3>
 
 	{#if data.countMode === 'times'}
 		<div class="flex items-center gap-4">
@@ -214,17 +208,6 @@
 			>
 		</form>
 	{/if}
-
-	<div>
-		<h3 class="text-xs font-extrabold tracking-[0.02em]">History</h3>
-		<ul aria-label="History" class="mt-1 flex flex-col divide-y divide-line text-sm">
-			{#each data.history as entry (entry.date)}
-				<li class="flex justify-between py-2 {entry.count > 0 ? 'font-bold' : 'text-muted'}">
-					<span>{short(entry.date)}</span><span class="tabular-nums">{entry.count}</span>
-				</li>
-			{/each}
-		</ul>
-	</div>
 </div>
 
 <Toast message={toast} />

@@ -86,7 +86,10 @@ test('earlier days are reachable and logging there counts', async ({ page }) => 
 	);
 });
 
-test('the 4th day back is not offered and a forged post is refused', async ({ page, baseURL }) => {
+test('the 4th day back is not offered and a post before the card started is refused', async ({
+	page,
+	baseURL
+}) => {
 	await onToday(page);
 	const days = page.getByRole('navigation', { name: 'Day' }).getByRole('link');
 	await expect(days).toHaveText(['Today', 'Yesterday', 'Sunday', 'Saturday']);
@@ -98,7 +101,7 @@ test('the 4th day back is not offered and a forged post is refused', async ({ pa
 	const squareId = await page.locator('input[name="squareId"]').first().inputValue();
 	const response = await page.request.post('/today?/log', {
 		headers: { origin: baseURL! },
-		form: { squareId, date: '2026-10-16' }
+		form: { squareId, date: '2026-10-14' }
 	});
 	expect(response.status()).toBe(400);
 	const foreign = await page.request.post('/today?/log', {
@@ -224,16 +227,22 @@ test('logging updates instantly and survives a reload', async ({ page }) => {
 
 test('a refused log rolls back with a message', async ({ page }) => {
 	await onToday(page);
-	await page.goto('/today?day=2026-10-17');
-	await waitForHydration(page);
-	// Two days later Oct 17 is outside the window, but this page still offers it.
-	await setClock(page, '2026-10-22T12:00:00Z');
+	// The clock steps back a day, so the page's "today" is now a day that has not happened.
+	await setClock(page, '2026-10-19T12:00:00Z');
 	const water = section(page, 'Do today').filter({ hasText: 'Drink water' });
 	await page.getByRole('button', { name: 'Log Drink water' }).click();
 	await expect(page.getByRole('status')).toContainText(
-		'You can only log today and the 3 days before.'
+		"You can log any day of this card's month, up to today."
 	);
-	await expect(water).toContainText('0/8 on Saturday');
+	await expect(water).toContainText('0/8 today');
+});
+
+test('a Today row opens the habit sheet', async ({ page }) => {
+	await onToday(page);
+	await page.getByRole('link', { name: 'Drink water', exact: true }).click();
+	// A panel on wide screens, the sheet's own page below that; both show the calendar.
+	await expect(page.getByRole('grid')).toBeVisible();
+	await expect(page).toHaveURL(/\/card\/squares\//);
 });
 
 test('reduced motion: no confetti canvas', async ({ page }) => {
