@@ -58,7 +58,7 @@ describe('BingoSquare', () => {
 		render(BingoSquare, { icon: 'bicycle', label: 'Go biking', state: 'held', compact: true });
 		const name = page.getByText('Go biking').element();
 		expect(name.className).not.toMatch(/(^|\s)hidden(\s|$)/);
-		expect(name.className).toContain('break-all');
+		expect(name.className).toContain('wrap-anywhere');
 	});
 
 	it('compact squares clamp the name to two lines', async () => {

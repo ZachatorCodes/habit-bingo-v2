@@ -232,7 +232,7 @@ test('a refused log rolls back with a message', async ({ page }) => {
 	const water = section(page, 'Do today').filter({ hasText: 'Drink water' });
 	await page.getByRole('button', { name: 'Log Drink water' }).click();
 	await expect(page.getByRole('status')).toContainText(
-		'You can log any day this month, up to today.'
+		"You can log any day of this card's month, up to today."
 	);
 	await expect(water).toContainText('0/8 today');
 });
