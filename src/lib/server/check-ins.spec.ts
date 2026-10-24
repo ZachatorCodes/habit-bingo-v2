@@ -128,12 +128,23 @@ describe('logCheckIn', () => {
 		const refused = {
 			ok: false,
 			field: 'date',
-			message: 'You can only log today and the 3 days before.'
+			message: "You can log any day of this card's month, up to today."
 		};
 		for (const date of ['2026-10-16', '2026-10-18', '2026-10-21', 'not-a-date']) {
 			expect(await logCheckIn(db, me, id, date, 1, OCT_20)).toEqual(refused);
 		}
 		expect(await db.select().from(checkIn)).toHaveLength(0);
+	});
+
+	it('logs a day 12 days ago, but not tomorrow', async () => {
+		const me = await makeUser();
+		const { id } = habitSquare(await cardFor(me, await makeHabits(me.id, 8), OCT_1));
+		expect(await logCheckIn(db, me, id, '2026-10-08', 1, OCT_20)).toEqual({ ok: true, count: 1 });
+		expect(await logCheckIn(db, me, id, '2026-10-21', 1, OCT_20)).toMatchObject({
+			ok: false,
+			field: 'date',
+			message: "You can log any day of this card's month, up to today."
+		});
 	});
 
 	it("another person's square, the center square or last month's card is not found", async () => {
@@ -160,7 +171,7 @@ describe('logCheckIn', () => {
 		expect(await logCheckIn(db, me, id, '2026-11-01', 1, NOV_1)).toMatchObject({ ok: false });
 		const NOV_3 = new Date('2026-11-03T09:00:00Z');
 		expect(await logCheckIn(db, me, id, '2026-10-31', 1, NOV_3)).toEqual({ ok: true, count: 1 });
-		expect(await logCheckIn(db, me, id, '2026-10-30', 1, NOV_3)).toMatchObject({ ok: false });
+		expect(await logCheckIn(db, me, id, '2026-10-30', 1, NOV_3)).toEqual({ ok: true, count: 1 });
 		const NOV_4 = new Date('2026-11-04T09:00:00Z');
 		expect(await logCheckIn(db, me, id, '2026-10-31', 1, NOV_4)).toBeNull();
 	});
@@ -218,7 +229,7 @@ describe('setCheckIn', () => {
 		const theirs = await cardFor(other, await makeHabits(other.id, 8), OCT_1);
 		const mine = await cardFor(me, await makeHabits(me.id, 8), OCT_1);
 		expect(await setCheckIn(db, me, habitSquare(theirs).id, '2026-10-20', 1, OCT_20)).toBeNull();
-		expect(await setCheckIn(db, me, habitSquare(mine).id, '2026-10-16', 1, OCT_20)).toMatchObject({
+		expect(await setCheckIn(db, me, habitSquare(mine).id, '2026-10-21', 1, OCT_20)).toMatchObject({
 			ok: false,
 			field: 'date'
 		});

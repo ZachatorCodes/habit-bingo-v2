@@ -47,7 +47,7 @@ function protectState(
 	today: string,
 	end: string
 ): SquareState {
-	// Days older than the backfill window can no longer change.
+	// A day missed more than 3 days ago stops counting; logging it later (any day this month) wins it back.
 	const settled = addDays(today, -BACKFILL_DAYS);
 	const count = (date: string) => counts.get(date) ?? 0;
 

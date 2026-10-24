@@ -34,8 +34,8 @@ type CheckInResult =
 
 /**
  * Whether the person may change check-ins on this square and date: null when it isn't a habit
- * square of their card for this month, or last month's on the 1st–3rd (the route answers 404); a refusal outside today and the 3
- * days before, inside the card's span (spec §3.1); otherwise ok.
+ * square of their card for this month, or last month's on the 1st–3rd (the route answers 404); a refusal
+ * for a day outside the card's month, before it started or after today (spec §3.1); otherwise ok.
  */
 async function checkLoggable(
 	db: Db,
@@ -59,7 +59,11 @@ async function checkLoggable(
 		);
 	if (!square) return null;
 	if (!canLog(date, today, square.startDate)) {
-		return { ok: false, field: 'date', message: 'You can only log today and the 3 days before.' };
+		return {
+			ok: false,
+			field: 'date',
+			message: "You can log any day of this card's month, up to today."
+		};
 	}
 	return { ok: true, count: 0 };
 }

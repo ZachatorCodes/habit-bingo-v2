@@ -16,12 +16,17 @@ const data: SheetData = {
 	progressText: '3/8 today',
 	today: '2026-10-20',
 	day: '2026-10-20',
-	days: ['2026-10-20', '2026-10-19', '2026-10-18', '2026-10-17'],
 	count: 3,
-	history: [
-		{ date: '2026-10-20', count: 3 },
-		{ date: '2026-10-19', count: 0 }
-	]
+	calendar: {
+		month: '2026-10',
+		weekStartsOn: 'monday',
+		direction: 'atLeast',
+		days: {
+			'2026-10-19': { count: 0, loggable: true },
+			'2026-10-20': { count: 3, loggable: true },
+			'2026-10-21': { count: 0, loggable: false }
+		}
+	}
 };
 
 describe('HabitSheet', () => {
@@ -33,8 +38,8 @@ describe('HabitSheet', () => {
 		await expect.element(page.getByRole('status', { name: 'Count' })).toHaveTextContent('3');
 		expect(page.getByRole('button', { name: 'Done that day' }).elements()).toHaveLength(0);
 		await expect
-			.element(page.getByRole('list', { name: 'History' }))
-			.toHaveTextContent(/Tue 203\s*Mon 190/);
+			.element(page.getByRole('heading', { name: 'Tuesday, Oct 20: 3 logged' }))
+			.toBeVisible();
 	});
 
 	it('shows a toggle for days habits', async () => {
@@ -44,15 +49,16 @@ describe('HabitSheet', () => {
 		expect(page.getByRole('button', { name: 'Add one' }).elements()).toHaveLength(0);
 	});
 
-	it('labels the days and marks the selected one', async () => {
-		render(HabitSheet, { data: { ...data, day: '2026-10-19' } });
-		const days = page.getByRole('navigation', { name: 'Day' }).getByRole('link');
-		expect(days.elements().map((a) => a.textContent?.trim())).toEqual([
-			'Today',
-			'Yesterday',
-			'Sunday',
-			'Saturday'
-		]);
-		await expect.element(days.nth(1)).toHaveAttribute('aria-current', 'date');
+	it('marks the selected day in the calendar', async () => {
+		render(HabitSheet, {
+			data: { ...data, day: '2026-10-19', count: 0 },
+			onnavigate: async () => {}
+		});
+		await expect
+			.element(page.getByRole('button', { name: 'Monday October 19, not logged' }))
+			.toHaveAttribute('aria-current', 'date');
+		await expect
+			.element(page.getByRole('button', { name: "Wednesday October 21, can't log" }))
+			.toBeDisabled();
 	});
 });

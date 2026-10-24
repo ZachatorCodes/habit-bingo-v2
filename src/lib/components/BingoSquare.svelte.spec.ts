@@ -54,6 +54,13 @@ describe('BingoSquare', () => {
 		expect(name.className).toContain('line-through');
 	});
 
+	it('compact squares show the name at every width', async () => {
+		render(BingoSquare, { icon: 'bicycle', label: 'Go biking', state: 'held', compact: true });
+		const name = page.getByText('Go biking').element();
+		expect(name.className).not.toMatch(/(^|\s)hidden(\s|$)/);
+		expect(name.className).toContain('wrap-anywhere');
+	});
+
 	it('compact squares clamp the name to two lines', async () => {
 		render(BingoSquare, {
 			icon: 'bicycle',

@@ -71,6 +71,10 @@
 			await goto(href);
 		}
 	}
+	// A row's name opens the sheet in place only beside the card (wide screens); below that it is a link.
+	const openFromRow = (event: MouseEvent, href: string) => {
+		if (matchMedia('(min-width: 1024px)').matches) void openSheet(event, href);
+	};
 	let closing = false;
 	function closeSheet() {
 		if (!page.state.sheet || closing) return;
@@ -87,11 +91,14 @@
 	});
 	afterNavigate(() => (closing = false));
 	// After a change inside the sheet: reload the sheet itself; Today refreshes when it closes.
+	let refreshes = 0;
 	async function refreshSheet(href: string) {
+		const mine = ++refreshes;
 		const sheet = await preloadData(
 			`${href}${href.includes('?') ? '&' : '?'}refresh=${Date.now()}`
 		);
-		if (sheet.type === 'loaded' && sheet.status === 200) {
+		// Only the newest refresh counts, and not once the sheet has closed.
+		if (mine === refreshes && page.state.sheet && sheet.type === 'loaded' && sheet.status === 200) {
 			// eslint-disable-next-line svelte/no-navigation-without-resolve -- href was built with resolve()
 			replaceState(href, { sheet: sheet.data.sheet as App.PageState['sheet'] });
 		}
@@ -215,7 +222,7 @@
 					{:else}
 						<ul class={list}>
 							{#each sections.doToday as row (row.squareId)}
-								<TodayRow {row} {day} keep={data.keep} onerror={showError} />
+								<TodayRow {row} {day} keep={data.keep} onerror={showError} onopen={openFromRow} />
 							{/each}
 						</ul>
 					{/if}
@@ -230,7 +237,7 @@
 							>
 							<ul class={list}>
 								{#each sections.done as row (row.squareId)}
-									<TodayRow {row} {day} keep={data.keep} onerror={showError} />
+									<TodayRow {row} {day} keep={data.keep} onerror={showError} onopen={openFromRow} />
 								{/each}
 							</ul>
 						</details>
@@ -243,7 +250,7 @@
 							<h2 id={group.key} class={heading}>{group.heading}</h2>
 							<ul class={list}>
 								{#each sections[group.key] as row (row.squareId)}
-									<TodayRow {row} {day} keep={data.keep} onerror={showError} />
+									<TodayRow {row} {day} keep={data.keep} onerror={showError} onopen={openFromRow} />
 								{/each}
 							</ul>
 						</section>
