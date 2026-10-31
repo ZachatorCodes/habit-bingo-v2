@@ -39,10 +39,12 @@ existing check-in transaction (`withHighlights`).
 ### Task 1: Counting rule in the evaluator
 
 **Files:**
+
 - Modify: `src/lib/game/evaluate.ts` (`evaluateSquare`, `protectState`)
 - Test: `src/lib/game/evaluate.spec.ts`
 
 **Interfaces:**
+
 - Produces: `evaluateSquare(rule, span, counts, today): { state: SquareState; progress: number; counting: boolean }`.
   `counting = counts(state) && !(rule.direction === 'atMost' && today <= lastDayOf(monthOf(span.startDate)))`
   (`counts` from `score.ts`; move it to `square-state.ts` if the import would be circular, and
@@ -66,9 +68,9 @@ existing check-in transaction (`withHighlights`).
 - [ ] **Step 2: Run** `npx vitest run src/lib/game/evaluate.spec.ts` — Expected: the new tests FAIL (`counting` undefined, `held` instead of `empty`).
 
 - [ ] **Step 3: Implement.** In `protectState`, for `atLeast` day/week: after the existing `lost`
-  checks, return `'empty'` when no period is met (day: some date in `[startDate, end]` with
-  `count >= target`; week: some started week with `required > 0 && progress >= required`).
-  Add `counting` in `evaluateSquare` as in Interfaces (earn squares: `counts(state)`).
+      checks, return `'empty'` when no period is met (day: some date in `[startDate, end]` with
+      `count >= target`; week: some started week with `required > 0 && progress >= required`).
+      Add `counting` in `evaluateSquare` as in Interfaces (earn squares: `counts(state)`).
 
 - [ ] **Step 4: Run** `npx vitest run src/lib/game` — Expected: PASS. Fix any other `src/lib/game` spec that asserted day-one `held` for atLeast day/week squares; ledger each as a Ruling.
 
@@ -77,6 +79,7 @@ existing check-in transaction (`withHighlights`).
 ### Task 2: Scoring, header, nudges and sheet read `counting`
 
 **Files:**
+
 - Modify: `src/lib/game/score.ts` (`scoreCard`, `squaresToLine`, `squarePoints`),
   `src/lib/game/nudges.ts`, `src/lib/server/card-view.ts` (center square),
   `src/lib/components/CardHeader.svelte`, `src/routes/(app)/card/+page.svelte`,
@@ -84,6 +87,7 @@ existing check-in transaction (`withHighlights`).
 - Test: `src/lib/game/score.spec.ts`, `src/lib/game/nudges.spec.ts`, `src/lib/components/HabitSheet.svelte.spec.ts`
 
 **Interfaces:**
+
 - Consumes: Task 1 `counting`.
 - Produces:
   - `scoreCard(size, squares: { points: number; counting: boolean }[]): CardScore`
@@ -107,12 +111,14 @@ existing check-in transaction (`withHighlights`).
 ### Task 3: Check-in feed items (server)
 
 **Files:**
+
 - Create: `drizzle/0013_check_in_feed.sql` (via `npm run db:generate -- --name check_in_feed`, offline)
 - Modify: `src/lib/server/db/schema/feed.ts` (type union + check), `src/lib/server/feed.ts`,
   `src/lib/server/check-ins.ts` (`withHighlights`), `src/lib/server/cards.ts:~364` (swap delete)
 - Test: `src/lib/server/feed.spec.ts`, `src/lib/server/check-ins.spec.ts`, `src/lib/server/cards.spec.ts`
 
 **Interfaces:**
+
 - Produces: `syncCheckIn(tx: Db, card: { id: string; userId: string }, square: { id: string; name: string | null; icon: string | null; isPrivate: boolean | null }, date: string, count: number, today: string, now: Date): Promise<void>`.
   Payload `{ name, icon, date, count, backfilled } | { private: true, date, count, backfilled }`,
   `backfilled = date !== today`. Count 0 → delete key `checkin:<squareId>:<date>`. Otherwise
@@ -131,10 +137,12 @@ existing check-in transaction (`withHighlights`).
 ### Task 4: Render check-in items
 
 **Files:**
+
 - Modify: `src/lib/components/FeedItem.svelte`
 - Test: `src/lib/components/FeedItem.svelte.spec.ts`, `e2e/feed.e2e.ts`
 
 **Interfaces:**
+
 - Consumes: Task 3 payload shape.
 
 - [ ] **Step 1: Failing tests** (`FeedItem.svelte.spec.ts`): `checkIn` count 1 → "logged Drink water"; count 8 → "logged Drink water ×8"; private → "logged a private habit"; `backfilled` with date `2026-10-22` → ends "for Thu, Oct 22".

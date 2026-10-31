@@ -28,10 +28,12 @@ describe('earn squares (atLeast / month)', () => {
 			state: 'empty',
 			progress: 0
 		});
-		expect(evaluateSquare(read, span, counts({ '2026-10-02': 1, '2026-10-05': 1 }), TODAY)).toMatchObject(
-			{ state: 'inProgress', progress: 0.5 }
-		);
-		expect(evaluateSquare(read, span, counts(range('2026-10-01', '2026-10-05')), TODAY)).toMatchObject({
+		expect(
+			evaluateSquare(read, span, counts({ '2026-10-02': 1, '2026-10-05': 1 }), TODAY)
+		).toMatchObject({ state: 'inProgress', progress: 0.5 });
+		expect(
+			evaluateSquare(read, span, counts(range('2026-10-01', '2026-10-05')), TODAY)
+		).toMatchObject({
 			state: 'complete',
 			progress: 1
 		});
@@ -49,7 +51,9 @@ describe('atLeast / day', () => {
 	const walk = rule('atLeast', 'day', 'times', 1);
 
 	it('held when every past day is met; today missing alone is fine', () => {
-		expect(evaluateSquare(walk, span, counts(range('2026-10-01', '2026-10-19')), TODAY)).toMatchObject({
+		expect(
+			evaluateSquare(walk, span, counts(range('2026-10-01', '2026-10-19')), TODAY)
+		).toMatchObject({
 			state: 'held',
 			progress: 0
 		});
