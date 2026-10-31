@@ -652,6 +652,15 @@ describe('feed highlights', () => {
 			payload: {},
 			createdAt: new Date()
 		});
+		await db.insert(feedEvent).values({
+			id: crypto.randomUUID(),
+			userId: me.id,
+			cardId: created.id,
+			type: 'checkIn',
+			key: `checkin:${gone.id}:2026-10-19`,
+			payload: { date: '2026-10-19', count: 1, backfilled: false },
+			createdAt: new Date()
+		});
 		const swapped = [...habits.slice(0, 7), extra];
 		const result = await updateCard(db, me, created.id, withoutSize(plan(swapped)), OCT_19);
 		expect(result.ok).toBe(true);

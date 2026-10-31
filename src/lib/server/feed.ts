@@ -78,6 +78,47 @@ export async function syncHighlights(
 	}
 }
 
+/**
+ * The day's check-in item for one square: one per square and date, with the day's count. A higher
+ * count moves it to the top; a lower one keeps its place; 0 removes it with its reactions.
+ */
+export async function syncCheckIn(
+	tx: Db,
+	card: { id: string; userId: string },
+	square: { id: string; name: string | null; icon: string | null; isPrivate: boolean | null },
+	date: string,
+	count: number,
+	today: string,
+	now: Date
+): Promise<void> {
+	const key = `checkin:${square.id}:${date}`;
+	if (count === 0) {
+		await tx.delete(feedEvent).where(and(eq(feedEvent.cardId, card.id), eq(feedEvent.key, key)));
+		return;
+	}
+	const day = { date, count, backfilled: date !== today };
+	await tx
+		.insert(feedEvent)
+		.values({
+			id: crypto.randomUUID(),
+			userId: card.userId,
+			cardId: card.id,
+			type: 'checkIn',
+			key,
+			payload: square.isPrivate
+				? { private: true, ...day }
+				: { name: square.name, icon: square.icon, ...day },
+			createdAt: now
+		})
+		.onConflictDoUpdate({
+			target: [feedEvent.cardId, feedEvent.key],
+			set: {
+				payload: sql`excluded.payload`,
+				createdAt: sql`case when (excluded.payload->>'count')::int > (${feedEvent.payload}->>'count')::int then excluded.created_at else ${feedEvent.createdAt} end`
+			}
+		});
+}
+
 /** Up to 30 events from the group's current members, newest first; null when not a member. */
 export async function groupFeed(
 	db: Db,

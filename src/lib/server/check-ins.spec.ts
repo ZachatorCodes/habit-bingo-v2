@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { CARD_SIZES, type CardSize } from '#lib/game/card-layout.ts';
 import { evaluateSquare } from '#lib/game/evaluate.ts';
 import type { Db } from '#lib/server/db/client.ts';
-import { checkIn, feedEvent, user } from '#lib/server/db/schema.ts';
+import { checkIn, feedEvent, reaction, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import { startCard, updateCard, type Card, type CardPlan, type Rewards } from './cards';
 import { getCheckIns, logCheckIn, MAX_COUNT, setCheckIn } from './check-ins';
@@ -282,6 +282,7 @@ describe('feed highlights', () => {
 	const keys = async (cardId: string) =>
 		(await db.select({ key: feedEvent.key }).from(feedEvent).where(eq(feedEvent.cardId, cardId)))
 			.map((e) => e.key)
+			.filter((key) => !key.startsWith('checkin:'))
 			.sort();
 
 	it('posts a completed square and removes it on undo', async () => {
@@ -314,5 +315,78 @@ describe('feed highlights', () => {
 		await logCheckIn(db, me, a, '2026-10-20', 1, OCT_20);
 		await Promise.all([b, c].map((id) => logCheckIn(db, me, id, '2026-10-20', 1, OCT_20)));
 		expect((await keys(card.id)).filter((k) => k === 'tier:bingo')).toHaveLength(1);
+	});
+});
+
+describe('check-in feed items', () => {
+	const items = async (cardId: string) =>
+		db
+			.select()
+			.from(feedEvent)
+			.where(and(eq(feedEvent.cardId, cardId), eq(feedEvent.type, 'checkIn')));
+	const LATER = new Date('2026-10-20T10:00:00Z');
+
+	it('a log posts a checkIn item with count 1, and a second log updates it and moves it up', async () => {
+		const me = await makeUser();
+		const card = await cardFor(me, await makeHabits(me.id, 8), OCT_1);
+		const { id } = habitSquare(card);
+		await logCheckIn(db, me, id, '2026-10-20', 1, OCT_20);
+		const [first] = await items(card.id);
+		expect(first).toMatchObject({
+			userId: me.id,
+			key: `checkin:${id}:2026-10-20`,
+			payload: { name: 'Habit 0', icon: 'bicycle', date: '2026-10-20', count: 1, backfilled: false }
+		});
+		await logCheckIn(db, me, id, '2026-10-20', 1, LATER);
+		const [second] = await items(card.id);
+		expect(second.id).toBe(first.id);
+		expect(second.payload).toMatchObject({ count: 2 });
+		expect(second.createdAt.getTime()).toBeGreaterThan(first.createdAt.getTime());
+	});
+
+	it('lowering the count keeps its place; undo to 0 removes it and its reactions', async () => {
+		const me = await makeUser();
+		const card = await cardFor(me, await makeHabits(me.id, 8, { target: 3 }), OCT_1);
+		const { id } = habitSquare(card);
+		await setCheckIn(db, me, id, '2026-10-20', 3, OCT_20);
+		const [before] = await items(card.id);
+		await db.insert(reaction).values({ feedEventId: before.id, userId: me.id, icon: 'heart' });
+		await setCheckIn(db, me, id, '2026-10-20', 2, LATER);
+		const [after] = await items(card.id);
+		expect(after.payload).toMatchObject({ count: 2 });
+		expect(after.createdAt.getTime()).toBe(before.createdAt.getTime());
+		await logCheckIn(db, me, id, '2026-10-20', -1, LATER);
+		await logCheckIn(db, me, id, '2026-10-20', -1, LATER);
+		expect(await items(card.id)).toHaveLength(0);
+		expect(await db.select().from(reaction)).toHaveLength(0);
+	});
+
+	it('a backfilled day is marked, and a private habit has no name', async () => {
+		const me = await makeUser();
+		const card = await cardFor(me, await makeHabits(me.id, 8, { isPrivate: true }), OCT_1);
+		const { id } = habitSquare(card);
+		await logCheckIn(db, me, id, '2026-10-18', 1, OCT_20);
+		const [item] = await items(card.id);
+		expect(item.payload).toEqual({ private: true, date: '2026-10-18', count: 1, backfilled: true });
+	});
+
+	it('a refused write leaves the feed alone', async () => {
+		const me = await makeUser();
+		const card = await cardFor(me, await makeHabits(me.id, 8), OCT_1);
+		const { id } = habitSquare(card);
+		const result = await logCheckIn(db, me, id, '2026-10-21', 1, OCT_20);
+		expect(result?.ok).toBe(false);
+		await logCheckIn(db, me, id, '2026-10-20', -1, OCT_20);
+		expect(await items(card.id)).toHaveLength(0);
+	});
+
+	it('simultaneous logs leave one item with the final count', async () => {
+		const me = await makeUser();
+		const card = await cardFor(me, await makeHabits(me.id, 8, { target: 8 }), OCT_1);
+		const { id } = habitSquare(card);
+		await Promise.all([1, 2].map(() => logCheckIn(db, me, id, '2026-10-20', 1, OCT_20)));
+		const all = await items(card.id);
+		expect(all).toHaveLength(1);
+		expect(all[0].payload).toMatchObject({ count: 2 });
 	});
 });

@@ -1,0 +1,2 @@
+ALTER TABLE "feed_event" DROP CONSTRAINT "feed_event_type_check";--> statement-breakpoint
+ALTER TABLE "feed_event" ADD CONSTRAINT "feed_event_type_check" CHECK ("feed_event"."type" in ('cardStarted', 'squareComplete', 'bingo', 'sixtyPercent', 'blackout', 'checkIn'));
