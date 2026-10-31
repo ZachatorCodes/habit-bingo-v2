@@ -42,6 +42,17 @@ async function squareNames(page: Page): Promise<string[]> {
 		.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label') ?? ''));
 }
 
+test('a new card starts with 0 pts and no bingo', async ({ page }) => {
+	await newMemberWithHabits(page, 8);
+	await setClock(page, '2026-11-10T12:00:00Z');
+	await buildToBoard(page);
+	await page.getByRole('button', { name: 'Start card' }).click();
+	await expect(page).toHaveURL(/\/card\?started=1$/);
+	await expect(page.getByText(/^0\s*pts$/)).toBeVisible();
+	await expect(page.getByText('Bingo!')).toHaveCount(0);
+	await expect(page.getByRole('list', { name: 'Rewards' }).getByText('Reached')).toHaveCount(0);
+});
+
 test('a new member builds and starts a 3×3 card', async ({ page }) => {
 	await newMemberWithHabits(page, 8);
 	await buildToBoard(page);
@@ -246,7 +257,7 @@ test('within 48 hours the card can be edited', async ({ page }) => {
 	await page.getByRole('button', { name: 'Save changes' }).click();
 	await expect(page).toHaveURL(/\/card\?saved=1$/);
 	await expect(page.getByText('Changes saved.')).toBeVisible();
-	await expect(page.getByText('Pizza night')).toBeVisible();
+	await expect(page.getByRole('list', { name: 'Rewards' }).getByText('Pizza night')).toBeVisible();
 	const after = await squareNames(page);
 	expect(after).toHaveLength(9);
 	expect(after.join()).not.toBe(before.join());
@@ -334,6 +345,7 @@ test('the test clock moves the app to another month', async ({ page }) => {
 test('5×5 names show on a phone', async ({ page, baseURL }) => {
 	test.setTimeout(90_000); // 24 habits plus the whole builder
 	await newMember(page);
+	await setClock(page, '2026-10-15T12:00:00Z'); // the center is Free before the last week
 	// 24 habits with 40-character names, created straight through the form action.
 	for (let i = 0; i < 24; i++) {
 		// Habit 00 is 40 characters with no spaces, the worst case for wrapping.
@@ -408,6 +420,7 @@ test('5×5 names show on a phone', async ({ page, baseURL }) => {
 
 test('the free square is solid forest', async ({ page }) => {
 	await newMemberWithHabits(page, 8);
+	await setClock(page, '2026-10-15T12:00:00Z'); // the center is Free before the last week
 	await buildToBoard(page);
 	const free = page.locator('main [role="img"][data-state="free"]');
 	await expect(free).toHaveCount(1);

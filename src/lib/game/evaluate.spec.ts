@@ -140,6 +140,13 @@ describe('atLeast / week', () => {
 		expect(evaluateSquare(gym, sundayStart, counts({}), '2026-10-20').state).toBe('empty');
 	});
 
+	it('a log in a stub week requiring nothing starts the square', () => {
+		const sundayStart: CardSpan = { startDate: '2026-10-18', weekStartsOn: 'monday' };
+		expect(
+			evaluateSquare(gym, sundayStart, counts({ '2026-10-18': 1 }), '2026-10-18')
+		).toMatchObject({ state: 'held', counting: true });
+	});
+
 	it('is empty until a week is met, the current week included', () => {
 		expect(evaluateSquare(gym, span, counts({}), '2026-10-02')).toMatchObject({
 			state: 'empty',

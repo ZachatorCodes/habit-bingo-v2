@@ -127,16 +127,28 @@ describe('squarePoints', () => {
 		).toBe(10);
 	});
 
-	it('atMost squares are worth 10 until lost', () => {
+	it('atMost squares are worth 10 once the month is over, unless lost', () => {
 		const naps = rule('atMost', 'month', 'days', 3);
-		expect(squarePoints(naps, span, days({}), TODAY, 'held')).toBe(10);
-		expect(squarePoints(naps, span, days({}), TODAY, 'atRisk')).toBe(10);
-		expect(squarePoints(naps, span, days({}), TODAY, 'lost')).toBe(0);
+		expect(squarePoints(naps, span, days({}), TODAY, 'held')).toBe(0);
+		expect(squarePoints(naps, span, days({}), '2026-10-31', 'held')).toBe(0);
+		expect(squarePoints(naps, span, days({}), '2026-11-01', 'held')).toBe(10);
+		expect(squarePoints(naps, span, days({}), '2026-11-01', 'atRisk')).toBe(10);
+		expect(squarePoints(naps, span, days({}), '2026-11-01', 'lost')).toBe(0);
 	});
 });
 
 describe('scoreCard', () => {
-	const square = (state: SquareState, points = 10) => ({ state, points });
+	const square = (state: SquareState, points = 10, counting = counts(state)) => ({
+		state,
+		points,
+		counting
+	});
+
+	it('squares that do not count yet make no lines or tiers', () => {
+		const pending = [...Array(4)].map(() => square('held', 0, false));
+		const card = [...pending, square('free', 0), ...pending];
+		expect(scoreCard(3, card)).toMatchObject({ counting: 1, lines: [], tiers: [], points: 0 });
+	});
 
 	it('blackout totals match the spec examples', () => {
 		const three = [...Array(4)].map(() => square('complete'));
@@ -183,28 +195,33 @@ describe('squaresToLine', () => {
 	it('counts the closest line', () => {
 		const s = board('empty');
 		s[0] = 'complete';
-		expect(squaresToLine(3, s)).toBe(1); // diagonal 0-4-8 needs 1
+		expect(squaresToLine(3, s, s.map(counts))).toBe(1); // diagonal 0-4-8 needs 1
 	});
 	it('works on a 5×5 board', () => {
 		const s = Array<SquareState>(25).fill('empty');
 		s[12] = 'free';
 		s[0] = 'complete';
-		expect(squaresToLine(5, s)).toBe(3); // diagonal 0-6-12-18-24: free center and one complete
+		expect(squaresToLine(5, s, s.map(counts))).toBe(3); // diagonal 0-6-12-18-24: free center and one complete
 	});
 	it('counts held and at-risk squares', () => {
 		const s = board('empty');
 		s[3] = 'held';
 		s[5] = 'atRisk';
-		expect(squaresToLine(3, s)).toBe(0);
+		expect(squaresToLine(3, s, s.map(counts))).toBe(0);
+	});
+	it('needs held squares that do not count yet', () => {
+		const s = board('held');
+		const counting = s.map((state) => state === 'free');
+		expect(squaresToLine(3, s, counting)).toBe(2);
 	});
 	it('skips lines with a lost square', () => {
-		expect(squaresToLine(3, board('lost'))).toBeNull();
+		expect(squaresToLine(3, board('lost'), board('lost').map(counts))).toBeNull();
 	});
 	it('is 0 when a line is complete', () => {
 		const s = board('empty');
 		s[3] = 'held';
 		s[5] = 'complete';
-		expect(squaresToLine(3, s)).toBe(0);
+		expect(squaresToLine(3, s, s.map(counts))).toBe(0);
 	});
 });
 

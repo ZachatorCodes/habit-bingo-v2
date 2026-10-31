@@ -2,10 +2,10 @@ import { addDays, lastDayOf, monthOf } from './calendar.ts';
 import { CARD_SIZES, type CardSize } from './card-layout.ts';
 import { progressBetween, type CardSpan, type Counts } from './evaluate.ts';
 import type { HabitRule } from './habit-rules.ts';
-import { counts, type SquareState } from './square-state.ts';
+import type { SquareState } from './square-state.ts';
 import { clippedWeeks } from './weeks.ts';
 
-export { counts };
+export { counts } from './square-state.ts';
 
 /** Every row, every column, then the two diagonals, as board indexes (spec §3.6). */
 export function lineIndexes(size: CardSize): number[][] {
@@ -36,11 +36,15 @@ export function reachedTiers(counting: boolean[], size: CardSize): Tier[] {
 }
 
 /** Squares still needed for the closest line with no lost square; null when every line is blocked. */
-export function squaresToLine(size: CardSize, states: SquareState[]): number | null {
+export function squaresToLine(
+	size: CardSize,
+	states: SquareState[],
+	counting: boolean[]
+): number | null {
 	let best: number | null = null;
 	for (const line of lineIndexes(size)) {
 		if (line.some((i) => states[i] === 'lost')) continue;
-		const need = line.filter((i) => !counts(states[i]) && states[i] !== 'free').length;
+		const need = line.filter((i) => !counting[i] && states[i] !== 'free').length;
 		if (best === null || need < best) best = need;
 	}
 	return best;
@@ -53,7 +57,7 @@ export function nextTier(reached: Tier[]): Tier | null {
 
 /**
  * A habit square's points out of 10 (spec §3.7), unrounded. Earn squares and `atLeast` day/week
- * squares score their progress (and keep it when lost); limits score 10 until lost.
+ * squares score their progress (and keep it when lost); limits score 10 after the month, unless lost.
  */
 export function squarePoints(
 	rule: HabitRule,
@@ -62,8 +66,9 @@ export function squarePoints(
 	today: string,
 	state: SquareState
 ): number {
-	if (rule.direction === 'atMost') return state === 'lost' ? 0 : 10;
 	const monthEnd = lastDayOf(monthOf(span.startDate));
+	// Limits are only won once the month is over.
+	if (rule.direction === 'atMost') return state !== 'lost' && today > monthEnd ? 10 : 0;
 	if (rule.period === 'month') {
 		const k = progressBetween(rule, counts, span.startDate, today);
 		return (10 * Math.min(k, rule.target)) / rule.target;
@@ -102,9 +107,9 @@ export type CardScore = {
  */
 export function scoreCard(
 	size: CardSize,
-	squares: { points: number; state: SquareState }[]
+	squares: { points: number; counting: boolean }[]
 ): CardScore {
-	const counting = squares.map((square) => counts(square.state));
+	const counting = squares.map((square) => square.counting);
 	const lines = completeLines(counting, size);
 	const tiers = reachedTiers(counting, size);
 	const base = squares.reduce((sum, square) => sum + square.points, 0);

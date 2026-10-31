@@ -4,7 +4,7 @@ import { CARD_SIZES, type CardSize } from './card-layout.ts';
 import type { CardSpan, Counts } from './evaluate.ts';
 import type { HabitRule } from './habit-rules.ts';
 import { canBuildNextMonth } from './next-month.ts';
-import { completeLines, counts, lineIndexes, reachedTiers } from './score.ts';
+import { completeLines, lineIndexes, reachedTiers } from './score.ts';
 import type { SquareState } from './square-state.ts';
 import { stateText } from './state-text.ts';
 
@@ -15,6 +15,8 @@ export type NudgeSquare = {
 	state: SquareState;
 	rule: HabitRule | null;
 	counts: Counts;
+	/** Counts toward lines and tiers now (see `evaluateSquare`). */
+	counting: boolean;
 };
 
 export type Nudge = {
@@ -71,7 +73,7 @@ export function nudges(input: {
 		});
 	}
 
-	const counting = squares.map((square) => counts(square.state));
+	const counting = squares.map((square) => square.counting);
 	const total = counting.filter(Boolean).length;
 	const reached = reachedTiers(counting, size);
 

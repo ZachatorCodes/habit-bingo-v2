@@ -350,9 +350,6 @@ test('focus follows the main button when a row meets its target and is undone', 
 	page
 }) => {
 	await onToday(page);
-	// The first completion earns a reward, and its dialog takes focus; clear it first.
-	await page.getByRole('button', { name: 'Log Finish a book' }).click();
-	await page.getByRole('button', { name: 'Nice!' }).click();
 	// An "anytime this month" row stays in its section when met, so the check can take focus.
 	await page.getByRole('button', { name: 'Log Call an old friend' }).focus();
 	await page.keyboard.press('Enter');

@@ -126,6 +126,7 @@
 		size={card.size}
 		rewards={card.rewards}
 		states={card.squares.map((square) => square.state)}
+		counting={card.squares.map((square) => square.counting)}
 	>
 		{#if started}
 			<Notice tone="success">Card started!</Notice>

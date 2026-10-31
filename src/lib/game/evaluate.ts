@@ -88,7 +88,8 @@ function protectState(
 	let atRisk = false;
 	let met = false;
 	for (const week of weeks) {
-		if (week.required > 0 && progress(week) >= week.required) met = true;
+		// A stub week that requires nothing starts the square only once something is logged in it.
+		if (progress(week) >= Math.max(week.required, 1)) met = true;
 		const short = week.required - progress(week);
 		if (short <= 0) continue;
 		if (week.end < today) {

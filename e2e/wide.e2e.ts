@@ -5,6 +5,7 @@ import {
 	expectNoHorizontalScroll,
 	newMember,
 	newMemberWithHabits,
+	setClock,
 	waitForHydration
 } from './fixtures.ts';
 
@@ -160,6 +161,7 @@ test('today without a card shows Build one beside the list', async ({ page }, in
 test('card names show on 5×5 at wide widths', async ({ page, baseURL }, info) => {
 	test.skip(info.project.name !== 'desktop');
 	await newMember(page);
+	await setClock(page, '2026-10-15T12:00:00Z'); // the center is Free before the last week
 	for (let i = 0; i < 24; i++) {
 		const response = await page.request.post('/me/habits/new', {
 			headers: { origin: baseURL!, accept: 'text/html' },

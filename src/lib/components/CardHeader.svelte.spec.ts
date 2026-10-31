@@ -1,6 +1,7 @@
 import { page } from 'vitest/browser';
 import { describe, expect, it } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import { counts, type SquareState } from '#lib/game/square-state.ts';
 import CardHeader from './CardHeader.svelte';
 
 const rewards = { bingo: 'Ice cream', sixty: 'Movie night', blackout: 'A weekend away' };
@@ -20,12 +21,15 @@ const base = {
 	rewards,
 	states: ['empty', 'empty', 'empty', 'empty', 'free', 'empty', 'empty', 'empty', 'empty'] as const
 };
-const props = (overrides = {}) => ({
-	...base,
-	states: [...base.states],
-	score: score(),
-	...overrides
-});
+const props = (overrides: { states?: SquareState[] } & Record<string, unknown> = {}) => {
+	const merged = {
+		...base,
+		states: [...base.states] as SquareState[],
+		score: score(),
+		...overrides
+	};
+	return { counting: merged.states.map(counts), ...merged };
+};
 
 describe('CardHeader', () => {
 	it('shows the month, days left, points and percent counting', async () => {

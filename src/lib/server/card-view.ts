@@ -1,7 +1,7 @@
 import { monthName, nextMonth } from '#lib/game/calendar.ts';
 import { evaluateSquare } from '#lib/game/evaluate.ts';
 import { centerState, nextMonthOpens } from '#lib/game/next-month.ts';
-import { scoreCard, squarePoints, type CardScore } from '#lib/game/score.ts';
+import { counts, scoreCard, squarePoints, type CardScore } from '#lib/game/score.ts';
 import type { SquareState } from '#lib/game/square-state.ts';
 import type { HighlightState } from '#lib/game/feed.ts';
 import { getCard, getCardById, type Card } from '#lib/server/cards.ts';
@@ -21,6 +21,8 @@ export type ViewSquare = {
 	/** The center square, which leads to next month's card. */
 	link?: boolean;
 	points: number;
+	/** Counts toward lines, tiers and blackout now (see `evaluateSquare`). */
+	counting: boolean;
 };
 
 /**
@@ -45,10 +47,15 @@ export async function cardView(
 	const state = centerState(card.month, today, builtInTime);
 	const center: ViewSquare =
 		today < nextMonthOpens(card.month)
-			? { icon: 'star', name: 'Free', state: 'free', points: 0 }
-			: state === 'buildNext'
-				? { icon: 'rocket', name: `Build ${next}'s card`, state, link: true, points: 0 }
-				: { icon: 'rocket', name: `${next} ready`, state, link: true, points: 0 };
+			? { icon: 'star', name: 'Free', state: 'free', points: 0, counting: true }
+			: {
+					icon: 'rocket',
+					name: state === 'buildNext' ? `Build ${next}'s card` : `${next} ready`,
+					state,
+					link: true,
+					points: 0,
+					counting: counts(state)
+				};
 	const squares = card.squares.map((square): ViewSquare => {
 		if (square.isCenter) return center;
 		const counts = checkIns.get(square.id) ?? new Map<string, number>();

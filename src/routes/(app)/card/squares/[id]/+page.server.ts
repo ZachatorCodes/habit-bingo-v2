@@ -43,7 +43,7 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 	const day =
 		asked && canLog(asked, today, card.startDate) ? asked : (open.find((d) => d <= today) ?? today);
 	const counts = (await getCheckIns(db, card.id)).get(square.id) ?? new Map<string, number>();
-	const { state, progress } = evaluateSquare(square, card, counts, today);
+	const { state, progress, counting } = evaluateSquare(square, card, counts, today);
 
 	const month = monthOf(card.startDate);
 	const days: SheetData['calendar']['days'] = {};
@@ -60,6 +60,7 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 		countMode: square.period === 'day' ? 'times' : square.countMode,
 		state,
 		progress,
+		counting,
 		stateText: stateText(square, card, counts, today, state),
 		progressText: progressText(square, card, counts, day, today),
 		today,
