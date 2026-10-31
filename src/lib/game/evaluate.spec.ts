@@ -24,11 +24,14 @@ describe('earn squares (atLeast / month)', () => {
 	const read = rule('atLeast', 'month', 'days', 4);
 
 	it('empty, inProgress with progress, complete', () => {
-		expect(evaluateSquare(read, span, counts({}), TODAY)).toEqual({ state: 'empty', progress: 0 });
-		expect(evaluateSquare(read, span, counts({ '2026-10-02': 1, '2026-10-05': 1 }), TODAY)).toEqual(
+		expect(evaluateSquare(read, span, counts({}), TODAY)).toMatchObject({
+			state: 'empty',
+			progress: 0
+		});
+		expect(evaluateSquare(read, span, counts({ '2026-10-02': 1, '2026-10-05': 1 }), TODAY)).toMatchObject(
 			{ state: 'inProgress', progress: 0.5 }
 		);
-		expect(evaluateSquare(read, span, counts(range('2026-10-01', '2026-10-05')), TODAY)).toEqual({
+		expect(evaluateSquare(read, span, counts(range('2026-10-01', '2026-10-05')), TODAY)).toMatchObject({
 			state: 'complete',
 			progress: 1
 		});
@@ -46,7 +49,7 @@ describe('atLeast / day', () => {
 	const walk = rule('atLeast', 'day', 'times', 1);
 
 	it('held when every past day is met; today missing alone is fine', () => {
-		expect(evaluateSquare(walk, span, counts(range('2026-10-01', '2026-10-19')), TODAY)).toEqual({
+		expect(evaluateSquare(walk, span, counts(range('2026-10-01', '2026-10-19')), TODAY)).toMatchObject({
 			state: 'held',
 			progress: 0
 		});
@@ -128,9 +131,87 @@ describe('atLeast / week', () => {
 		expect(evaluateSquare(gym, span, caughtUp, '2026-10-24').state).toBe('held');
 	});
 
-	it('a 1-day stub week requiring nothing is fine (Review Focus 5)', () => {
+	it('a 1-day stub week requiring nothing is not a met week', () => {
 		const sundayStart: CardSpan = { startDate: '2026-10-18', weekStartsOn: 'monday' };
-		expect(evaluateSquare(gym, sundayStart, counts({}), '2026-10-20').state).toBe('held');
+		expect(evaluateSquare(gym, sundayStart, counts({}), '2026-10-18')).toMatchObject({
+			state: 'empty',
+			counting: false
+		});
+		expect(evaluateSquare(gym, sundayStart, counts({}), '2026-10-20').state).toBe('empty');
+	});
+
+	it('is empty until a week is met, the current week included', () => {
+		expect(evaluateSquare(gym, span, counts({}), '2026-10-02')).toMatchObject({
+			state: 'empty',
+			counting: false
+		});
+		const met = counts(range('2026-10-01', '2026-10-02'));
+		expect(evaluateSquare(gym, span, met, '2026-10-02')).toMatchObject({
+			state: 'held',
+			counting: true
+		});
+	});
+});
+
+describe('when protect squares count', () => {
+	const walk = rule('atLeast', 'day', 'times', 1);
+
+	it('"every day" is empty until a day is met, then counts overnight', () => {
+		expect(evaluateSquare(walk, span, counts({}), '2026-10-01')).toEqual({
+			state: 'empty',
+			progress: 0,
+			counting: false
+		});
+		const first = counts({ '2026-10-01': 1 });
+		expect(evaluateSquare(walk, span, first, '2026-10-01')).toMatchObject({
+			state: 'held',
+			counting: true
+		});
+		expect(evaluateSquare(walk, span, first, '2026-10-02')).toMatchObject({
+			state: 'held',
+			counting: true
+		});
+	});
+
+	it('a missed day in the window before any met day is still empty', () => {
+		expect(evaluateSquare(walk, span, counts({}), '2026-10-03').state).toBe('empty');
+	});
+
+	it('a settled miss before the first met day is lost', () => {
+		expect(evaluateSquare(walk, span, counts({}), '2026-10-06')).toMatchObject({
+			state: 'lost',
+			counting: false
+		});
+	});
+
+	it('"at most" squares do not count during the month and count after it', () => {
+		for (const period of ['day', 'week', 'month'] as const) {
+			const limit = rule('atMost', period, 'days', 3);
+			for (const [today, counting] of [
+				['2026-10-15', false],
+				['2026-10-31', false],
+				['2026-11-01', true]
+			] as const) {
+				expect(evaluateSquare(limit, span, counts({}), today)).toMatchObject({
+					state: 'held',
+					counting
+				});
+			}
+		}
+	});
+
+	it('a lost "at most" square never counts', () => {
+		const none = rule('atMost', 'month', 'days', 0);
+		expect(evaluateSquare(none, span, counts({ '2026-10-02': 1 }), '2026-11-01')).toMatchObject({
+			state: 'lost',
+			counting: false
+		});
+	});
+
+	it('earn squares count when complete', () => {
+		const read = rule('atLeast', 'month', 'days', 1);
+		expect(evaluateSquare(read, span, counts({ '2026-10-02': 1 }), TODAY).counting).toBe(true);
+		expect(evaluateSquare(read, span, counts({}), TODAY).counting).toBe(false);
 	});
 });
 

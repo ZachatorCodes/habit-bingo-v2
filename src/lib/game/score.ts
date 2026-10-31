@@ -2,13 +2,10 @@ import { addDays, lastDayOf, monthOf } from './calendar.ts';
 import { CARD_SIZES, type CardSize } from './card-layout.ts';
 import { progressBetween, type CardSpan, type Counts } from './evaluate.ts';
 import type { HabitRule } from './habit-rules.ts';
-import type { SquareState } from './square-state.ts';
+import { counts, type SquareState } from './square-state.ts';
 import { clippedWeeks } from './weeks.ts';
 
-/** A square counts toward lines, tiers and blackout when it is complete, held or at risk (§3.5). */
-export function counts(state: SquareState): boolean {
-	return state === 'complete' || state === 'free' || state === 'held' || state === 'atRisk';
-}
+export { counts };
 
 /** Every row, every column, then the two diagonals, as board indexes (spec §3.6). */
 export function lineIndexes(size: CardSize): number[][] {
