@@ -22,9 +22,9 @@ Success:
   or points. Once today is after the card's last day (the 1st–3rd grace days and month close),
   `held` and `atRisk` count as they do now.
 - **"At least" day and week squares** ("every day", "N days a week"):
-  - New state `notStarted` until the first met period: a day whose count reached the target, or
-    a week (the current one included) whose progress reached its requirement. `notStarted`
-    does not count.
+  - State `empty` (already labelled "Not started") until the first met period: a day whose count
+    reached the target, or a week (the current one included) with a requirement above 0 whose
+    progress reached it. `empty` does not count.
   - After that, the existing rules apply unchanged: `held`, `atRisk`, `lost`, with the 3-day
     settle rule and winning back by logging a missed day. Today, or the current week, not being
     done yet is not a miss, so a counting square stays counted overnight.
@@ -37,8 +37,7 @@ Success:
 
 - **"At most" squares during the month:** same look as today. The square's sheet adds the line
   "Counts at the end of the month if you stay under."
-- **`notStarted` squares:** the same look as an `empty` earn square. Accessible label and sheet
-  status read "Not started".
+- **Not-started protect squares** use the existing `empty` look and its "Not started" label.
 - **Points, leaderboard, "Next reward":** only what counts now. No projected score.
 - **Feed:** follows square states as today, so no day-one tier posts. Nothing new posts at month
   end.
@@ -50,10 +49,10 @@ Every behaviour below is written as a failing test first, seen failing, then mad
 - **Unit (`src/lib/game`, 100% coverage kept):**
   - an "at most" daily, weekly and monthly square does not count on the 15th and counts the day
     after the card's last day;
-  - "every day" is `notStarted` on day one before logging, counts after one met day, and still
+  - "every day" is `empty` on day one before logging, counts after one met day, and still
     counts the next morning before logging;
-  - "every week" is `notStarted` until a week's requirement is met, the current week included;
-  - a settled miss before the first met day is `lost`, not `notStarted`;
+  - "every week" is `empty` until a week's requirement is met, the current week included;
+  - a settled miss before the first met day is `lost`, not `empty`;
   - a card started with only protect squares has 0 points and no tiers;
   - existing win-back tests still pass.
 - **End-to-end:** start a card and see 0 pts and no Bingo.
