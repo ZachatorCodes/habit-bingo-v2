@@ -37,6 +37,7 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 	return {
 		group: membership.group,
 		isOwner: membership.role === 'owner',
+		updated: url.searchParams.get('updated') === '1',
 		tab,
 		board,
 		members: members.map(({ userId, displayUsername, avatarIcon, role }) => ({

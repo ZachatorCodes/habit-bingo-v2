@@ -16,7 +16,8 @@ import {
 	listGroups,
 	listMembers,
 	removeMember,
-	resetInvite
+	resetInvite,
+	updateGroup
 } from './groups.ts';
 
 let db: Db;
@@ -255,5 +256,51 @@ describe('getMembership', () => {
 		const owner = await makeUser();
 		const { groupId } = await makeGroup(owner);
 		expect(await getMembership(db, await makeUser(), groupId, now)).toBeNull();
+	});
+});
+
+describe('updateGroup', () => {
+	it('lets the owner rename the group and change its icon', async () => {
+		const owner = await makeUser();
+		const { groupId } = await makeGroup(owner);
+		expect(
+			await updateGroup(db, owner, groupId, { name: '  Climbers ', icon: 'mountains' })
+		).toEqual({
+			ok: true
+		});
+		const membership = await getMembership(db, owner, groupId, now);
+		expect(membership?.group).toMatchObject({ name: 'Climbers', icon: 'mountains' });
+	});
+
+	it('is null for a member or a stranger, and changes nothing', async () => {
+		const owner = await makeUser();
+		const { groupId, code } = await makeGroup(owner);
+		const member = await makeUser();
+		await joinGroup(db, member, code, now);
+		const stranger = await makeUser();
+		for (const who of [member, stranger]) {
+			expect(await updateGroup(db, who, groupId, { name: 'Mine', icon: 'rocket' })).toBeNull();
+		}
+		expect((await getMembership(db, owner, groupId, now))?.group.name).toBe('Crew');
+	});
+
+	it('refuses a bad name or icon', async () => {
+		const owner = await makeUser();
+		const { groupId } = await makeGroup(owner);
+		expect(await updateGroup(db, owner, groupId, { name: ' ', icon: 'rocket' })).toEqual({
+			ok: false,
+			field: 'name',
+			message: 'Name must be 1 to 40 characters.'
+		});
+		expect(
+			await updateGroup(db, owner, groupId, { name: 'x'.repeat(41), icon: 'rocket' })
+		).toMatchObject({
+			field: 'name'
+		});
+		expect(await updateGroup(db, owner, groupId, { name: 'Crew', icon: 'not-an-icon' })).toEqual({
+			ok: false,
+			field: 'icon',
+			message: 'Pick an icon.'
+		});
 	});
 });

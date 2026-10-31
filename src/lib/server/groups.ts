@@ -17,12 +17,11 @@ const lockGroup = (tx: Db, groupId: string) =>
 const standingInvite = (db: Db, createdBy: string, groupId: string, now: Date) =>
 	createInvite(db, { createdBy, groupId, expiresInDays: 36500, maxUses: 1_000_000 }, now);
 
-export async function createGroup(
-	db: Db,
-	userId: string,
-	input: { name: string; icon: string },
-	now: Date
-): Promise<{ ok: true; groupId: string } | { ok: false; field: 'name' | 'icon'; message: string }> {
+type GroupInput = { name: string; icon: string };
+type GroupProblem = { ok: false; field: 'name' | 'icon'; message: string };
+
+/** The trimmed name, or what is wrong with the input. */
+function checkGroup(input: GroupInput): { ok: true; name: string } | GroupProblem {
 	const name = input.name.trim();
 	if (name.length < 1 || name.length > 40) {
 		return { ok: false, field: 'name', message: 'Name must be 1 to 40 characters.' };
@@ -30,6 +29,18 @@ export async function createGroup(
 	if (!isPickableIcon(input.icon)) {
 		return { ok: false, field: 'icon', message: 'Pick an icon.' };
 	}
+	return { ok: true, name };
+}
+
+export async function createGroup(
+	db: Db,
+	userId: string,
+	input: GroupInput,
+	now: Date
+): Promise<{ ok: true; groupId: string } | GroupProblem> {
+	const checked = checkGroup(input);
+	if (!checked.ok) return checked;
+	const name = checked.name;
 	const groupId = crypto.randomUUID();
 	await db.transaction(async (tx) => {
 		await tx.insert(group).values({ id: groupId, name, icon: input.icon, createdBy: userId });
@@ -37,6 +48,24 @@ export async function createGroup(
 		await standingInvite(tx, userId, groupId, now);
 	});
 	return { ok: true, groupId };
+}
+
+/** Renames a group and changes its icon; owner only (null for anyone else). */
+export async function updateGroup(
+	db: Db,
+	userId: string,
+	groupId: string,
+	input: GroupInput
+): Promise<{ ok: true } | GroupProblem | null> {
+	const [owner] = await db
+		.select({ role: groupMember.role })
+		.from(groupMember)
+		.where(and(eq(groupMember.groupId, groupId), eq(groupMember.userId, userId)));
+	if (owner?.role !== 'owner') return null;
+	const checked = checkGroup(input);
+	if (!checked.ok) return checked;
+	await db.update(group).set({ name: checked.name, icon: input.icon }).where(eq(group.id, groupId));
+	return { ok: true };
 }
 
 export async function listGroups(
