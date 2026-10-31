@@ -26,7 +26,19 @@ describe('FeedItem', () => {
 		['bingo', {}, '@ana got a bingo!'],
 		['sixtyPercent', {}, '@ana reached 60% of their squares'],
 		['blackout', {}, '@ana got a blackout!'],
-		['cardStarted', { month: '2026-10' }, '@ana started their October card']
+		['cardStarted', { month: '2026-10' }, '@ana started their October card'],
+		['checkIn', { name: 'Drink water', date: '2026-10-22', count: 1 }, '@ana logged Drink water'],
+		[
+			'checkIn',
+			{ name: 'Drink water', date: '2026-10-22', count: 8 },
+			'@ana logged Drink water ×8'
+		],
+		['checkIn', { private: true, date: '2026-10-22', count: 1 }, '@ana logged a private habit'],
+		[
+			'checkIn',
+			{ name: 'Drink water', date: '2026-10-22', count: 2, backfilled: true },
+			'@ana logged Drink water ×2 for Thu, Oct 22'
+		]
 	])('reads %s', async (type, payload, text) => {
 		render(FeedItem, props({ type, payload }));
 		await expect.element(page.getByText(text)).toBeVisible();
