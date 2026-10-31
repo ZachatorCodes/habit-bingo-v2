@@ -220,3 +220,39 @@ test('an admin deletes a group link; the owner resets it', async ({ page, browse
 	await expect(page.getByRole('heading', { level: 1, name: /Climbers/ })).toBeVisible();
 	await admin.context().close();
 });
+
+test('the owner renames the group and changes its icon; a member cannot', async ({
+	page,
+	browser
+}) => {
+	await newMember(page);
+	const { groupPath, link } = await createClimbers(page);
+	await page.goto(`${groupPath}?tab=members`);
+	await page.getByRole('link', { name: 'Edit group' }).click();
+	await expect(page).toHaveURL(new RegExp(`${groupPath}/edit$`));
+	await waitForHydration(page);
+	await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Climbers');
+	await page.getByRole('textbox', { name: 'Name' }).fill('Boulderers');
+	await page
+		.locator('label')
+		.filter({ has: page.getByRole('radio', { name: 'Rocket', exact: true }) })
+		.click();
+	await page.getByRole('button', { name: 'Save changes' }).click();
+	await expect(page).toHaveURL(new RegExp(`${groupPath}[?]updated=1$`));
+	await expect(page.getByRole('heading', { level: 1, name: /Boulderers/ })).toBeVisible();
+	await expect(page.getByText('Group updated.')).toBeVisible();
+	await page.goto('/groups');
+	await expect(page.getByRole('link', { name: /Boulderers/ })).toBeVisible();
+
+	const pageB = await otherPerson(browser);
+	await newMember(pageB);
+	await pageB.goto(link);
+	await waitForHydration(pageB);
+	await pageB.getByRole('button', { name: 'Join', exact: true }).click();
+	await expect(pageB).toHaveURL(/\/groups\/[^/]+$/);
+	await pageB.goto(`${groupPath}?tab=members`);
+	await expect(pageB.getByRole('link', { name: 'Edit group' })).toHaveCount(0);
+	const response = await pageB.goto(`${groupPath}/edit`);
+	expect(response?.status()).toBe(404);
+	await pageB.context().close();
+});
