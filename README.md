@@ -9,10 +9,68 @@ race your friends up the group leaderboard.
 - Architecture decisions: [`docs/adr/`](docs/adr/)
 - How we work: [CONTRIBUTING.md](CONTRIBUTING.md)
 
+## Features
+
+- **Habit library.** Save the habits you care about, each with an icon, a category and a rule:
+  "at least 3 times a month", "8 times a day", "2 days a week" or "at most 3 days a month".
+  Mark any habit private and friends only ever see "a private habit". A Quick start list gets new
+  players going.
+- **Monthly bingo cards.** Build a 3×3 (8 habits, 1× points) or 5×5 (24 habits, 2× points) card in
+  five steps: size, habits, targets, rewards and board. Starting mid-month shortens monthly targets
+  to the days left. You can edit a card for 48 hours after starting it.
+- **Squares you earn and squares you protect.**
+  - **Monthly goals** fill up as you log and count once complete.
+  - **Every-day and every-week habits** count once you meet a first day (or week) and keep
+    counting while you keep up. Miss a day and the square turns at risk; once the miss is more
+    than 3 days old the square is lost until you log that day.
+  - **"At most" limits** stay safe while you stay under, and count when the month ends.
+- **Rewards.** Set three real-life treats for your first bingo, for reaching 60% of your squares,
+  and for a blackout. A celebration reveals each one as you reach it.
+- **Today.** Today's check-ins in one list, with day chips to catch up on the last few days and
+  nudges for what needs doing.
+- **Log any day of the month.** Every habit opens a sheet with a month calendar, so a day you forgot
+  can still be logged later, up to today.
+- **Groups.** Invite friends with a link. Each group has:
+  - a **Feed** of everyone's check-ins and highlights, with icon reactions;
+  - a live **Leaderboard**;
+  - **Members**, where you can view each other's cards.
+- **Month end.** The month closes on the 4th, after a 3-day grace period for last-minute logging.
+  You get a recap and final standings, and the last week's center square nudges you to build next
+  month's card.
+- **Made for phones.** Installable as a Safari web app on iPhone, with a sidebar layout on iPad and
+  desktop.
+- **Invite-only.** Sign-up needs an invite. Admins manage invites and group links.
+
+## How to play
+
+1. **Get an invite.** Open your invite link, create an account, and pick your time zone and the day
+   your week starts.
+2. **Add habits.** Go to **Me → Habits**, then tap Quick start habits or create your own.
+3. **Build your card.** Go to **Card**, then choose a size, pick habits, adjust targets, name your
+   rewards, and shuffle the board until you like it. Then tap **Start card**.
+4. **Check in.** On **Today**, tap **+** on each habit as you do it. To fix an earlier day, open the
+   habit and pick the day on its calendar.
+5. **Play with friends.** Create a group under **Groups**, share its invite link, and react to each
+   other's progress in the feed.
+6. **Finish the month.** Go for lines, the 60% reward and the blackout. Build next month's card by
+   the 3rd to complete the last center square.
+
+Points: each square is worth up to 10 points by its progress, plus 25 per complete line and 100 for
+a blackout. Multiply by 2 on a 5×5 card.
+
 ## Stack
 
-SvelteKit 3 (Svelte 5) · TypeScript · Tailwind CSS v4 · Drizzle ORM · Postgres (Neon) ·
-Vitest · Playwright · GitHub Actions · Vercel
+- **App:** SvelteKit 3 (Svelte 5 runes) and TypeScript, with Tailwind CSS v4 (design tokens in
+  `@theme`), Phosphor icons and Nunito.
+- **Data:** Drizzle ORM on Postgres (Neon), with migrations in [`drizzle/`](drizzle/).
+- **Auth:** Better Auth (username and password, with optional Google), invite-only.
+- **Game rules:** pure TypeScript in [`src/lib/game/`](src/lib/game/), covered by tests at 100%.
+- **Tests:**
+  - **Vitest** for server code against an in-memory PGlite Postgres, and browser-mode component
+    tests.
+  - **Playwright** end-to-end tests on phone, tablet and desktop.
+- **Delivery:** GitHub Actions CI on pull requests, Vercel hosting with Neon preview branches, and
+  release-please for versions.
 
 ## Getting started
 
@@ -27,6 +85,20 @@ npm run dev
 
 The app builds and runs without a database; `/api/health` reports `degraded` until `DATABASE_URL`
 is set.
+
+### Try it locally without a database
+
+The E2E server runs the production build against an in-memory Postgres (PGlite), migrated and
+seeded with a member and an admin account (see [`scripts/e2e-seed.ts`](scripts/e2e-seed.ts) for
+their logins):
+
+```bash
+npm run build
+npx tsx scripts/e2e-server.ts   # http://localhost:4173
+```
+
+Everything resets when it stops. Add a `hb_test_now` cookie with an ISO date to move the app's clock,
+which is how the tests jump between months.
 
 ## Environment variables
 
@@ -68,6 +140,7 @@ Only the E2E server sets it, because every E2E test comes from one IP. Never set
 | `npm run db:generate`   | Generate a migration from the Drizzle schema |
 | `npm run db:migrate`    | Apply migrations to `DATABASE_URL`           |
 | `npm run db:studio`     | Browse the database                          |
+| `npm run icons`         | Render `static/icon.svg` into the app icons  |
 
 > **Windows note:** local builds use `@sveltejs/adapter-auto` because `@sveltejs/adapter-vercel`
 > needs symlink permission. Vercel builds use the Vercel adapter automatically.
