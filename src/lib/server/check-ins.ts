@@ -5,7 +5,7 @@ import { highlightState } from '#lib/server/card-view.ts';
 import { syncCheckIn, syncHighlights } from '#lib/server/feed.ts';
 import { localDate } from '#lib/server/clock.ts';
 import type { Db } from '#lib/server/db/client.ts';
-import { card, cardSquare, checkIn } from '#lib/server/db/schema.ts';
+import { card, cardSquare, checkIn, habit } from '#lib/server/db/schema.ts';
 
 /** A square's count on one date stops here (spec §3.2). */
 export const MAX_COUNT = 20;
@@ -82,21 +82,26 @@ async function withHighlights(
 	write: (tx: Db) => Promise<CheckInResult>
 ): Promise<CheckInResult> {
 	return db.transaction(async (tx) => {
-		const [{ cardId }] = await tx
-			.select({ cardId: cardSquare.cardId })
+		const [{ cardId, nowPrivate }] = await tx
+			.select({ cardId: cardSquare.cardId, nowPrivate: habit.isPrivate })
 			.from(cardSquare)
+			.leftJoin(habit, eq(habit.id, cardSquare.habitId))
 			.where(eq(cardSquare.id, squareId));
 		await tx.execute(sql`select id from card where id = ${cardId} for update`);
 		const before = await highlightState(tx, cardId, today);
 		const result = await write(tx);
 		const after = await highlightState(tx, cardId, today);
+		// A habit made private since the card started is private in the feed too.
+		const squares = after.squares.map((s) =>
+			s.id === squareId ? { ...s, isPrivate: s.isPrivate || nowPrivate === true } : s
+		);
 		await syncHighlights(
 			tx,
 			{ id: cardId, userId },
-			after.squares,
+			squares,
 			highlightChanges(before.state, after.state)
 		);
-		const square = after.squares.find((s) => s.id === squareId);
+		const square = squares.find((s) => s.id === squareId);
 		if (result?.ok && square) {
 			await syncCheckIn(tx, { id: cardId, userId }, square, date, result.count, today, now);
 		}

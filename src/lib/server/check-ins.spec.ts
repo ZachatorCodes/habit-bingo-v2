@@ -7,7 +7,7 @@ import { checkIn, feedEvent, reaction, user } from '#lib/server/db/schema.ts';
 import { createTestDb } from '#lib/server/db/test-db.ts';
 import { startCard, updateCard, type Card, type CardPlan, type Rewards } from './cards';
 import { getCheckIns, logCheckIn, MAX_COUNT, setCheckIn } from './check-ins';
-import { createHabit, type Habit } from './habits';
+import { createHabit, updateHabit, type Habit } from './habits';
 
 let db: Db;
 
@@ -368,6 +368,33 @@ describe('check-in feed items', () => {
 		await logCheckIn(db, me, id, '2026-10-18', 1, OCT_20);
 		const [item] = await items(card.id);
 		expect(item.payload).toEqual({ private: true, date: '2026-10-18', count: 1, backfilled: true });
+	});
+
+	it('a habit made private after the card started posts without its name', async () => {
+		const me = await makeUser();
+		const habits = await makeHabits(me.id, 8);
+		const card = await cardFor(me, habits, OCT_1);
+		const square = habitSquare(card);
+		const habit = habits.find((h) => h.id === square.habitId)!;
+		const made = await updateHabit(db, me.id, habit.id, {
+			icon: habit.icon,
+			name: habit.name,
+			category: habit.category,
+			direction: habit.direction,
+			period: habit.period,
+			countMode: habit.countMode,
+			target: habit.target,
+			isPrivate: true
+		});
+		expect(made?.ok).toBe(true);
+		await logCheckIn(db, me, square.id, '2026-10-20', 1, OCT_20);
+		const [item] = await items(card.id);
+		expect(item.payload).toEqual({
+			private: true,
+			date: '2026-10-20',
+			count: 1,
+			backfilled: false
+		});
 	});
 
 	it('a refused write leaves the feed alone', async () => {
