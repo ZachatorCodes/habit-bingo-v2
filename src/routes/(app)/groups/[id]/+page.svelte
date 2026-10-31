@@ -5,6 +5,7 @@
 	import FeedItem from '#lib/components/FeedItem.svelte';
 	import Hero from '#lib/components/Hero.svelte';
 	import Icon from '#lib/components/Icon.svelte';
+	import Notice from '#lib/components/Notice.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import { monthName } from '#lib/game/calendar.ts';
 	import type { PageProps } from './$types';
@@ -58,6 +59,9 @@
 			class="inline-flex min-h-11 items-center gap-1 font-bold text-forest underline-offset-4 hover:underline"
 			><Icon name="arrow-left" /> Groups</a
 		>
+		{#if data.updated}
+			<Notice tone="success">Group updated.</Notice>
+		{/if}
 
 		<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve() cannot carry the query string -->
 		<nav aria-label="Group" class="flex gap-2 border-b border-line lg:hidden">
@@ -198,6 +202,11 @@
 	{/if}
 	<div class="flex flex-wrap gap-3">
 		{#if data.isOwner}
+			<a
+				href={resolve('/(app)/groups/[id]/edit', { id: data.group.id })}
+				class="inline-flex min-h-11 items-center rounded-full border border-line bg-surface px-3 py-1.5 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+				>Edit group</a
+			>
 			<ConfirmAction
 				action="?/reset"
 				label="Reset link"
