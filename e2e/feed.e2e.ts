@@ -60,6 +60,41 @@ test('a friend sees a highlight and reacts', async ({ page, browser }) => {
 	await b.page.context().close();
 });
 
+test('a friend sees a check-in, reacts, sees it grow, and it goes on undo', async ({
+	page,
+	browser
+}) => {
+	const { a, groupPath, b } = await setup(page, browser);
+	const water = (p: Page) => p.getByRole('button', { name: 'Log Drink water' });
+	await water(page).click();
+	await expect(page.getByRole('button', { name: 'Undo one Drink water' })).toBeVisible();
+	await b.page.goto(groupPath);
+	const item = b.page.getByRole('listitem').filter({ hasText: 'logged Drink water' });
+	await expect(item).toContainText(`@${a.username} logged Drink water`);
+	await item.getByRole('button', { name: 'React with heart, 0' }).click();
+	await expect(
+		item.getByRole('button', { name: 'React with heart, 1, you reacted' })
+	).toBeVisible();
+
+	const saved = page.waitForResponse((r) => r.url().includes('/today/__data.json'));
+	await water(page).click();
+	await saved;
+	await b.page.reload();
+	await expect(item).toContainText('logged Drink water ×2');
+	await expect(
+		item.getByRole('button', { name: 'React with heart, 1, you reacted' })
+	).toBeVisible();
+
+	for (let i = 0; i < 2; i++) {
+		const undone = page.waitForResponse((r) => r.url().includes('/today/__data.json'));
+		await page.getByRole('button', { name: 'Undo one Drink water' }).click();
+		await undone;
+	}
+	await b.page.reload();
+	await expect(b.page.getByText('logged Drink water')).toHaveCount(0);
+	await b.page.context().close();
+});
+
 test('undo removes the highlight', async ({ page, browser }) => {
 	const { a, groupPath, b } = await setup(page, browser);
 	await expect(b.page.getByText(`@${a.username} completed ${GOAL}`)).toBeVisible();

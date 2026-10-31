@@ -1,6 +1,6 @@
 // Monthly cards: a snapshot of nine or twenty-four habits, laid out on a board. Every query is
 // scoped to the signed-in user.
-import { and, asc, eq, inArray, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, inArray, like, or, sql, type SQL } from 'drizzle-orm';
 import { monthName, monthOf, nextMonth } from '#lib/game/calendar.ts';
 import { CARD_SIZES, isValidLayout, type CardSize } from '#lib/game/card-layout.ts';
 import type { CategoryId } from '#lib/game/categories.ts';
@@ -360,13 +360,16 @@ export async function updateCard(
 					dropped.map((s) => s.id)
 				)
 			);
-			// A new habit never inherits the old one's highlight.
+			// A new habit never inherits the old one's highlight or check-in items.
 			await tx.delete(feedEvent).where(
 				and(
 					eq(feedEvent.cardId, existing.id),
-					inArray(
-						feedEvent.key,
-						dropped.map((s) => `square:${s.id}`)
+					or(
+						inArray(
+							feedEvent.key,
+							dropped.map((s) => `square:${s.id}`)
+						),
+						...dropped.map((s) => like(feedEvent.key, `checkin:${s.id}:%`))
 					)
 				)
 			);

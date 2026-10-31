@@ -14,6 +14,8 @@
 		countMode: 'times' | 'days';
 		state: SquareState;
 		progress: number;
+		/** Counts toward lines, tiers and points now. */
+		counting: boolean;
 		stateText: string;
 		progressText: string;
 		today: string;
@@ -146,6 +148,11 @@
 			<p class="text-[13px] font-semibold text-muted">{data.category} · {data.rule}</p>
 			<p class="font-bold">{data.stateText}</p>
 			<p class="text-[13px] font-semibold text-muted">{data.progressText}</p>
+			{#if data.calendar.direction === 'atMost' && data.state !== 'lost' && !data.counting}
+				<p class="text-[13px] font-semibold text-muted">
+					Counts at the end of the month if you stay under.
+				</p>
+			{/if}
 		</div>
 	</div>
 

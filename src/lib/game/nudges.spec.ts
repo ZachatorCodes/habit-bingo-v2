@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { CardSpan, Counts } from './evaluate.ts';
 import type { HabitRule } from './habit-rules.ts';
 import { nudges, type NudgeSquare } from './nudges.ts';
-import type { SquareState } from './square-state.ts';
+import { counts as countsNow, type SquareState } from './square-state.ts';
 
 const span: CardSpan = { startDate: '2026-10-01', weekStartsOn: 'monday' };
 const rewards = { sixty: 'Movie night', blackout: 'A weekend away' };
@@ -18,14 +18,16 @@ const square = (
 	id: string,
 	state: SquareState,
 	habit: HabitRule = rule('month', 'days', 1),
-	counts: Counts = days({})
-): NudgeSquare => ({ id, name: id, state, rule: habit, counts });
+	counts: Counts = days({}),
+	counting = countsNow(state)
+): NudgeSquare => ({ id, name: id, state, rule: habit, counts, counting });
 const center = (state: SquareState = 'complete'): NudgeSquare => ({
 	id: null,
 	name: 'Center',
 	state,
 	rule: null,
-	counts: days({})
+	counts: days({}),
+	counting: countsNow(state)
 });
 
 /** A 3×3 board (center at 4) from 8 habit squares. */
@@ -135,6 +137,13 @@ describe('nudges', () => {
 		expect(run(board(empty(8), center('buildNext')), '2026-10-31')[0].text).toBe(
 			"Build November's card to keep your center square: 1 day left"
 		);
+	});
+
+	it('no "1 square from a bingo" from "at most" squares that do not count yet', () => {
+		const limit = rule('month', 'days', 3, 'atMost');
+		const pending = (id: string) => square(id, 'held', limit, days({}), false);
+		const near = board([pending('a'), pending('b'), ...empty(6)]);
+		expect(run(near, '2026-10-20').map((n) => n.text)).not.toContain('1 square from a bingo');
 	});
 
 	it('shows at most 3, most urgent first', () => {

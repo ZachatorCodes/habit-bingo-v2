@@ -12,6 +12,7 @@ const data: SheetData = {
 	countMode: 'times',
 	state: 'atRisk',
 	progress: 0,
+	counting: true,
 	stateText: 'At risk: log a missed day',
 	progressText: '3/8 today',
 	today: '2026-10-20',
@@ -30,6 +31,20 @@ const data: SheetData = {
 };
 
 describe('HabitSheet', () => {
+	it('says an "at most" square counts at the end of the month', async () => {
+		const limit = {
+			...data,
+			state: 'held' as const,
+			calendar: { ...data.calendar, direction: 'atMost' as const }
+		};
+		const note = 'Counts at the end of the month if you stay under.';
+		const { unmount } = render(HabitSheet, { data: { ...limit, counting: false } });
+		await expect.element(page.getByText(note)).toBeVisible();
+		unmount();
+		render(HabitSheet, { data: { ...limit, counting: true } });
+		expect(page.getByText(note).elements()).toHaveLength(0);
+	});
+
 	it('shows a stepper for times habits', async () => {
 		render(HabitSheet, { data });
 		await expect.element(page.getByText('Health · 8 times a day')).toBeVisible();

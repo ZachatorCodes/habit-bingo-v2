@@ -1,7 +1,7 @@
 import { addDays, lastDayOf, monthOf } from './calendar.ts';
 import { BACKFILL_DAYS } from './backfill.ts';
 import type { HabitRule } from './habit-rules.ts';
-import type { SquareState } from './square-state.ts';
+import { counts, type SquareState } from './square-state.ts';
 import { clippedWeeks, weekOf, type Week } from './weeks.ts';
 
 /** A square's check-ins: date → count. */
@@ -23,21 +23,25 @@ export function progressBetween(rule: HabitRule, counts: Counts, from: string, t
 /**
  * A square's state for `today` (spec §3.5): earn squares go empty → inProgress → complete; protect
  * squares start held and turn atRisk or lost. `progress` (0–1) is shown for earn squares only.
- * Check-ins after `today` or before the card started are ignored.
+ * `counting`: whether it counts toward lines, tiers and points now; "at most" squares only count
+ * once the month is over. Check-ins after `today` or before the card started are ignored.
  */
 export function evaluateSquare(
 	rule: HabitRule,
 	span: CardSpan,
-	counts: Counts,
+	checkIns: Counts,
 	today: string
-): { state: SquareState; progress: number } {
-	const end = minDate(today, lastDayOf(monthOf(span.startDate)));
+): { state: SquareState; progress: number; counting: boolean } {
+	const monthEnd = lastDayOf(monthOf(span.startDate));
+	const end = minDate(today, monthEnd);
 	if (rule.direction === 'atLeast' && rule.period === 'month') {
-		const k = progressBetween(rule, counts, span.startDate, end);
+		const k = progressBetween(rule, checkIns, span.startDate, end);
 		const state = k === 0 ? 'empty' : k < rule.target ? 'inProgress' : 'complete';
-		return { state, progress: Math.min(k, rule.target) / rule.target };
+		return { state, progress: Math.min(k, rule.target) / rule.target, counting: counts(state) };
 	}
-	return { state: protectState(rule, span, counts, today, end), progress: 0 };
+	const state = protectState(rule, span, checkIns, today, end);
+	const pending = rule.direction === 'atMost' && today <= monthEnd;
+	return { state, progress: 0, counting: counts(state) && !pending };
 }
 
 function protectState(
@@ -59,6 +63,8 @@ function protectState(
 		}
 		const missed = days.filter((d) => d !== today && count(d) < rule.target);
 		if (missed.some((d) => d < settled)) return 'lost';
+		// Nothing counts until a first day is met.
+		if (!days.some((d) => count(d) >= rule.target)) return 'empty';
 		return missed.length > 0 ? 'atRisk' : 'held';
 	}
 
@@ -80,7 +86,10 @@ function protectState(
 		return current && progress(current) === current.required ? 'atRisk' : 'held';
 	}
 	let atRisk = false;
+	let met = false;
 	for (const week of weeks) {
+		// A stub week that requires nothing starts the square only once something is logged in it.
+		if (progress(week) >= Math.max(week.required, 1)) met = true;
 		const short = week.required - progress(week);
 		if (short <= 0) continue;
 		if (week.end < today) {
@@ -90,6 +99,7 @@ function protectState(
 			atRisk = true;
 		}
 	}
+	if (!met) return 'empty';
 	return atRisk ? 'atRisk' : 'held';
 }
 

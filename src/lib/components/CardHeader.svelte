@@ -15,11 +15,13 @@
 		rewards: Rewards;
 		/** Every square's state in board order, for the line status. */
 		states: SquareState[];
+		/** Whether each square counts now, in board order. */
+		counting: boolean[];
 		/** The board and anything that belongs on the sheet above the reward rows. */
 		children?: Snippet;
 	};
 
-	let { monthName, daysLeft, score, size, rewards, states, children }: Props = $props();
+	let { monthName, daysLeft, score, size, rewards, states, counting, children }: Props = $props();
 
 	const tiers = $derived<{ tier: Tier; label: string; reward: string }[]>([
 		{ tier: 'bingo', label: 'Bingo', reward: rewards.bingo },
@@ -30,7 +32,7 @@
 		},
 		{ tier: 'blackout', label: 'Blackout', reward: rewards.blackout }
 	]);
-	const toLine = $derived(squaresToLine(size, states));
+	const toLine = $derived(squaresToLine(size, states, counting));
 	const lineText = $derived(
 		toLine === null
 			? 'No lines left this month'

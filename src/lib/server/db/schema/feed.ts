@@ -15,7 +15,7 @@ import { user } from './auth.ts';
 import { card } from './cards.ts';
 
 export type FeedEventType =
-	'cardStarted' | 'squareComplete' | 'bingo' | 'sixtyPercent' | 'blackout';
+	'cardStarted' | 'squareComplete' | 'bingo' | 'sixtyPercent' | 'blackout' | 'checkIn';
 
 export const feedEvent = pgTable(
 	'feed_event',
@@ -28,9 +28,12 @@ export const feedEvent = pgTable(
 			.notNull()
 			.references(() => card.id, { onDelete: 'cascade' }),
 		type: text('type').$type<FeedEventType>().notNull(),
-		/** `card`, `square:<squareId>` or `tier:<tier>`; one event per key per card. */
+		/** `card`, `square:<squareId>`, `tier:<tier>` or `checkin:<squareId>:<date>`; one per key per card. */
 		key: text('key').notNull(),
-		/** Snapshot at posting time: `{ month }`, `{ name, icon }`, `{ private: true }` or `{}`. */
+		/**
+		 * Snapshot at posting time: `{ month }`, `{ name, icon }`, `{ private: true }` or `{}`; a
+		 * check-in adds `{ date, count, backfilled }` and is rewritten as its count changes.
+		 */
 		payload: jsonb('payload').$type<Record<string, unknown>>().notNull(),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},
@@ -39,7 +42,7 @@ export const feedEvent = pgTable(
 		index('feed_event_user_id_created_at_idx').on(table.userId, table.createdAt.desc()),
 		check(
 			'feed_event_type_check',
-			sql`${table.type} in ('cardStarted', 'squareComplete', 'bingo', 'sixtyPercent', 'blackout')`
+			sql`${table.type} in ('cardStarted', 'squareComplete', 'bingo', 'sixtyPercent', 'blackout', 'checkIn')`
 		)
 	]
 );

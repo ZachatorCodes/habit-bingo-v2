@@ -15,10 +15,22 @@
 		item.reactions[icon] - (item.mine === icon ? 1 : 0) + (mine === icon ? 1 : 0);
 
 	const name = $derived(item.author.displayUsername ?? 'Someone');
+	const shortDay = new Intl.DateTimeFormat('en-US', {
+		weekday: 'short',
+		month: 'short',
+		day: 'numeric',
+		timeZone: 'UTC'
+	});
 	const text = $derived.by(() => {
 		const p = item.payload;
 		if (item.type === 'squareComplete')
 			return p.private ? 'completed a private habit' : `completed ${p.name}`;
+		if (item.type === 'checkIn') {
+			const what = p.private ? 'a private habit' : String(p.name);
+			const times = Number(p.count) > 1 ? ` ×${p.count}` : '';
+			const day = p.backfilled ? ` for ${shortDay.format(new Date(`${p.date}T00:00:00Z`))}` : '';
+			return `logged ${what}${times}${day}`;
+		}
 		if (item.type === 'bingo') return 'got a bingo!';
 		if (item.type === 'blackout') return 'got a blackout!';
 		if (item.type === 'sixtyPercent') return 'reached 60% of their squares';

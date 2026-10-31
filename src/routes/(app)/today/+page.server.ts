@@ -94,6 +94,7 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 						id: square.isCenter ? null : square.id,
 						name: board.squares[index].name,
 						state: board.squares[index].state,
+						counting: board.squares[index].counting,
 						rule: square.isCenter ? null : square,
 						counts: checkIns.get(square.id) ?? new Map<string, number>()
 					})),
